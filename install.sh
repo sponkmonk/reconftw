@@ -618,6 +618,16 @@ eval strip -s "$HOME"/go/bin/* $DEBUG_STD
 
 eval $SUDO cp "$HOME"/go/bin/* /usr/local/bin/ $DEBUG_STD
 
+## Adding bin folder to $PATH
+rftw_path_command='export PATH=$PATH:$HOME/.reconftw/bin/'
+
+# Check if the line already exists in the shell configuration file
+if ! grep -qF "$rftw_path_command" ~/"${profile_shell}"; then
+    echo "$rftw_path_command" >> ~/"${profile_shell}"
+else
+    echo "reconftw bin PATH already set in ${profile_shell}. Skipping..."
+fi
+
 if [ "$web" = true ]; then
     printf "\n${bgreen} Web server is installed, to set it up run ./install.sh and select option 3 ${reset}\n\n"
 fi
