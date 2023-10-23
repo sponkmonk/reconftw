@@ -1,13 +1,5 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-if [ -f "reconftw.cfg" ]; then
-    source reconftw.cfg
-else
-    echo "Error: reconftw.cfg not found!"
-    exit 1
-fi
-
 # Function to display help menu
 help_menu() {
     echo "Usage: $0 [OPTIONS]"
@@ -18,6 +10,11 @@ help_menu() {
     echo "  -o, --output-file     Specify the output file for saving results."
     echo "Ensure all required environment variables are set in reconftw.cfg"
     exit 0
+}
+
+# Validate domain using rftw_util_validatedomain
+validate_domain() {
+    rftw_util_validatedomain "$1" || { echo "Invalid domain: $1"; exit 1; }
 }
 
 # Parse input arguments
@@ -39,9 +36,13 @@ if [ -n "$INPUTFILE" ] && [ ! -f "$INPUTFILE" ]; then
 fi
 
 # Input validation
-if [ -z "$domain" ] || [[ "$domain" == "-h" ]] || [[ "$domain" == "--help" ]]; then
+if [ -z "$domain" ]; then
+    echo "No domain provided."
     help_menu
+    exit 1
 fi
+
+validate_domain "$domain"
 
 # Function to start the process
 start_func() {

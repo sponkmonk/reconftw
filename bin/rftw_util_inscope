@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Help Menu
+function display_help() {
+    echo "Usage: $0 -f <file>"
+    echo "Options:"
+    echo "  -f, --file            Specify the input file to check inscope."
+    echo "  -h, --help            Display this help menu."
+}
+
+# check_inscope function
+function check_inscope() {
+    echo "Checking inscope for $1"
+    cat $1 | inscope > $1_tmp && cp $1_tmp $1 && rm -f $1_tmp
+}
+
+# Variables for input
+input_file=""
+
+# Input validation and argument parsing
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -f|--file) 
+            input_file="$2"; 
+            shift;;
+        -h|--help) 
+            display_help; 
+            exit 0;;
+        *) 
+            echo "Unknown parameter passed: $1"; 
+            display_help; 
+            exit 1;;
+    esac
+    shift
+done
+
+# Validate input file
+if [ -z "$input_file" ]; then
+    echo "Error: Input file not provided."
+    display_help
+    exit 1
+fi
+
+if [ ! -f "$input_file" ]; then
+    echo "Error: Specified input file does not exist."
+    exit 1
+fi
+
+# Call the check_inscope function
+check_inscope "$input_file"

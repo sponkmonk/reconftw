@@ -1,19 +1,10 @@
 #!/bin/bash
 
-# Default config path
-CONFIG_PATH="$RECONFTW_CFG"
-
-# Check if the config file exists
-if [ -f "$CONFIG_PATH" ]; then
-    source "$CONFIG_PATH"
-else
-    echo "Error: reconftw.cfg not found at $CONFIG_PATH!"
-    exit 1
-fi
+# Description: Script to perform Google dorks
 
 # Help menu
 function help_menu() {
-    echo -e "Usage: ./google_dorks_script.sh [OPTIONS]"
+    echo -e "Usage: ./rftw_osint_googledorks.sh [OPTIONS]"
     echo -e "Options:"
     echo -e "  -d, --domain DOMAIN       Specify the domain"
     echo -e "  -o, --output FILE         (Optional) Specify the output directory file"
@@ -36,7 +27,7 @@ function google_dorks() {
 
 # Parse command-line arguments
 domain=""
-output_dir=""
+output=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -d|--domain) domain="$2"; shift ;;
@@ -53,6 +44,9 @@ if [ -z "$domain" ]; then
     help_menu
     exit 1
 fi
+
+# Validate the domain using the utility script
+rftw_util_validatedomain "$domain" || exit 1
 
 # Execute the main function
 google_dorks

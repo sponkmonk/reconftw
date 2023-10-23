@@ -40,7 +40,7 @@ rftw_util_tools -t $tools
 
 function google_dorks(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$GOOGLE_DORKS" = true ] && [ "$OSINT" = true ]; then
-		rftw_osint_googledorks -d "$domain" -o osint/dorks.txt || { echo "dorks_hunter command failed"; exit 1; } 2>>"$LOGFILE" >/dev/null 2>&1
+		rftw_osint_googledorks -d "$domain" -o osint/dorks.txt || { echo "rftw_osint_googledorks command failed"; exit 1; } 2>>"$LOGFILE" >/dev/null 2>&1
 		end_func "Results are saved in $domain/osint/dorks.txt" "${FUNCNAME[0]}"
 	else
 		if [ "$GOOGLE_DORKS" = false ] || [ "$OSINT" = false ]; then
@@ -52,141 +52,97 @@ function google_dorks(){
 }
 
 function github_dorks(){
-	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$GITHUB_DORKS" = true ] && [ "$OSINT" = true ]; then
-		start_func "${FUNCNAME[0]}" "Github Dorks in process"
-		rftw_osint_gh_dorks -d "$domain" -t "${GITHUB_TOKENS}" -D "$DEEP" | anew -q osint/gitdorks.txt || { echo "gitdorks_go command failed"; exit 1; } 2>>"$LOGFILE" >/dev/null 2>&1
-		end_func "Results are saved in $domain/osint/gitdorks.txt" "${FUNCNAME[0]}"
-	else
-		if [ "$GITHUB_DORKS" = false ] || [ "$OSINT" = false ]; then
-			printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-		else
-			printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
-		fi
-	fi
+    if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$GITHUB_DORKS" = true ] && [ "$OSINT" = true ]; then
+        rftw_osint_ghdorks -d "$domain" -g "$path_to_github_tokens" -o "path_to_output_file" || { 
+            echo -e "${bred}Error: rftw_osint_ghdorks command failed.${reset}" >&2; 
+            exit 1; 
+        }
+        end_func "Results are saved in path_to_output_file" "${FUNCNAME[0]}"
+    else
+        if [ "$GITHUB_DORKS" = false ] || [ "$OSINT" = false ]; then
+            printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
+        else
+            printf "${yellow} ${FUNCNAME[0]} are already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
+        fi
+    fi
 }
 
 function github_repos(){
-	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$GITHUB_REPOS" = true ] && [ "$OSINT" = true ]; then
-		start_func "${FUNCNAME[0]}" "Github Repos analysis in process"
+    if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$GITHUB_REPOS" = true ] && [ "$OSINT" = true ]; then
+        start_func "${FUNCNAME[0]}" "Github Repos analysis in process"
+        rftw_osint_ghrepos -d "$domain" -t "${GITHUB_TOKENS}" -o osint/ghrepos.txt || { echo "rftw_osint_ghrepos command failed"; exit 1; } 2>>"$LOGFILE" >/dev/null 2>&1
+        end_func "Results are saved in $domain/osint/ghrepos.txt" "${FUNCNAME[0]}"
+    else
+        if [ "$GITHUB_REPOS" = false ] || [ "$OSINT" = false ]; then
+            printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
+        else
+            printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
+        fi
+    fi
+}
 
-		if [ -s "${GITHUB_TOKENS}" ]; then
-			GH_TOKEN=$(cat ${GITHUB_TOKENS} | head -1)
-			echo $domain | unfurl format %r > .tmp/company_name.txt
-			enumerepo -token-string "${GH_TOKEN}" -usernames .tmp/company_name.txt -o .tmp/company_repos.txt 2>>"$LOGFILE" >/dev/null
-			[ -s ".tmp/company_repos.txt" ] && jq -r '.[].repos[]|.url' < .tmp/company_repos.txt > .tmp/company_repos_url.txt 2>>"$LOGFILE"
-			mkdir -p .tmp/github_repos 2>>"$LOGFILE" >>"$LOGFILE"
-			mkdir -p .tmp/github 2>>"$LOGFILE" >>"$LOGFILE"
-			[ -s ".tmp/company_repos_url.txt" ] && interlace -tL .tmp/company_repos_url.txt -threads ${INTERLACE_THREADS} -c "git clone _target_  .tmp/github_repos/_cleantarget_" 2>>"$LOGFILE" >/dev/null 2>&1
-			[ -d ".tmp/github/" ] && ls .tmp/github_repos > .tmp/github_repos_folders.txt
-			[ -s ".tmp/github_repos_folders.txt" ] && interlace -tL .tmp/github_repos_folders.txt -threads ${INTERLACE_THREADS} -c "gitleaks detect --source .tmp/github_repos/_target_ --no-banner --no-color -r .tmp/github/gh_secret_cleantarget_.json" 2>>"$LOGFILE" >/dev/null
-			[ -s ".tmp/company_repos_url.txt" ] && interlace -tL .tmp/company_repos_url.txt -threads ${INTERLACE_THREADS} -c "trufflehog git _target_ -j 2>&1 | jq -c > _output_/_cleantarget_" -o .tmp/github/ >>"$LOGFILE" 2>&1
-			if [ -d ".tmp/github/" ]; then
-				cat .tmp/github/* 2>/dev/null | jq -c | jq -r > osint/github_company_secrets.json 2>>"$LOGFILE"
-			fi
-		else
-			printf "\n${bred} Required file ${GITHUB_TOKENS} not exists or empty${reset}\n"
-		fi
-		end_func "Results are saved in $domain/osint/github_company_secrets.json" ${FUNCNAME[0]}
+
+function metadata(){
+    if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$METADATA" = true ] && [ "$OSINT" = true ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+        start_func "${FUNCNAME[0]}" "Metadata analysis in process"
+        rftw_osint_metadata -d "$domain" -o "osint/metadata.txt" || { 
+            echo -e "${bred}Error: rftw_osint_metadata command failed.${reset}" >&2; 
+            exit 1; 
+        }
+        end_func "Results are saved in $domain/osint/metadata.txt" "${FUNCNAME[0]}"
+    else
+        if [ "$METADATA" = false ] || [ "$OSINT" = false ]; then
+            printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
+        else
+            printf "${yellow} ${FUNCNAME[0]} is already processed or input is an IP. To force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
+        fi
+    fi
+}
+
+
+function postleaks(){
+	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$POSTLEAKS" = true ] && [ "$OSINT" = true ]; then
+		start_func "${FUNCNAME[0]}" "Post leaks in process"
+		rftw_osint_postleaks -d "$domain" -o "osint/postleaks.txt" || { echo "rftw_osint_postleaks command failed"; exit 1; } 2>>"$LOGFILE" >/dev/null 2>&1
+		end_func "Results are saved in $domain/osint/postleaks.txt" "${FUNCNAME[0]}"
 	else
-		if [ "$GITHUB_REPOS" = false ] || [ "$OSINT" = false ]; then
+		if [ "$POSTLEAKS" = false ] || [ "$OSINT" = false ]; then
 			printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
 		else
 			printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
-		fi
-	fi
-}
-
-function metadata(){
-	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$METADATA" = true ] && [ "$OSINT" = true ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-		start_func ${FUNCNAME[0]} "Scanning metadata in public files"
-		metafinder -d "$domain" -l $METAFINDER_LIMIT -o osint -go -bi -ba &>> "$LOGFILE" || { echo "metafinder command failed"; exit 1; }
-		mv "osint/${domain}/"*".txt" "osint/" 2>>"$LOGFILE"
-		rm -rf "osint/${domain}" 2>>"$LOGFILE"
-		end_func "Results are saved in $domain/osint/[software/authors/metadata_results].txt" ${FUNCNAME[0]}
-	else
-		if [ "$METADATA" = false ] || [ "$OSINT" = false ]; then
-			printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-		elif [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-			return
-		else
-			if [ "$METADATA" = false ] || [ "$OSINT" = false ]; then
-				printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-			else
-				printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
-			fi
-		fi
-	fi
-}
-
-function postleaks(){
-	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$POSTMAN_LEAKS" = true ] && [ "$OSINT" = true ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-		start_func ${FUNCNAME[0]} "Scanning for leaks in postman public directory"
-
-		postleaksNg -k "$domain" > .tmp/postleaks.txt  || { echo "postleaksNg command failed"; exit 1; }
-
-		end_func "Results are saved in $domain/osint/[software/authors/metadata_results].txt" ${FUNCNAME[0]}
-	else
-		if [ "$POSTMAN_LEAKS" = false ] || [ "$OSINT" = false ]; then
-			printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-		elif [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-			return
-		else
-			if [ "$POSTMAN_LEAKS" = false ] || [ "$OSINT" = false ]; then
-				printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-			else
-				printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
-			fi
 		fi
 	fi
 }
 
 function emails(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$EMAILS" = true ] && [ "$OSINT" = true ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-		start_func ${FUNCNAME[0]} "Searching emails/users/passwords leaks"
-		emailfinder -d $domain 2>>"$LOGFILE" | anew -q .tmp/emailfinder.txt || { echo "emailfinder command failed"; exit 1; }
-		[ -s ".tmp/emailfinder.txt" ] && cat .tmp/emailfinder.txt | grep "@" | grep -iv "|_" | anew -q osint/emails.txt
-
-		end_func "Results are saved in $domain/osint/emails.txt" ${FUNCNAME[0]}
+		start_func "${FUNCNAME[0]}" "Emails search in process"
+		rftw_osint_emails -d "$domain" -o "osint/emails.txt" || { echo "rftw_osint_emails command failed"; exit 1; } 2>>"$LOGFILE" >/dev/null 2>&1
+		end_func "Results are saved in $domain/osint/emails.txt" "${FUNCNAME[0]}"
 	else
 		if [ "$EMAILS" = false ] || [ "$OSINT" = false ]; then
 			printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-		elif [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-			return
 		else
-			if [ "$EMAILS" = false ] || [ "$OSINT" = false ]; then
-				printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-			else
-				printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
-			fi
+			printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
 		fi
 	fi
 }
+
 
 function domain_info(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$DOMAIN_INFO" = true ] && [ "$OSINT" = true ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-		start_func ${FUNCNAME[0]} "Searching domain info (whois, registrant name/email domains)"
-		whois -H $domain > osint/domain_info_general.txt || { echo "whois command failed"; exit 1; }
-		if [ "$DEEP" = true ] || [ "$REVERSE_WHOIS" = true ]; then
-			timeout -k 1m ${AMASS_INTEL_TIMEOUT}m amass intel -d ${domain} -whois -timeout $AMASS_INTEL_TIMEOUT -o osint/domain_info_reverse_whois.txt 2>>"$LOGFILE" &>/dev/null
-		fi
-		
-		curl -s "https://aadinternals.azurewebsites.net/api/tenantinfo?domainName=${domain}" -H "Origin: https://aadinternals.com" | jq -r .domains[].name > osint/azure_tenant_domains.txt
-
-		end_func "Results are saved in $domain/osint/domain_info_[general/name/email/ip].txt" ${FUNCNAME[0]}
+		start_func "${FUNCNAME[0]}" "Searching domain info (whois, registrant name/email domains)"
+		rftw_osint_whois -d "$domain" -o "$domain/osint" || { echo "rftw_osint_whois command failed"; exit 1; } 2>>"$LOGFILE" >/dev/null 2>&1
+		end_func "Results are saved in $domain/osint/domain_info_[general/name/email/ip].txt" "${FUNCNAME[0]}"
 	else
 		if [ "$DOMAIN_INFO" = false ] || [ "$OSINT" = false ]; then
 			printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-		elif [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-			return
 		else
-			if [ "$DOMAIN_INFO" = false ] || [ "$OSINT" = false ]; then
-				printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-			else
-				printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
-			fi
+			printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
 		fi
 	fi
 }
+
 
 function ip_info(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$IP_INFO" = true ] && [ "$OSINT" = true ] && [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
@@ -219,83 +175,13 @@ function ip_info(){
 ###############################################################################################################
 
 function subdomains_full(){
-	NUMOFLINES_subs="0"
-	NUMOFLINES_probed="0"
-	printf "${bgreen}#######################################################################\n\n"
-	! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Subdomain Enumeration $domain\n\n"
-	[[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Scanning IP $domain\n\n"
-	[ -s "subdomains/subdomains.txt" ] && cp subdomains/subdomains.txt .tmp/subdomains_old.txt
-	[ -s "webs/webs.txt" ] && cp webs/webs.txt .tmp/probed_old.txt
-
-	if ( [ ! -f "$called_fn_dir/.sub_active" ] || [ ! -f "$called_fn_dir/.sub_brute" ] || [ ! -f "$called_fn_dir/.sub_permut" ] || [ ! -f "$called_fn_dir/.sub_recursive_brute" ] )  || [ "$DIFF" = true ] ; then
-		resolvers_update
-	fi
-
-	[ -s "${inScope_file}" ] && cat ${inScope_file} | anew -q subdomains/subdomains.txt
-
-	if ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && [ "$SUBDOMAINS_GENERAL" = true ]; then
-		sub_passive
-		sub_crt
-		sub_active
-		sub_noerror
-		sub_brute
-		sub_permut
-		sub_regex_permut
-		#sub_gpt
-		sub_recursive_passive
-		sub_recursive_brute
-		sub_dns
-		sub_scraping
-		sub_analytics
-	else 
-		notification "IP/CIDR detected, subdomains search skipped" info
-		echo $domain | anew -q subdomains/subdomains.txt
-	fi
-
-	webprobe_simple
-	if [ -s "subdomains/subdomains.txt" ]; then
-		[ -s "$outOfScope_file" ] && deleteOutScoped $outOfScope_file subdomains/subdomains.txt
-		NUMOFLINES_subs=$(cat subdomains/subdomains.txt 2>>"$LOGFILE" | anew .tmp/subdomains_old.txt | sed '/^$/d' | wc -l)
-	fi
-	if [ -s "webs/webs.txt" ]; then
-		[ -s "$outOfScope_file" ] && deleteOutScoped $outOfScope_file webs/webs.txt
-		NUMOFLINES_probed=$(cat webs/webs.txt 2>>"$LOGFILE" | anew .tmp/probed_old.txt | sed '/^$/d' | wc -l)
-	fi
-	printf "${bblue}\n Total subdomains: ${reset}\n\n"
-	notification "- ${NUMOFLINES_subs} alive" good
-	[ -s "subdomains/subdomains.txt" ] && cat subdomains/subdomains.txt | sort
-	notification "- ${NUMOFLINES_probed} new web probed" good
-	[ -s "webs/webs.txt" ] && cat webs/webs.txt | sort
-	notification "Subdomain Enumeration Finished" good
-	printf "${bblue} Results are saved in $domain/subdomains/subdomains.txt and webs/webs.txt${reset}\n"
-	printf "${bgreen}#######################################################################\n\n"
+    rftw_sub_full -d "$domain" || { echo "Error: rftw_sub_full failed for $domain"; exit 1; }
 }
 
 function sub_passive(){
-	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$SUBPASSIVE" = true ]; then
-		start_subfunc ${FUNCNAME[0]} "Running : Passive Subdomain Enumeration"
-
-		[[ $RUNAMASS == true ]] && timeout -k 1m ${AMASS_ENUM_TIMEOUT} amass enum -passive -d $domain -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT -json .tmp/amass_json.json 2>>"$LOGFILE" &>/dev/null
-		[ -s ".tmp/amass_json.json" ] && cat .tmp/amass_json.json | jq -r '.name' | anew -q .tmp/amass_psub.txt
-		[[ $RUNSUBFINDER == true ]] && subfinder -all -d "$domain" -silent -o .tmp/subfinder_psub.txt 2>>"$LOGFILE" >/dev/null
-		
-		if [ -s "${GITHUB_TOKENS}" ]; then
-			if [ "$DEEP" = true ]; then
-				github-subdomains -d $domain -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
-			else
-				github-subdomains -d $domain -k -q -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
-			fi
-		fi
-		if [ -s "${GITLAB_TOKENS}" ]; then
-			gitlab-subdomains -d $domain -t $GITLAB_TOKENS > .tmp/gitlab_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
-		fi
-		if [ "$INSCOPE" = true ]; then
-			check_inscope .tmp/amass_psub.txt 2>>"$LOGFILE" >/dev/null
-			check_inscope .tmp/subfinder_psub.txt 2>>"$LOGFILE" >/dev/null
-			check_inscope .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
-			check_inscope .tmp/gitlab_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
-		fi
-		NUMOFLINES=$(find .tmp -type f -iname "*_psub.txt" -exec cat {} + | sed "s/*.//" | anew .tmp/passive_subs.txt | sed '/^$/d' | wc -l)
+	if [[ ! -f "$called_fn_dir/.sub_passive" ]] || [[ "$DIFF" = true ]] && [[ "$SUBPASSIVE" = true ]]; then
+        rftw_sub_passive -d "$domain" -o "path_to_output_file"
+        NUMOFLINES=$(find .tmp -type f -iname "*_psub.txt" -exec cat {} + | sed "s/*.//" | anew .tmp/passive_subs.txt | sed '/^$/d' | wc -l)
 		end_subfunc "${NUMOFLINES} new subs (passive)" ${FUNCNAME[0]}
 	else
 		if [ "$SUBPASSIVE" = false ]; then
@@ -309,8 +195,7 @@ function sub_passive(){
 function sub_crt(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$SUBCRT" = true ]; then
 		start_subfunc ${FUNCNAME[0]} "Running : Crtsh Subdomain Enumeration"
-		crt -s -json -l ${CTR_LIMIT} $domain 2>>"$LOGFILE" | jq -r '.[].subdomain' 2>>"$LOGFILE" | sed -e "s/^\\*\\.//" | anew -q .tmp/crtsh_subs_tmp.txt 2>>"$LOGFILE" >/dev/null
-		[[ "$INSCOPE" = true ]] && check_inscope .tmp/crtsh_subs_tmp.txt 2>>"$LOGFILE" >/dev/null
+		rftw_sub_crt -d "$domain" -o "path_to_output_file"
 		NUMOFLINES=$(cat .tmp/crtsh_subs_tmp.txt 2>>"$LOGFILE" | sed 's/\*.//g' | anew .tmp/crtsh_subs.txt | sed '/^$/d' | wc -l)
 		end_subfunc "${NUMOFLINES} new subs (cert transparency)" ${FUNCNAME[0]}
 	else
