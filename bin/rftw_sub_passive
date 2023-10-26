@@ -15,15 +15,6 @@ function display_help() {
     echo "  -h, --help            Display this help menu."
 }
 
-# Other functions
-function start_subfunc() {
-    echo "[+] Starting $1: $2"
-}
-
-function end_subfunc() {
-    echo "[+] Ending $1: $2"
-}
-
 # Variables for input and output
 output_file=""
 
@@ -59,7 +50,6 @@ fi
 rftw_util_validatedomain "$domain" || exit 1
 
 # Main functionality
-start_subfunc "$script_name" "Running : Crtsh Subdomain Enumeration"
 
 [[ $RUNAMASS == true ]] && timeout -k 1m ${AMASS_ENUM_TIMEOUT} amass enum -passive -d $domain -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT -json .tmp/amass_json.json 2>>"$LOGFILE" &>/dev/null
 [ -s ".tmp/amass_json.json" ] && cat .tmp/amass_json.json | jq -r '.name' | anew -q .tmp/amass_psub.txt

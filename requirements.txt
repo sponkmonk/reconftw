@@ -23,7 +23,6 @@ metafinder              # Tool
 mmh3                    # fav-up
 netaddr                 # dnsvalidator
 psutil                  # xnLinkFinder
-PySocks                 # pwndb
 requests                # multiple
 requests_futures        # cloud_enums
 retrying                # multiple

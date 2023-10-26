@@ -76,7 +76,6 @@ gotools["s3scanner"]="go install -v github.com/sa7mon/s3scanner@latest"
 # Declaring repositories and their paths
 declare -A repos
 repos["dorks_hunter"]="six2dez/dorks_hunter"
-repos["pwndb"]="davidtavarez/pwndb"
 repos["dnsvalidator"]="vortexau/dnsvalidator"
 repos["interlace"]="codingo/Interlace"
 repos["brutespray"]="x90skysn3k/brutespray"
@@ -107,7 +106,7 @@ repos["gitleaks"]="gitleaks/gitleaks"
 repos["trufflehog"]="trufflesecurity/trufflehog"
 
 
-function banner_web(){
+function banner(){
     tput clear
 	printf "\n${bgreen}"
 	printf "  ██▀███  ▓█████  ▄████▄   ▒█████   ███▄    █   █████▒▄▄▄█████▓ █     █░\n"
@@ -242,48 +241,7 @@ function install_tools(){
     eval subfinder $DEBUG_STD
 }
 
-install_webserver(){
-    printf "${bblue} Running: Installing web reconftw ${reset}\n\n"
-
-    printf "${yellow} Installing python libraries...${reset}\n\n"
-    
-    # Install venv
-    printf "${yellow} python virtualenv install...${reset}\n\n"
-    $SUDO rm -rf /web/.venv/
-    $SUDO pip3 install virtualenv &>/dev/null
-    $SUDO virtualenv web/.venv/ &>/dev/null
-    if [ $? -eq 0 ]; then
-        printf "${yellow} Activating virtualenv...${reset}\n\n" 
-        $SUDO source web/.venv/bin/activate
-        $SUDO pip3 install --upgrade pip &>/dev/null
-    else
-        printf '[ERROR] Failed to create virtualenv. Please install requirements mentioned in Documentation.'
-        exit 1
-    fi
-
-    printf "${yellow} Installing Requirements...${reset}\n\n"
-    $SUDO pip3 install -r $SCRIPTPATH/web/requirements.txt &>/dev/null
-        
-    printf "${yellow} Installing tools...${reset}\n\n"
-    if command -v apt > /dev/null; then
-    $SUDO apt install redis-server -y &>/dev/null
-    elif command -v yum > /dev/null; then
-        $SUDO yum install redis -y &>/dev/null
-    else
-        printf '[ERROR] Unable to find a supported package manager. Please install redis manually.\n'
-        exit 1
-    fi
-    
-    printf "${yellow} Creating WEB User...${reset}\n\n"
-    $SUDO rm $SCRIPTPATH/web/db.sqlite3 &>/dev/null
-    $SUDO python3 $SCRIPTPATH/web/manage.py makemigrations &>/dev/null
-    $SUDO python3 $SCRIPTPATH/web/manage.py migrate &>/dev/null
-    $SUDO python3 $SCRIPTPATH/web/manage.py createsuperuser
-    printf "\n\n"
-}
-
-
-banner_web
+banner
 printf "\n${bgreen} reconFTW installer/updater script ${reset}\n\n"
 
 
@@ -300,10 +258,8 @@ display_menu(){
         printf "${bblue} Choose one of the following options: ${reset}\n\n"
 
         if $rftw_installed; then
-            printf "${bblue} 1. Install/Update ReconFTW (without Web Interface)${reset}\n\n"
-            printf "${bblue} 2. Install/Update ReconFTW + Install Web Interface${reset}\n\n"
-            printf "${bblue} 3. Setup Web Interface${reset} ${yellow}(User Interaction needed!)${reset}\n\n"
-            printf "${bblue} 4. Exit${reset}\n\n"
+            printf "${bblue} 1. Install/Update ReconFTW${reset}\n\n"
+            printf "${bblue} 2. Exit${reset}\n\n"
             printf "${bgreen}#######################################################################${reset}\n\n"
             read -p "${bblue}Insert option: ${reset}" option
             printf "\n\n${bgreen}#######################################################################${reset}\n\n"
@@ -316,18 +272,9 @@ display_menu(){
 
             case $option in
                 1)
-                    web=false
                     break
                     ;;
                 2)
-                    web=true
-                    break
-                    ;;
-                3)
-                    install_webserver
-                    exit 1
-                    ;;
-                4)
                     printf "${bblue} Exiting...${reset}\n\n"
                     exit 1
                     ;;
@@ -339,23 +286,16 @@ display_menu(){
 
         else
             printf "${bblue} 1. Install/Update ReconFTW${reset}\n\n"
-            printf "${bblue} 2. Install/Update ReconFTW + Install Web Interface${reset} ${yellow}(User Interaction needed!)${reset}\n\n"
-            printf "${bred} 3. Can't setup Web Interface without ReconFTW${reset}\n\n"
-            printf "${bblue} 4. Exit${reset}\n\n"
+            printf "${bblue} 2. Exit${reset}\n\n"
             printf "${bgreen}#######################################################################${reset}\n\n"
             read -p "$(echo -e ${bblue} "Insert option: "${reset})" option
             printf "\n${bgreen}#######################################################################${reset}\n\n"
 
             case $option in
                 1)
-                    web=false
                     break
                     ;;
                 2)
-                    web=true
-                    break
-                    ;;
-                4)
                     printf "${bblue} Exiting...${reset}\n\n"
                     exit 1
                     ;;
@@ -373,7 +313,6 @@ case "$1" in
         install_tools
         ;;
     --auto)
-        # possibly some other actions
         ;;
     *)
         echo "$1"
@@ -626,10 +565,6 @@ if ! grep -qF "$rftw_path_command" ~/"${profile_shell}"; then
     echo "$rftw_path_command" >> ~/"${profile_shell}"
 else
     echo "reconftw bin PATH already set in ${profile_shell}. Skipping..."
-fi
-
-if [ "$web" = true ]; then
-    printf "\n${bgreen} Web server is installed, to set it up run ./install.sh and select option 3 ${reset}\n\n"
 fi
 
 printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/provider-config.yaml)\n - GitLab (~/Tools/.gitlab_tokens)\n - SSRF Server (COLLAB_SERVER in reconftw.cfg or env var) \n - Blind XSS Server (XSS_SERVER in reconftw.cfg or env var) \n - notify (~/.config/notify/provider-config.yaml) \n - WHOISXML API (WHOISXML_API in reconftw.cfg or env var)\n\n${reset}"
