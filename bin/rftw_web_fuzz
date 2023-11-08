@@ -11,7 +11,7 @@ fi
 
 # Help function
 help_menu() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo ""
     echo "Web Directory Fuzzing"
     echo ""

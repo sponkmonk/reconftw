@@ -11,7 +11,7 @@ fi
 
 # Help menu function
 function display_help() {
-    echo "Usage: $0 [MODE]"
+    echo "$(basename "$0") [MODE]"
     echo
     echo "Shut down the Axiom fleet based on configurations in reconftw.cfg."
     echo

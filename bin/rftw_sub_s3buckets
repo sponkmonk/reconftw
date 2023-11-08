@@ -10,7 +10,7 @@ else
 fi
 
 help_menu() {
-    echo "Usage: $0 [DOMAIN] [OPTIONS]"
+    echo "$(basename "$0") [DOMAIN] [OPTIONS]"
     echo "AWS S3 buckets and cloud assets checker."
     echo
     echo "Options:"

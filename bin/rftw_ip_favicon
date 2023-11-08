@@ -10,7 +10,7 @@ else
 fi
 
 help_menu() {
-  echo "Usage: $0 [OPTIONS] DOMAIN"
+  echo "$(basename "$0") [OPTIONS] DOMAIN"
   echo ""
   echo "Favicon Ip Lookup Tool"
   echo ""
@@ -61,26 +61,12 @@ if [[ ! "$DOMAIN" =~ ^[a-zA-Z0-9.-]+$ ]]; then
     exit 1
 fi
 
-if { [ ! -f "$called_fn_dir/.favicon" ] || [ "$FORCE" = true ]; } && [ "$FAVICON" = true ] && ! [[ $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-    start_func "Favicon Ip Lookup"
-    
-    cd "$tools/fav-up" || { echo "Failed to cd to $tools/fav-up in favicon"; exit 1; }
-    python3 favUp.py -w "$DOMAIN" -sc -o favicontest.json 2>>"$LOGFILE" >/dev/null
-
-    if [ -s "favicontest.json" ]; then
-        jq -r 'try .found_ips' favicontest.json 2>>"$LOGFILE" | grep -v "not-found" > favicontest.txt
-        sed -i "s/|/\n/g" favicontest.txt
-        cat favicontest.txt 2>>"$LOGFILE"
-        mv favicontest.txt $dir/hosts/favicontest.txt 2>>"$LOGFILE"
-        rm -f favicontest.json 2>>"$LOGFILE"
-    fi
-
-    cd "$dir" || { echo "Failed to cd to $dir in favicon"; exit 1; }
-    end_func "Results are saved in hosts/favicontest.txt" "favicon"
-else
-    if [ "$FAVICON" = false ] || [[ $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-        echo -e "\n${yellow} favicon skipped in this mode, defined in reconftw.cfg, or the domain is an IP address${reset}\n"
-    else
-        echo -e "${yellow} favicon is already processed. To force executing favicon, delete\n    $called_fn_dir/.favicon ${reset}\n\n"
-    fi
+pushd "$tools/fav-up" &>/dev/null || { echo "Failed to cd to $tools/fav-up in favicon"; exit 1; }
+python3 favUp.py -w "$DOMAIN" -sc -o favicontest.json
+if [ -s "favicontest.json" ]; then
+    jq -r 'try .found_ips' favicontest.json | grep -v "not-found" > favicontest.txt
+    sed -i "s/|/\n/g" favicontest.txt
 fi
+popd &>/dev/null || { echo "Failed to cd back from favicon"; exit 1; }
+[ -s "$tools/fav-up/favicontest.txt" ] && cp $tools/fav-up/favicontest.txt .
+cat favicontest.txt

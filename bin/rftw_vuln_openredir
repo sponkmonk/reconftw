@@ -16,7 +16,7 @@ reset="\033[0m"
 
 # Help menu
 function display_help() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo
     echo "Perform Open Redirects scan on provided inputs."
     echo "Options:"

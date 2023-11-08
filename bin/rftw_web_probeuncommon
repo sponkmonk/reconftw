@@ -10,7 +10,7 @@ else
 fi
 
 help_menu() {
-    echo "Usage: $0 [DOMAIN] [OPTIONS]"
+    echo "$(basename "$0") [DOMAIN] [OPTIONS]"
     echo "Web probing tool for non-standard ports for the specified domain."
     echo
     echo "Options:"

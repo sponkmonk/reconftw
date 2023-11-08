@@ -16,7 +16,7 @@ reset="\033[0m"
 
 # Help menu function
 function display_help() {
-    echo "Usage: $0"
+    echo "$(basename "$0")"
     echo
     echo "Removes specific files and any files larger than 200MB from .tmp directory."
     echo "Logs errors to 'LOGFILE' specified in reconftw.cfg."

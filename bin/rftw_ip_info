@@ -30,7 +30,7 @@ fi
 # Function to display help menu
 help_menu() {
     cat <<- EOF
-Usage: $0 -i <input_file> -o <output_file>
+$(basename "$0") -i <input_file> -o <output_file>
 
 Search for IP information.
 

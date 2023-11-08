@@ -11,7 +11,7 @@ fi
 
 # Helper function to display usage/help menu
 usage() {
-    echo "Usage: $0 -d domain"
+    echo "$(basename "$0") -d domain"
     echo
     echo "Options:"
     echo "  -d, --domain domain     Specify the domain to perform recursive passive search."

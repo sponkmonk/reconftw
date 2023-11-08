@@ -16,7 +16,7 @@ reset="\033[0m"
 
 # Help menu function
 function display_help() {
-    echo "Usage: $0 [FILE]"
+    echo "$(basename "$0") [FILE]"
     echo
     echo "Checks if the provided file contains ASCII text."
     echo "Options:"

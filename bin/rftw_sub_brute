@@ -10,7 +10,7 @@ fi
 
 # Help menu
 display_help() {
-    echo "Usage: $0 [Options]"
+    echo "$(basename "$0") [Options]"
     echo "Options:"
     echo "  -h, --help              Display this help and exit"
     echo "  -i, --input INPUT_FILE  Specify the input file"

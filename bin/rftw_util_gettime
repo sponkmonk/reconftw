@@ -16,7 +16,7 @@ reset="\033[0m"
 
 # Help menu function
 function display_help() {
-    echo "Usage: $0 [START_TIME] [END_TIME]"
+    echo "$(basename "$0") [START_TIME] [END_TIME]"
     echo
     echo "Calculate the elapsed time between two time values in seconds."
     echo "Options:"

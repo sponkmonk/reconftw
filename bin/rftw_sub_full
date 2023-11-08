@@ -2,7 +2,7 @@
 
 # Function to display help menu
 help_menu() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo "Options:"
     echo "  -d, --domain          Set the target domain."
     echo "  -h, --help            Display this help and exit."

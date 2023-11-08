@@ -10,7 +10,7 @@ else
 fi
 
 help_menu() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo "Subdomain and DNS takeover checker."
     echo
     echo "Options:"

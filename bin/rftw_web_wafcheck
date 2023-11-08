@@ -10,7 +10,7 @@ fi
 
 # Help function
 help_menu() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo ""
     echo "Website's WAF Detection Tool"
     echo ""

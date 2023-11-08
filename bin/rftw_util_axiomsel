@@ -11,7 +11,7 @@ fi
 
 # Help menu function
 function display_help() {
-    echo "Usage: $0"
+    echo "$(basename "$0")"
     echo
     echo "Check for running Axiom instances and whether any instances are selected."
     echo

@@ -10,7 +10,7 @@ else
 fi
 
 function print_help() {
-    echo "Usage: $0 [-d <domain>] [-h]"
+    echo "$(basename "$0") [-d <domain>] [-h]"
     echo ""
     echo "Options:"
     echo "  -d <domain>     Specify target domain"

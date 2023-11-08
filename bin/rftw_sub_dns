@@ -2,7 +2,7 @@
 
 # Help menu
 display_help() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo "Options:"
     echo "  -f, --input-file      Specify the input file with a list of domains. (Required)"
     echo "  -o, --output-file     Specify the output file for saving results. (Optional)"

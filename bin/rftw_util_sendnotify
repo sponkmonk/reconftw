@@ -11,7 +11,7 @@ fi
 
 # Display help information
 function display_help() {
-    echo "Usage: $0 <file>"
+    echo "$(basename "$0") <file>"
     echo
     echo "Send a specified file to notify providers based on configurations."
     echo

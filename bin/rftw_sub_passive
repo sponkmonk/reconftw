@@ -2,7 +2,7 @@
 
 # Help Menu
 function display_help() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo "Options:"
     echo "  -d, --domain          Set the target domain."
     echo "  -a, --amass           Run amass."

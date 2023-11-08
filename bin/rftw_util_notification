@@ -18,7 +18,7 @@ bgreen="\033[1;32m"
 
 # Help menu function
 function display_help() {
-    echo "Usage: $0 <message> <type>"
+    echo "$(basename "$0") <message> <type>"
     echo
     echo "Sends notification based on the given message and type."
     echo "Types:"

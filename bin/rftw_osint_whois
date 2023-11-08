@@ -2,7 +2,7 @@
 
 # Help menu
 function help_menu() {
-    echo -e "Usage: $0 [OPTIONS]"
+    echo -e "$(basename "$0") [OPTIONS]"
     echo -e "Search for domain information."
     echo -e "Options:"
     echo -e "  -d, --domain DOMAIN   Specify the domain target"

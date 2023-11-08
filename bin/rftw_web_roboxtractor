@@ -11,7 +11,7 @@ fi
 
 # Help menu
 help_menu() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo "Robots Wordlist Generation using roboxtractor"
     echo ""
     echo "Options:"

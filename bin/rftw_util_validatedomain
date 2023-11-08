@@ -21,7 +21,7 @@ validate_domain() {
 
 # Check if a domain is provided
 if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <domain/website/URL>"
+    echo "$(basename "$0") <domain/website/URL>"
     exit 1
 fi
 

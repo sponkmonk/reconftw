@@ -11,7 +11,7 @@ fi
 
 # Helper function to display usage/help menu
 usage() {
-    echo "Usage: $0 [OPTIONS]"
+    echo "$(basename "$0") [OPTIONS]"
     echo
     echo "Options:"
     echo "  -h, --help          Display this help and exit."

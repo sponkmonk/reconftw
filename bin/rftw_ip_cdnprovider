@@ -15,7 +15,7 @@ fi
 # Help function
 help_menu() {
     cat <<- EOF
-Usage: $0 [OPTIONS] <input_file>
+Usage: $(basename "$0") [OPTIONS] -i <input_file>
 
 CDN Provider Check Tool
 

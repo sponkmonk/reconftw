@@ -425,9 +425,9 @@ function sub_permut(){
 function sub_regex_permut(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$SUBREGEXPERMUTE" = true ]; then
 		start_subfunc ${FUNCNAME[0]} "Running : Permutations by regex analysis"
-		cd "$tools/regulator" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+		pushd "$tools/regulator" &>/dev/null || { echo "Failed to cd to regulator"; exit 1; }
 		python3 main.py -t $domain -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/${domain}.brute
-		cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+		popd &>/dev/null || { echo "Failed to cd back"; exit 1; }
 
 		if [ ! "$AXIOM" = true ]; then
 			resolvers_update_quick_local
@@ -770,16 +770,12 @@ function virtualhosts(){
 function favicon(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$FAVICON" = true ] && ! [[ $domain =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
 		start_func ${FUNCNAME[0]} "Favicon Ip Lookup"
-		cd "$tools/fav-up" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
-		python3 favUp.py -w "$domain" -sc -o favicontest.json 2>>"$LOGFILE" >/dev/null
+		rftw_ip_cdnprovider -d $domain
 		if [ -s "favicontest.json" ]; then
-			cat favicontest.json | jq -r 'try .found_ips' 2>>"$LOGFILE" | grep -v "not-found" > favicontest.txt
-			sed -i "s/|/\n/g" favicontest.txt
 			cat favicontest.txt 2>>"$LOGFILE"
 			mv favicontest.txt $dir/hosts/favicontest.txt 2>>"$LOGFILE"
 			rm -f favicontest.json 2>>"$LOGFILE"
 		fi
-		cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
 		end_func "Results are saved in hosts/favicontest.txt" ${FUNCNAME[0]}
 	else
 		if [ "$FAVICON" = false ]; then
@@ -1508,9 +1504,9 @@ function test_ssl(){
 function spraying(){
 	if { [ ! -f "$called_fn_dir/.${FUNCNAME[0]}" ] || [ "$DIFF" = true ]; } && [ "$SPRAY" = true ]; then
 		start_func ${FUNCNAME[0]} "Password spraying"
-		cd "$tools/brutespray" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+		pushd "$tools/brutespray" &>/dev/null || { echo "Failed to cd to brutespray"; exit 1; }
 		python3 brutespray.py --file $dir/hosts/portscan_active.gnmap --threads $BRUTESPRAY_THREADS --hosts $BRUTESPRAY_CONCURRENCE -o $dir/vulns/brutespray 2>>"$LOGFILE" >/dev/null
-		cd "$dir" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+		popd &>/dev/null || { echo "Failed to cd back"; exit 1; }
 		end_func "Results are saved in vulns/brutespray folder" ${FUNCNAME[0]}
 	else
 		if [ "$SPRAY" = false ]; then
@@ -1547,9 +1543,9 @@ function 4xxbypass(){
 		if [[ $(cat fuzzing/fuzzing_full.txt 2>/dev/null | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | wc -l) -le 1000 ]] || [ "$DEEP" = true ]; then
 			start_func "403 bypass"
 			cat $dir/fuzzing/fuzzing_full.txt 2>/dev/null | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 > $dir/.tmp/403test.txt
-			cd "$tools/byp4xx" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+			pushd "$tools/byp4xx" &>/dev/null || { echo "Failed to cd to byp4xx"; exit 1; }
 			byp4xx -threads $BYP4XX_THREADS $dir/.tmp/403test.txt > $dir/.tmp/byp4xx.txt
-			cd "$dir" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+			popd &>/dev/null || { echo "Failed to cd back"; exit 1; }
 			[ -s ".tmp/byp4xx.txt" ] && cat .tmp/byp4xx.txt | anew -q vulns/byp4xx.txt
 			end_func "Results are saved in vulns/byp4xx.txt" ${FUNCNAME[0]}
 		else
@@ -1588,9 +1584,9 @@ function smuggling(){
 		start_func ${FUNCNAME[0]} "HTTP Request Smuggling checks"
 		[ ! -s ".tmp/webs_all.txt" ] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 		if [ "$DEEP" = true ] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
-			cd "$tools/smuggler" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+			pushd "$tools/smuggler" &>/dev/null || { echo "Failed to cd to smuggler"; exit 1; }
 			cat $dir/.tmp/webs_all.txt | python3 smuggler.py -q --no-color 2>/dev/null | anew -q $dir/.tmp/smuggling.txt
-			cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+			pophd &>/dev/null || { echo "Failed to cd back"; exit 1; }
 			[ -s ".tmp/smuggling.txt" ] && cat .tmp/smuggling.txt | anew -q vulns/smuggling.txt
 			end_func "Results are saved in vulns/smuggling.txt" ${FUNCNAME[0]}
 		else
@@ -1610,9 +1606,9 @@ function webcache(){
 		start_func ${FUNCNAME[0]} "Web Cache Poisoning checks"
 		[ ! -s ".tmp/webs_all.txt" ] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 		if [ "$DEEP" = true ] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
-			cd "$tools/Web-Cache-Vulnerability-Scanner" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+			pushd "$tools/Web-Cache-Vulnerability-Scanner" &>/dev/null || { echo "Failed to cd to Web-Cache-Vulnerability-Scanner"; exit 1; }
 			Web-Cache-Vulnerability-Scanner -u file:$dir/.tmp/webs_all.txt -v 0 2>/dev/null | anew -q $dir/.tmp/webcache.txt
-			cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+			popd &>/dev/null || { echo "Failed to cd back"; exit 1; }
 			[ -s ".tmp/webcache.txt" ] && cat .tmp/webcache.txt | anew -q vulns/webcache.txt
 			end_func "Results are saved in vulns/webcache.txt" ${FUNCNAME[0]}
 		else
@@ -2477,7 +2473,7 @@ function webs_menu(){
 }
 
 function help(){
-	printf "\n Usage: $0 [-d domain.tld] [-m name] [-l list.txt] [-x oos.txt] [-i in.txt] "
+	printf "\n $(basename "$0") [-d domain.tld] [-m name] [-l list.txt] [-x oos.txt] [-i in.txt] "
 	printf "\n           	      [-r] [-s] [-p] [-a] [-w] [-n] [-i] [-h] [-f] [--deep] [-o OUTPUT]\n\n"
 	printf " ${bblue}TARGET OPTIONS${reset}\n"
 	printf "   -d domain.tld     Target domain\n"

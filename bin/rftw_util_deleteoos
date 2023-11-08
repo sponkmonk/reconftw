@@ -16,7 +16,7 @@ reset="\033[0m"
 
 # Help menu function
 function display_help() {
-    echo "Usage: $0 [OPTIONS] [SCOPE_FILE] [TARGET_FILE]"
+    echo "$(basename "$0") [OPTIONS] [SCOPE_FILE] [TARGET_FILE]"
     echo
     echo "Remove out-of-scope items from a target file based on a scope file."
     echo "Options:"

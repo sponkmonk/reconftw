@@ -11,7 +11,7 @@ fi
 
 # Help menu
 function display_help() {
-    echo "Usage: $0"
+    echo "$(basename "$0")"
     echo
     echo "Launch an Axiom fleet based on configurations in reconftw.cfg."
     echo

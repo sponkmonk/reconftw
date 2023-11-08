@@ -2,7 +2,7 @@
 
 # Help menu
 display_help() {
-    echo "Usage: $0 [Options]"
+    echo "$(basename "$0") [Options]"
     echo
     echo "  -d, --domain       Domain to check"
     echo "  -i, --inscope      Check inscope."

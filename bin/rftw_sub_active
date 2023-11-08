@@ -3,7 +3,7 @@
 
 # Help menu
 display_help() {
-    echo "Usage: $0 [Options]"
+    echo "$(basename "$0") [Options]"
     echo
     echo "  -d, --domain            Domain for which subdomain enumeration is required"
     echo "  -f, --file              File containing domains for subdomain enumeration (Required)"

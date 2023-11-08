@@ -11,7 +11,7 @@ fi
 
 # Help menu
 function display_help() {
-    echo "Usage: $0 [IP CIDR] [OPTIONAL FILE]"
+    echo "$(basename "$0") [IP CIDR] [OPTIONAL FILE]"
     echo
     echo "Processes an IP CIDR, maps it, and optionally saves the output to a file."
     echo

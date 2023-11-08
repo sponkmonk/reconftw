@@ -10,7 +10,7 @@ else
 fi
 
 help_menu() {
-    echo "Usage: $0 [DOMAIN] [OPTIONS]"
+    echo "$(basename "$0") [DOMAIN] [OPTIONS]"
     echo "Virtual Hosts discovery tool for the specified domain."
     echo
     echo "Options:"

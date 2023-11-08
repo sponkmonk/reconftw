@@ -9,7 +9,7 @@ else
 fi
 
 function usage() {
-    echo "Usage: $0 [-h] [-d DOMAIN] [-i INPUT_FILE] [-o OUTPUT_FILE]"
+    echo "$(basename "$0") [-h] [-d DOMAIN] [-i INPUT_FILE] [-o OUTPUT_FILE]"
     echo "  -h                Display this help message."
     echo "  -d DOMAIN         Specify the target domain."
     echo "  -i INPUT_FILE     Specify the input file."

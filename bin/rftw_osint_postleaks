@@ -2,7 +2,7 @@
 
 # Help menu
 function help_menu() {
-    echo -e "Usage: $0 [OPTIONS]"
+    echo -e "$(basename "$0") [OPTIONS]"
     echo -e "Options:"
     echo -e "  -d, --domain DOMAIN       Specify the domain to scan for postman leaks."
     echo -e "  -o, --output FILE         (Optional) Specify the output file path (prints to stdout if not set)"

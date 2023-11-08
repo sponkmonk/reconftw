@@ -11,7 +11,7 @@ fi
 
 # Display help information
 function display_help() {
-    echo "Usage: $0"
+    echo "$(basename "$0")"
     echo
     echo "Update resolvers for reconftw."
     echo
