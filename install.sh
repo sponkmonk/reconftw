@@ -8,24 +8,24 @@ double_check=false
 # ARM Detection
 ARCH=$(uname -m)
 case $ARCH in
-    amd64|x86_64) IS_ARM="False" ;;
-    arm64|armv6l) 
-        IS_ARM="True"
-        RPI_4=$([[ $ARCH == "arm64" ]] && echo "True" || echo "False")
-        RPI_3=$([[ $ARCH == "arm64" ]] && echo "False" || echo "True")
-        ;;
+amd64 | x86_64) IS_ARM="False" ;;
+arm64 | armv6l)
+    IS_ARM="True"
+    RPI_4=$([[ $ARCH == "arm64" ]] && echo "True" || echo "False")
+    RPI_3=$([[ $ARCH == "arm64" ]] && echo "False" || echo "True")
+    ;;
 esac
 
 #Mac Osx Detecting
-IS_MAC=$([[ "$OSTYPE" == "darwin"* ]] && echo "True" || echo "False")
+IS_MAC=$([[ $OSTYPE == "darwin"* ]] && echo "True" || echo "False")
 
 BASH_VERSION=$(bash --version | awk 'NR==1{print $4}' | cut -d'.' -f1)
 if [ "${BASH_VERSION}" -lt 4 ]; then
-     printf "${bred} Your Bash version is lower than 4, please update${reset}\n"
-     printf "%s Your Bash version is lower than 4, please update%s\n" "${bred}" "${reset}" >&2
+    printf "${bred} Your Bash version is lower than 4, please update${reset}\n"
+    printf "%s Your Bash version is lower than 4, please update%s\n" "${bred}" "${reset}" >&2
     if [ "True" = "$IS_MAC" ]; then
         printf "${yellow} For MacOS run 'brew install bash' and rerun installer in a new terminal${reset}\n\n"
-        exit 1;
+        exit 1
     fi
 fi
 
@@ -71,7 +71,7 @@ gotools["hakip2host"]="go install -v github.com/hakluke/hakip2host@latest"
 gotools["gau"]="go install -v github.com/lc/gau/v2/cmd/gau@latest"
 gotools["Mantra"]="go install -v github.com/MrEmpy/Mantra@latest"
 gotools["crt"]="go install -v github.com/cemulus/crt@latest"
-gotools["s3scanner"]="go install -v github.com/sa7mon/s3scanner@latest" 
+gotools["s3scanner"]="go install -v github.com/sa7mon/s3scanner@latest"
 
 # Declaring repositories and their paths
 declare -A repos
@@ -105,37 +105,36 @@ repos["ghauri"]="r0oth3x49/ghauri"
 repos["gitleaks"]="gitleaks/gitleaks"
 repos["trufflehog"]="trufflesecurity/trufflehog"
 
-
-function banner(){
+function banner() {
     tput clear
-	printf "\n${bgreen}"
-	printf "  ██▀███  ▓█████  ▄████▄   ▒█████   ███▄    █   █████▒▄▄▄█████▓ █     █░\n"
-	printf " ▓██ ▒ ██▒▓█   ▀ ▒██▀ ▀█  ▒██▒  ██▒ ██ ▀█   █ ▓██   ▒ ▓  ██▒ ▓▒▓█░ █ ░█░\n"
-	printf " ▓██ ░▄█ ▒▒███   ▒▓█    ▄ ▒██░  ██▒▓██  ▀█ ██▒▒████ ░ ▒ ▓██░ ▒░▒█░ █ ░█ \n"
-	printf " ▒██▀▀█▄  ▒▓█  ▄ ▒▓▓▄ ▄██▒▒██   ██░▓██▒  ▐▌██▒░▓█▒  ░ ░ ▓██▓ ░ ░█░ █ ░█ \n"
-	printf " ░██▓ ▒██▒░▒████▒▒ ▓███▀ ░░ ████▓▒░▒██░   ▓██░░▒█░      ▒██▒ ░ ░░██▒██▓ \n"
-	printf " ░ ▒▓ ░▒▓░░░ ▒░ ░░ ░▒ ▒  ░░ ▒░▒░▒░ ░ ▒░   ▒ ▒  ▒ ░      ▒ ░░   ░ ▓░▒ ▒  \n"
-	printf "   ░▒ ░ ▒░ ░ ░  ░  ░  ▒     ░ ▒ ▒░ ░ ░░   ░ ▒░ ░          ░      ▒ ░ ░  \n"
-	printf "   ░░   ░    ░   ░        ░ ░ ░ ▒     ░   ░ ░  ░ ░      ░        ░   ░  \n"
-	printf "    ░        ░  ░░ ░          ░ ░           ░                      ░    \n"
-	printf "                 ░                                                      \n"
-        printf " ${reconftw_version}                                         by @six2dez\n"
+    printf "\n${bgreen}"
+    printf "  ██▀███  ▓█████  ▄████▄   ▒█████   ███▄    █   █████▒▄▄▄█████▓ █     █░\n"
+    printf " ▓██ ▒ ██▒▓█   ▀ ▒██▀ ▀█  ▒██▒  ██▒ ██ ▀█   █ ▓██   ▒ ▓  ██▒ ▓▒▓█░ █ ░█░\n"
+    printf " ▓██ ░▄█ ▒▒███   ▒▓█    ▄ ▒██░  ██▒▓██  ▀█ ██▒▒████ ░ ▒ ▓██░ ▒░▒█░ █ ░█ \n"
+    printf " ▒██▀▀█▄  ▒▓█  ▄ ▒▓▓▄ ▄██▒▒██   ██░▓██▒  ▐▌██▒░▓█▒  ░ ░ ▓██▓ ░ ░█░ █ ░█ \n"
+    printf " ░██▓ ▒██▒░▒████▒▒ ▓███▀ ░░ ████▓▒░▒██░   ▓██░░▒█░      ▒██▒ ░ ░░██▒██▓ \n"
+    printf " ░ ▒▓ ░▒▓░░░ ▒░ ░░ ░▒ ▒  ░░ ▒░▒░▒░ ░ ▒░   ▒ ▒  ▒ ░      ▒ ░░   ░ ▓░▒ ▒  \n"
+    printf "   ░▒ ░ ▒░ ░ ░  ░  ░  ▒     ░ ▒ ▒░ ░ ░░   ░ ▒░ ░          ░      ▒ ░ ░  \n"
+    printf "   ░░   ░    ░   ░        ░ ░ ░ ▒     ░   ░ ░  ░ ░      ░        ░   ░  \n"
+    printf "    ░        ░  ░░ ░          ░ ░           ░                      ░    \n"
+    printf "                 ░                                                      \n"
+    printf " ${reconftw_version}                                         by @six2dez\n"
 }
 
 function install_ppfuzz() {
     local url=$1
     local tar_file=$2
-    
+
     wget -N -c "$url" $DEBUG_STD
     eval $SUDO tar -C /usr/local/bin/ -xzf "$tar_file" $DEBUG_STD
     eval $SUDO rm -rf "$tar_file" $DEBUG_STD
 }
 
 # This function installs various tools and repositories as per the configuration.
-function install_tools(){
+function install_tools() {
 
     eval pip3 install -I -r requirements.txt $DEBUG_STD
-    
+
     printf "${bblue} Running: Installing Golang tools (${#gotools[@]})${reset}\n\n"
     go env -w GO111MODULE=auto
     go_step=0
@@ -149,27 +148,29 @@ function install_tools(){
         fi
         eval ${gotools[$gotool]} $DEBUG_STD
         exit_status=$?
-        if [ $exit_status -eq 0 ]
-        then
+        if [ $exit_status -eq 0 ]; then
             printf "${yellow} $gotool installed (${go_step}/${#gotools[@]})${reset}\n"
         else
             printf "${red} Unable to install $gotool, try manually (${go_step}/${#gotools[@]})${reset}\n"
             double_check=true
         fi
     done
-    
+
     printf "${bblue}\n Running: Installing repositories (${#repos[@]})${reset}\n\n"
-    
+
     # Repos with special configs
     eval git clone https://github.com/projectdiscovery/nuclei-templates ${NUCLEI_TEMPLATES_PATH} $DEBUG_STD
     eval git clone https://github.com/geeknik/the-nuclei-templates.git ${NUCLEI_TEMPLATES_PATH}/extra_templates $DEBUG_STD
     eval git clone https://github.com/projectdiscovery/fuzzing-templates $tools/fuzzing-templates $DEBUG_STD
     eval nuclei -update-templates update-template-dir ${NUCLEI_TEMPLATES_PATH} $DEBUG_STD
-    cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+    cd "$dir" || {
+        echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"
+        exit 1
+    }
     eval git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git $dir/sqlmap $DEBUG_STD
     eval git clone --depth 1 https://github.com/drwetter/testssl.sh.git $dir/testssl.sh $DEBUG_STD
     eval $SUDO git clone https://gitlab.com/exploit-database/exploitdb /opt/exploitdb $DEBUG_STD
-    
+
     # Standard repos installation
     repos_step=0
     for repo in "${!repos[@]}"; do
@@ -190,14 +191,13 @@ function install_tools(){
         eval cd $dir/$repo $DEBUG_STD
         eval git pull $DEBUG_STD
         exit_status=$?
-        if [ $exit_status -eq 0 ]
-        then
+        if [ $exit_status -eq 0 ]; then
             printf "${yellow} $repo installed (${repos_step}/${#repos[@]})${reset}\n"
         else
             printf "${red} Unable to install $repo, try manually (${repos_step}/${#repos[@]})${reset}\n"
             double_check=true
         fi
-        if ( [ -z $is_installed ] && [ "$upgrade_tools" = "false" ] ) || [ "$upgrade_tools" = "true" ] ; then
+        if ([ -z $is_installed ] && [ "$upgrade_tools" = "false" ]) || [ "$upgrade_tools" = "true" ]; then
             if [ -s "requirements.txt" ]; then
                 eval $SUDO pip3 install -r requirements.txt $DEBUG_STD
             fi
@@ -216,9 +216,12 @@ function install_tools(){
         elif [ "Gf-Patterns" = "$repo" ]; then
             eval mv ./*.json ~/.gf $DEBUG_ERROR
         fi
-        cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+        cd "$dir" || {
+            echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"
+            exit 1
+        }
     done
-    
+
     if [ "True" = "$IS_ARM" ]; then
         if [ "True" = "$RPI_3" ]; then
             install_ppfuzz "https://github.com/dwisiswant0/ppfuzz/releases/download/v1.0.1/ppfuzz-v1.0.1-armv7-unknown-linux-gnueabihf.tar.gz" "ppfuzz-v1.0.1-armv7-unknown-linux-gnueabihf.tar.gz"
@@ -244,16 +247,14 @@ function install_tools(){
 banner
 printf "\n${bgreen} reconFTW installer/updater script ${reset}\n\n"
 
-
 if [[ -d $dir && -d ~/.gf && -d ~/.config/notify/ && -d ~/.config/amass/ && -d ~/.config/nuclei/ && -f $dir/.github_tokens ]]; then
     rftw_installed=true
-else 
+else
     rftw_installed=false
 fi
 
-
 # Display menu and wait for user input
-display_menu(){
+display_menu() {
     while true; do
         printf "${bblue} Choose one of the following options: ${reset}\n\n"
 
@@ -265,23 +266,23 @@ display_menu(){
             printf "\n\n${bgreen}#######################################################################${reset}\n\n"
 
             option=$(echo "$option" | tr -d '[:space:]')
-            if ! [[ "$option" =~ ^[1-4]$ ]]; then
+            if ! [[ $option =~ ^[1-4]$ ]]; then
                 printf "${bred} Invalid option. Please try again.${reset}\n\n"
                 continue
             fi
 
             case $option in
-                1)
-                    break
-                    ;;
-                2)
-                    printf "${bblue} Exiting...${reset}\n\n"
-                    exit 1
-                    ;;
-                *)
-                    printf "${bblue} Invalid option. Exiting...${reset}\n\n"
-                    exit 1
-                    ;;
+            1)
+                break
+                ;;
+            2)
+                printf "${bblue} Exiting...${reset}\n\n"
+                exit 1
+                ;;
+            *)
+                printf "${bblue} Invalid option. Exiting...${reset}\n\n"
+                exit 1
+                ;;
             esac
 
         else
@@ -292,32 +293,31 @@ display_menu(){
             printf "\n${bgreen}#######################################################################${reset}\n\n"
 
             case $option in
-                1)
-                    break
-                    ;;
-                2)
-                    printf "${bblue} Exiting...${reset}\n\n"
-                    exit 1
-                    ;;
-                *)
-                    printf "${bred} Invalid option. Please try again.${reset}\n\n"
-                    exit 1
-                    ;;
+            1)
+                break
+                ;;
+            2)
+                printf "${bblue} Exiting...${reset}\n\n"
+                exit 1
+                ;;
+            *)
+                printf "${bred} Invalid option. Please try again.${reset}\n\n"
+                exit 1
+                ;;
             esac
-        fi    
+        fi
     done
 }
 
 case "$1" in
-    --tools)
-        install_tools
-        ;;
-    --auto)
-        ;;
-    *)
-        echo "$1"
-        display_menu
-        ;;
+--tools)
+    install_tools
+    ;;
+--auto) ;;
+*)
+    echo "$1"
+    display_menu
+    ;;
 esac
 
 printf "${yellow} This may take time. So, go grab a coffee! ${reset}\n\n"
@@ -334,45 +334,45 @@ else
     SUDO="sudo"
 fi
 
-install_apt(){
+install_apt() {
     eval $SUDO apt update -y $DEBUG_STD
     eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium-browser -y $DEBUG_STD
     eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install chromium -y $DEBUG_STD
     eval $SUDO DEBIAN_FRONTEND="noninteractive" apt install python3 python3-pip python3-virtualenv build-essential gcc cmake ruby whois git curl libpcap-dev wget zip python3-dev pv dnsutils libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx medusa xvfb libxml2-utils procps bsdmainutils libdata-hexdump-perl -y $DEBUG_STD
     curl https://sh.rustup.rs -sSf | sh -s -- -y >/dev/null 2>&1
-    eval source "$HOME/.cargo/env $DEBUG_STD"
+    eval source "${HOME}/.cargo/env $DEBUG_STD"
     eval cargo install ripgen $DEBUG_STD
-    eval source "$HOME/.cargo/env $DEBUG_STD"
+    eval source "${HOME}/.cargo/env $DEBUG_STD"
 }
 
-install_brew(){
+install_brew() {
     if brew --version &>/dev/null; then
-	printf "${bgreen} brew is already installed ${reset}\n\n"
+        printf "${bgreen} brew is already installed ${reset}\n\n"
     else
-	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
     eval brew update -$DEBUG_STD
     eval brew install --cask chromium $DEBUG_STD
     eval brew install bash coreutils python massdns jq gcc cmake ruby git curl libpcap-dev wget zip python3-dev pv dnsutils whois libssl-dev libffi-dev libxml2-dev libxslt1-dev zlib1g-dev nmap jq apt-transport-https lynx medusa xvfb libxml2-utils libdata-hexdump-perl gnu-getopt $DEBUG_STD
     export PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"
-    echo 'export PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"' >> ~/.zshrc
+    echo 'export PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"' >>~/.zshrc
     brew install rustup
     rustup-init
     eval cargo install ripgen $DEBUG_STD
 }
 
-install_yum(){
+install_yum() {
     eval $SUDO yum groupinstall "Development Tools" -y $DEBUG_STD
     eval $SUDO yum install python3 python3-pip gcc cmake ruby git curl libpcap-dev wget whois zip python3-devel pv bind-utils libopenssl-devel libffi-devel libxml2-devel libxslt-devel zlib-devel nmap jq lynx medusa xorg-x11-server-xvfb -y $DEBUG_STD
     curl https://sh.rustup.rs -sSf | sh -s -- -y >/dev/null 2>&1
-    eval source "$HOME/.cargo/env $DEBUG_STD"
+    eval source "${HOME}/.cargo/env $DEBUG_STD"
     eval cargo install ripgen $DEBUG_STD
 }
 
-install_pacman(){
+install_pacman() {
     eval $SUDO pacman -Sy install python python-pip base-devel gcc cmake ruby git curl libpcap whois wget zip pv bind openssl libffi libxml2 libxslt zlib nmap jq lynx medusa xorg-server-xvfb -y $DEBUG_STD
     curl https://sh.rustup.rs -sSf | sh -s -- -y >/dev/null 2>&1
-    eval source "$HOME/.cargo/env $DEBUG_STD"
+    eval source "${HOME}/.cargo/env $DEBUG_STD"
     eval cargo install ripgen $DEBUG_STD
 }
 
@@ -390,8 +390,7 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 HEADHASH=$(git rev-parse HEAD)
 UPSTREAMHASH=$(git rev-parse "${BRANCH}@{upstream}")
 
-if [ "$HEADHASH" != "$UPSTREAMHASH" ]
-then
+if [ "$HEADHASH" != "$UPSTREAMHASH" ]; then
     printf "${yellow} There is a new version, updating...${reset}\n\n"
     if git status --porcelain | grep -q 'reconftw.cfg$'; then
         mv reconftw.cfg reconftw.cfg_bck
@@ -405,63 +404,73 @@ else
 fi
 
 printf "${bblue} Running: Installing system packages ${reset}\n\n"
-if [ -f /etc/debian_version ]; then install_apt;
-elif [ -f /etc/redhat-release ]; then install_yum;
-elif [ -f /etc/arch-release ]; then install_pacman;
-elif [ "True" = "$IS_MAC" ]; then install_brew;
-elif [ -f /etc/os-release ]; then install_yum;  #/etc/os-release fall in yum for some RedHat and Amazon Linux instances
+if [ -f /etc/debian_version ]; then
+    install_apt
+elif [ -f /etc/redhat-release ]; then
+    install_yum
+elif [ -f /etc/arch-release ]; then
+    install_pacman
+elif [ "True" = "$IS_MAC" ]; then
+    install_brew
+elif [ -f /etc/os-release ]; then
+    install_yum #/etc/os-release fall in yum for some RedHat and Amazon Linux instances
 fi
 
 # Installing latest Golang version
 version=$(curl -L -s https://golang.org/VERSION?m=text | head -1)
-[[ $version = g* ]] || version="go1.20.7"
+[[ $version == g* ]] || version="go1.20.7"
 
 printf "${bblue} Running: Installing/Updating Golang ${reset}\n\n"
 if [ "$install_golang" = "true" ]; then
-    if [[ $(eval type go $DEBUG_ERROR | grep -o 'go is') == "go is" ]] && [[ "$version" = $(go version | cut -d " " -f3) ]]
-        then
-            printf "${bgreen} Golang is already installed and updated ${reset}\n\n"
-        else
-            eval $SUDO rm -rf /usr/local/go $DEBUG_STD
-            if [ "True" = "$IS_ARM" ]; then
-                if [ "True" = "$RPI_3" ]; then
-                    eval wget "https://dl.google.com/go/${version}.linux-armv6l.tar.gz" -O /tmp/${version}.linux-armv6l.tar.gz $DEBUG_STD
-                    eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.linux-armv6l.tar.gz" $DEBUG_STD
-                elif [ "True" = "$RPI_4" ]; then
-                    eval wget "https://dl.google.com/go/${version}.linux-arm64.tar.gz" -O /tmp/${version}.linux-arm64.tar.gz $DEBUG_STD
-                    eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.linux-arm64.tar.gz" $DEBUG_STD
-                fi
-            elif [ "True" = "$IS_MAC" ]; then
-                if [ "True" = "$IS_ARM" ]; then
-                    eval wget "https://dl.google.com/go/${version}.darwin-arm64.tar.gz" -O /tmp/${version}.darwin-arm64.tar.gz $DEBUG_STD
-                    eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.darwin-arm64.tar.gz" $DEBUG_STD
-                else
-                    eval wget "https://dl.google.com/go/${version}.darwin-amd64.tar.gz" -O /tmp/${version}.darwin-amd64.tar.gz $DEBUG_STD
-                    eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.darwin-amd64.tar.gz" $DEBUG_STD
-                fi
-            else
-                eval wget "https://dl.google.com/go/${version}.linux-amd64.tar.gz" -O /tmp/${version}.linux-amd64.tar.gz $DEBUG_STD
-                eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.linux-amd64.tar.gz" $DEBUG_STD
+    if [[ $(eval type go $DEBUG_ERROR | grep -o 'go is') == "go is" ]] && [[ $version == $(go version | cut -d " " -f3) ]]; then
+        printf "${bgreen} Golang is already installed and updated ${reset}\n\n"
+    else
+        eval $SUDO rm -rf /usr/local/go $DEBUG_STD
+        if [ "True" = "$IS_ARM" ]; then
+            if [ "True" = "$RPI_3" ]; then
+                eval wget "https://dl.google.com/go/${version}.linux-armv6l.tar.gz" -O /tmp/${version}.linux-armv6l.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.linux-armv6l.tar.gz" $DEBUG_STD
+            elif [ "True" = "$RPI_4" ]; then
+                eval wget "https://dl.google.com/go/${version}.linux-arm64.tar.gz" -O /tmp/${version}.linux-arm64.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.linux-arm64.tar.gz" $DEBUG_STD
             fi
-            eval $SUDO ln -sf /usr/local/go/bin/go /usr/local/bin/
-            #rm -rf $version*
-            export GOROOT=/usr/local/go
-            export GOPATH=$HOME/go
-            export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/.local/bin:$PATH
-cat << EOF >> ~/"${profile_shell}"
+        elif [ "True" = "$IS_MAC" ]; then
+            if [ "True" = "$IS_ARM" ]; then
+                eval wget "https://dl.google.com/go/${version}.darwin-arm64.tar.gz" -O /tmp/${version}.darwin-arm64.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.darwin-arm64.tar.gz" $DEBUG_STD
+            else
+                eval wget "https://dl.google.com/go/${version}.darwin-amd64.tar.gz" -O /tmp/${version}.darwin-amd64.tar.gz $DEBUG_STD
+                eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.darwin-amd64.tar.gz" $DEBUG_STD
+            fi
+        else
+            eval wget "https://dl.google.com/go/${version}.linux-amd64.tar.gz" -O /tmp/${version}.linux-amd64.tar.gz $DEBUG_STD
+            eval $SUDO tar -C /usr/local -xzf /tmp/"${version}.linux-amd64.tar.gz" $DEBUG_STD
+        fi
+        eval $SUDO ln -sf /usr/local/go/bin/go /usr/local/bin/
+        #rm -rf $version*
+        export GOROOT=/usr/local/go
+        export GOPATH=${HOME}/go
+        export PATH=$GOPATH/bin:$GOROOT/bin:${HOME}/.local/bin:$PATH
+        cat <<EOF >>~/"${profile_shell}"
 
 # Golang vars
 export GOROOT=/usr/local/go
-export GOPATH=\$HOME/go
-export PATH=\$GOPATH/bin:\$GOROOT/bin:\$HOME/.local/bin:\$PATH
+export GOPATH=\${HOME}/go
+export PATH=\$GOPATH/bin:\$GOROOT/bin:\${HOME}/.local/bin:\$PATH
 EOF
-fi
+    fi
 else
-    printf "${byellow} Golang will not be configured according to the user's prefereneces (reconftw.cfg install_golang var)${reset}\n";
+    printf "${byellow} Golang will not be configured according to the user's prefereneces (reconftw.cfg install_golang var)${reset}\n"
 fi
 
-[ -n "$GOPATH" ] || { printf "${bred} GOPATH env var not detected, add Golang env vars to your \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
-[ -n "$GOROOT" ] || { printf "${bred} GOROOT env var not detected, add Golang env vars to your \$HOME/.bashrc or \$HOME/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\$HOME/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"; exit 1; }
+[ -n "$GOPATH" ] || {
+    printf "${bred} GOPATH env var not detected, add Golang env vars to your \${HOME}/.bashrc or \${HOME}/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\${HOME}/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"
+    exit 1
+}
+[ -n "$GOROOT" ] || {
+    printf "${bred} GOROOT env var not detected, add Golang env vars to your \${HOME}/.bashrc or \${HOME}/.zshrc:\n\n export GOROOT=/usr/local/go\n export GOPATH=\${HOME}/go\n export PATH=\$GOPATH/bin:\$GOROOT/bin:\$PATH\n\n"
+    exit 1
+}
 
 printf "${bblue} Running: Installing requirements ${reset}\n\n"
 
@@ -482,18 +491,18 @@ printf "${bblue}\n Running: Downloading required files ${reset}\n\n"
 ## Downloads
 [ ! -f ~/.config/amass/config.ini ] && wget -q -O ~/.config/amass/config.ini https://raw.githubusercontent.com/owasp-amass/amass/master/examples/config.ini
 [ ! -f ~/.config/notify/provider-config.yaml ] && wget -q -O ~/.config/notify/provider-config.yaml https://gist.githubusercontent.com/six2dez/23a996bca189a11e88251367e6583053/raw
-#wget -q -O - https://raw.githubusercontent.com/devanshbatham/ParamSpider/master/gf_profiles/potential.json > ~/.gf/potential.json - Removed 
-wget -q -O - https://raw.githubusercontent.com/m4ll0k/Bug-Bounty-Toolz/master/getjswords.py > ${tools}/getjswords.py
-wget -q -O - https://raw.githubusercontent.com/n0kovo/n0kovo_subdomains/main/n0kovo_subdomains_huge.txt > ${subs_wordlist_big}
-wget -q -O - https://raw.githubusercontent.com/six2dez/resolvers_reconftw/main/resolvers_trusted.txt > ${resolvers_trusted}
-wget -q -O - https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt > ${resolvers} 
-wget -q -O - https://gist.github.com/six2dez/a307a04a222fab5a57466c51e1569acf/raw > ${subs_wordlist}
-wget -q -O - https://gist.github.com/six2dez/ffc2b14d283e8f8eff6ac83e20a3c4b4/raw > ${tools}/permutations_list.txt
-wget -q -O - https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallmicro.txt > ${fuzz_wordlist}
-wget -q -O - https://gist.githubusercontent.com/six2dez/a89a0c7861d49bb61a09822d272d5395/raw > ${lfi_wordlist}
-wget -q -O - https://gist.githubusercontent.com/six2dez/ab5277b11da7369bf4e9db72b49ad3c1/raw > ${ssti_wordlist}
-wget -q -O - https://gist.github.com/six2dez/d62ab8f8ffd28e1c206d401081d977ae/raw > ${tools}/headers_inject.txt
-wget -q -O - https://gist.githubusercontent.com/six2dez/6e2d9f4932fd38d84610eb851014b26e/raw > ${tools}/axiom_config.sh
+#wget -q -O - https://raw.githubusercontent.com/devanshbatham/ParamSpider/master/gf_profiles/potential.json > ~/.gf/potential.json - Removed
+wget -q -O - https://raw.githubusercontent.com/m4ll0k/Bug-Bounty-Toolz/master/getjswords.py >${tools}/getjswords.py
+wget -q -O - https://raw.githubusercontent.com/n0kovo/n0kovo_subdomains/main/n0kovo_subdomains_huge.txt >${subs_wordlist_big}
+wget -q -O - https://raw.githubusercontent.com/six2dez/resolvers_reconftw/main/resolvers_trusted.txt >${resolvers_trusted}
+wget -q -O - https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt >${resolvers}
+wget -q -O - https://gist.github.com/six2dez/a307a04a222fab5a57466c51e1569acf/raw >${subs_wordlist}
+wget -q -O - https://gist.github.com/six2dez/ffc2b14d283e8f8eff6ac83e20a3c4b4/raw >${tools}/permutations_list.txt
+wget -q -O - https://raw.githubusercontent.com/six2dez/OneListForAll/main/onelistforallmicro.txt >${fuzz_wordlist}
+wget -q -O - https://gist.githubusercontent.com/six2dez/a89a0c7861d49bb61a09822d272d5395/raw >${lfi_wordlist}
+wget -q -O - https://gist.githubusercontent.com/six2dez/ab5277b11da7369bf4e9db72b49ad3c1/raw >${ssti_wordlist}
+wget -q -O - https://gist.github.com/six2dez/d62ab8f8ffd28e1c206d401081d977ae/raw >${tools}/headers_inject.txt
+wget -q -O - https://gist.githubusercontent.com/six2dez/6e2d9f4932fd38d84610eb851014b26e/raw >${tools}/axiom_config.sh
 eval $SUDO chmod +x $tools/axiom_config.sh
 eval $SUDO mv $SCRIPTPATH/assets/potential.json ~/.gf/potential.json
 
@@ -509,7 +518,10 @@ if [ "$double_check" = "true" ]; then
     repos_step=0
     for repo in "${!repos[@]}"; do
         repos_step=$((repos_step + 1))
-        eval cd $dir/$repo $DEBUG_STD || { eval git clone https://github.com/${repos[$repo]} $dir/$repo $DEBUG_STD && cd $dir/$repo || { echo "Failed to cd directory '$dir'"; exit 1; }; }
+        eval cd $dir/$repo $DEBUG_STD || { eval git clone https://github.com/${repos[$repo]} $dir/$repo $DEBUG_STD && cd $dir/$repo || {
+            echo "Failed to cd directory '$dir'"
+            exit 1
+        }; }
         eval git pull $DEBUG_STD
         exit_status=$?
         if [ -s "setup.py" ]; then
@@ -524,32 +536,35 @@ if [ "$double_check" = "true" ]; then
         elif [ "trufflehog" = "$repo" ]; then
             eval go install $DEBUG_STD
         fi
-        cd "$dir" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+        cd "$dir" || {
+            echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"
+            exit 1
+        }
     done
 fi
 
 printf "${bblue} Running: Performing last configurations ${reset}\n\n"
 ## Last steps
 if [ "$generate_resolvers" = true ]; then
-	if [ ! -s "$resolvers" ] || [[ $(find "$resolvers" -mtime +1 -print) ]] ; then
+    if [ ! -s "$resolvers" ] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
         printf "${reset}\n\nChecking resolvers lists...\n Accurate resolvers are the key to great results\n This may take around 10 minutes if it's not updated\n\n"
-		eval rm -f $resolvers 2>>"$LOGFILE"
-		dnsvalidator -tL https://public-dns.info/nameservers.txt -threads $DNSVALIDATOR_THREADS -o $resolvers &>/dev/null
-		dnsvalidator -tL https://raw.githubusercontent.com/blechschmidt/massdns/master/lists/resolvers.txt -threads $DNSVALIDATOR_THREADS -o tmp_resolvers &>/dev/null
-		[ -s "tmp_resolvers" ] && cat tmp_resolvers | anew -q $resolvers
-		[ -s "tmp_resolvers" ] && rm -f tmp_resolvers &>/dev/null
-		[ ! -s "$resolvers" ] && wget -q -O - https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt > ${resolvers}
-        [ ! -s "$resolvers_trusted" ] && wget -q -O - https://raw.githubusercontent.com/six2dez/resolvers_reconftw/main/resolvers_trusted.txt > ${resolvers_trusted}
-		printf "${yellow} Resolvers updated\n ${reset}\n\n"
-	fi
-	generate_resolvers=false
+        eval rm -f $resolvers 2>>"$LOGFILE"
+        dnsvalidator -tL https://public-dns.info/nameservers.txt -threads $DNSVALIDATOR_THREADS -o $resolvers &>/dev/null
+        dnsvalidator -tL https://raw.githubusercontent.com/blechschmidt/massdns/master/lists/resolvers.txt -threads $DNSVALIDATOR_THREADS -o tmp_resolvers &>/dev/null
+        [ -s "tmp_resolvers" ] && cat tmp_resolvers | anew -q $resolvers
+        [ -s "tmp_resolvers" ] && rm -f tmp_resolvers &>/dev/null
+        [ ! -s "$resolvers" ] && wget -q -O - https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt >${resolvers}
+        [ ! -s "$resolvers_trusted" ] && wget -q -O - https://raw.githubusercontent.com/six2dez/resolvers_reconftw/main/resolvers_trusted.txt >${resolvers_trusted}
+        printf "${yellow} Resolvers updated\n ${reset}\n\n"
+    fi
+    generate_resolvers=false
 else
-	[ ! -s "$resolvers" ] || if [[ $(find "$resolvers" -mtime +1 -print) ]] ; then
-		 ${reset}"\n\nChecking resolvers lists...\n Accurate resolvers are the key to great results\n Downloading new resolvers ${reset}\n\n"
-		wget -q -O - https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt > ${resolvers}
-        wget -q -O - https://raw.githubusercontent.com/six2dez/resolvers_reconftw/main/resolvers_trusted.txt > ${resolvers_trusted}
-		printf "${yellow} Resolvers updated\n ${reset}\n\n"
-	fi
+    [ ! -s "$resolvers" ] || if [[ $(find "$resolvers" -mtime +1 -print) ]]; then
+        ${reset}"\n\nChecking resolvers lists...\n Accurate resolvers are the key to great results\n Downloading new resolvers ${reset}\n\n"
+        wget -q -O - https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt >${resolvers}
+        wget -q -O - https://raw.githubusercontent.com/six2dez/resolvers_reconftw/main/resolvers_trusted.txt >${resolvers_trusted}
+        printf "${yellow} Resolvers updated\n ${reset}\n\n"
+    fi
 fi
 
 ## Stripping all Go binaries
@@ -558,11 +573,11 @@ eval strip -s "$HOME"/go/bin/* $DEBUG_STD
 eval $SUDO cp "$HOME"/go/bin/* /usr/local/bin/ $DEBUG_STD
 
 ## Adding bin folder to $PATH
-rftw_path_command='export PATH=$PATH:$HOME/.reconftw/bin/'
+rftw_path_command='export PATH=$PATH:${HOME}/.reconftw/bin/'
 
 # Check if the line already exists in the shell configuration file
 if ! grep -qF "$rftw_path_command" ~/"${profile_shell}"; then
-    echo "$rftw_path_command" >> ~/"${profile_shell}"
+    echo "$rftw_path_command" >>~/"${profile_shell}"
 else
     echo "reconftw bin PATH already set in ${profile_shell}. Skipping..."
 fi

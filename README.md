@@ -165,8 +165,8 @@ upgrade_tools=true
 
 # Golang Vars (Comment or change on your own)
 export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/.local/bin:$PATH
+export GOPATH=${HOME}/go
+export PATH=$GOPATH/bin:$GOROOT/bin:${HOME}/.local/bin:$PATH
 
 # Tools config files
 #NOTIFY_CONFIG=~/.config/notify/provider-config.yaml # No need to define
@@ -241,7 +241,7 @@ CDN_IP=true # Check which IPs belongs to CDN
 WAF_DETECTION=true # Detect WAFs
 NUCLEICHECK=true # Enable or disable nuclei
 NUCLEI_SEVERITY="info,low,medium,high,critical" # Set templates criticity
-NUCLEI_FLAGS=" -silent -t $HOME/nuclei-templates/ -retries 2" # Additional nuclei extra flags, don't set the severity here but the exclusions like " -etags openssh"
+NUCLEI_FLAGS=" -silent -t ${HOME}/nuclei-templates/ -retries 2" # Additional nuclei extra flags, don't set the severity here but the exclusions like " -etags openssh"
 NUCLEI_FLAGS_JS=" -silent -tags exposure,token -severity info,low,medium,high,critical" # Additional nuclei extra flags for js secrets
 URL_CHECK=true # Enable or disable URL collection
 URL_CHECK_PASSIVE=true # Search for urls, passive methods from Archive, OTX, CommonCrawl, etc
@@ -568,7 +568,7 @@ Once done, just run:
 
 ```bash
 # below line is optional, the default is ~/reconftw-data
-export PRIV_REPO="$HOME/reconftw-data"
+export PRIV_REPO="${HOME}/reconftw-data"
 make bootstrap
 ```
 

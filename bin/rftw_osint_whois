@@ -2,31 +2,34 @@
 
 # Help menu
 function help_menu() {
-    echo -e "$(basename "$0") [OPTIONS]"
-    echo -e "Search for domain information."
-    echo -e "Options:"
-    echo -e "  -d, --domain DOMAIN   Specify the domain target"
-    echo -e "  -o, --output DIR      (Optional) Specify the output directory (default: osint/)"
-    echo -e "  -h, --help            Display this help menu"
-    exit 1
+	echo -e "$(basename "$0") [OPTIONS]"
+	echo -e "Search for domain information."
+	echo -e "Options:"
+	echo -e "  -d, --domain DOMAIN   Specify the domain target"
+	echo -e "  -o, --output DIR      (Optional) Specify the output directory (default: osint/)"
+	echo -e "  -h, --help            Display this help menu"
+	exit 1
 }
 
 # Main function to gather domain info
 function domain_info_func() {
-    echo "[*] Searching domain info (whois, registrant name/email domains)"
-    
-    # Domain General Info
-    whois -H "$domain" > "${output_dir}/domain_info_general.txt" || { echo "whois command failed"; exit 1; }
-    
-    # Reverse Whois (if DEEP or REVERSE_WHOIS is true)
-    if [ "$DEEP" = true ] || [ "$REVERSE_WHOIS" = true ]; then
-        timeout -k 1m ${AMASS_INTEL_TIMEOUT}m amass intel -d "${domain}" -whois -timeout $AMASS_INTEL_TIMEOUT -o "${output_dir}/domain_info_reverse_whois.txt" 2>>"$LOGFILE" &>/dev/null
-    fi
-    
-    # Azure Tenant Domains
-    curl -s "https://aadinternals.azurewebsites.net/api/tenantinfo?domainName=${domain}" -H "Origin: https://aadinternals.com" | jq -r .domains[].name > "${output_dir}/azure_tenant_domains.txt"
+	echo "[*] Searching domain info (whois, registrant name/email domains)"
 
-    echo "[+] Results are saved in ${output_dir}/domain_info_[general/name/email/ip].txt"
+	# Domain General Info
+	whois -H "$domain" >"${output_dir}/domain_info_general.txt" || {
+		echo "whois command failed"
+		exit 1
+	}
+
+	# Reverse Whois (if DEEP or REVERSE_WHOIS is true)
+	if [ "$DEEP" = true ] || [ "$REVERSE_WHOIS" = true ]; then
+        timeout -k 1m ${AMASS_INTEL_TIMEOUT}m amass intel -d "${domain}" -whois -timeout $AMASS_INTEL_TIMEOUT -o "${output_dir}/domain_info_reverse_whois.txt" 2>>"$LOGFILE" >> /dev/null
+	fi
+
+	# Azure Tenant Domains
+	curl -s "https://aadinternals.azurewebsites.net/api/tenantinfo?domainName=${domain}" -H "Origin: https://aadinternals.com" | jq -r .domains[].name >"${output_dir}/azure_tenant_domains.txt"
+
+	echo "[+] Results are saved in ${output_dir}/domain_info_[general/name/email/ip].txt"
 }
 
 # Default values
@@ -34,14 +37,23 @@ domain=""
 output_dir="osint"
 
 # Parse command-line arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -d|--domain) domain="$2"; shift ;;
-        -o|--output) output_dir="$2"; shift ;;
-        -h|--help) help_menu ;;
-        *) echo -e "${bred}Unknown parameter passed: $1${reset}" >&2; help_menu ;;
-    esac
-    shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		domain="$2"
+		shift
+		;;
+	-o | --output)
+		output_dir="$2"
+		shift
+		;;
+	-h | --help) help_menu ;;
+	*)
+		echo -e "${bred}Unknown parameter passed: $1${reset}" >&2
+		help_menu
+		;;
+	esac
+	shift
 done
 
 # Validate the domain using the utility script
@@ -49,9 +61,9 @@ rftw_util_validatedomain "$domain" || exit 1
 
 # Validate inputs
 if [ -z "$domain" ]; then
-    echo -e "${bred}Error: Missing required parameters.${reset}" >&2
-    help_menu
-    exit 1
+	echo -e "${bred}Error: Missing required parameters.${reset}" >&2
+	help_menu
+	exit 1
 fi
 
 # Execute the main function

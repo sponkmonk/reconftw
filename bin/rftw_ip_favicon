@@ -2,71 +2,83 @@
 # Looks good, needs testing
 
 # Load environment variables
-if [ -f "reconftw.cfg" ]; then
-    source reconftw.cfg
+if [[ -f "reconftw.cfg" ]]; then
+	source reconftw.cfg
 else
-    echo "Error: reconftw.cfg not found!"
-    exit 1
+	echo "Error: reconftw.cfg not found!"
+	exit 1
 fi
 
 help_menu() {
-  echo "$(basename "$0") [OPTIONS] DOMAIN"
-  echo ""
-  echo "Favicon Ip Lookup Tool"
-  echo ""
-  echo "Options:"
-  echo "  -h, --help            Show this help menu"
-  echo "  -d, --domain DOMAIN   Specify the domain to process"
-  echo "  -f, --force           Force the execution even if already processed"
+	echo "$(basename "$0") [OPTIONS] DOMAIN"
+	echo ""
+	echo "Favicon Ip Lookup Tool"
+	echo ""
+	echo "Options:"
+	echo "  -h, --help            Show this help menu"
+	echo "  -d, --domain DOMAIN   Specify the domain to process"
 }
 
 # Start function
 start_func() {
-    echo "Starting $1..."
+	echo "Starting $1..."
 }
 
 # End function
 end_func() {
-    echo "$1"
-    echo "End of $2..."
+	echo "$1"
+	echo "End of $2..."
 }
 
 # Default values
-FORCE=false
 DOMAIN=""
 
 # Parse arguments
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    -h|--help) help_menu; exit 0 ;;
-    -d|--domain) DOMAIN="$2"; shift ;;
-    -f|--force) FORCE=true ;;
-    *)
-      # Set the domain if it's not specified with -d
-      [ -z "$DOMAIN" ] && DOMAIN="$1" || { echo "Unknown parameter passed: $1"; exit 1; }
-      ;;
-  esac
-  shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-h | --help)
+		help_menu
+		exit 0
+		;;
+	-d | --domain)
+		DOMAIN="$2"
+		shift
+		;;
+	*)
+		# Set the domain if it's not specified with -d
+		[ -z "$DOMAIN" ] && DOMAIN="$1" || {
+			echo "Unknown parameter passed: $1"
+			exit 1
+		}
+		;;
+	esac
+	shift
 done
 
 # Input validation
 if [ -z "$DOMAIN" ]; then
-  help_menu
-  exit 1
+	help_menu
+	exit 1
 fi
 
 # Validate domain format
-if [[ ! "$DOMAIN" =~ ^[a-zA-Z0-9.-]+$ ]]; then
-    echo "Invalid domain format."
-    exit 1
+if [[ ! $DOMAIN =~ ^[a-zA-Z0-9.-]+$ ]]; then
+	echo "Invalid domain format."
+	exit 1
 fi
 
-pushd "$tools/fav-up" &>/dev/null || { echo "Failed to cd to $tools/fav-up in favicon"; exit 1; }
+pushd "$tools/fav-up" &>/dev/null || {
+	echo "Failed to cd to $tools/fav-up in favicon"
+	exit 1
+}
 python3 favUp.py -w "$DOMAIN" -sc -o favicontest.json
 if [ -s "favicontest.json" ]; then
-    jq -r 'try .found_ips' favicontest.json | grep -v "not-found" > favicontest.txt
-    sed -i "s/|/\n/g" favicontest.txt
+	jq -r 'try .found_ips' favicontest.json | grep -v "not-found" >favicontest.txt
+	sed -i "s/|/\n/g" favicontest.txt
 fi
-popd &>/dev/null || { echo "Failed to cd back from favicon"; exit 1; }
+popd &>/dev/null || {
+	echo "Failed to cd back from favicon"
+	exit 1
+}
 [ -s "$tools/fav-up/favicontest.txt" ] && cp $tools/fav-up/favicontest.txt .
 cat favicontest.txt

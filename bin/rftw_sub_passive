@@ -2,48 +2,67 @@
 
 # Help Menu
 function display_help() {
-    echo "$(basename "$0") [OPTIONS]"
-    echo "Options:"
-    echo "  -d, --domain          Set the target domain."
-    echo "  -a, --amass           Run amass."
-    echo "  -s, --subfinder       Run subfinder."
-    echo "  -g, --github-tokens   Specify GitHub tokens file."
-    echo "  -l, --gitlab-tokens   Specify GitLab tokens file."
-    echo "  -D, --deep            Run in deep mode."
-    echo "  -i, --inscope         Check inscope."
-    echo "  -o, --output          Specify the output file."
-    echo "  -h, --help            Display this help menu."
+	echo "$(basename "$0") [OPTIONS]"
+	echo "Options:"
+	echo "  -d, --domain          Set the target domain."
+	echo "  -a, --amass           Run amass."
+	echo "  -s, --subfinder       Run subfinder."
+	echo "  -g, --github-tokens   Specify GitHub tokens file."
+	echo "  -l, --gitlab-tokens   Specify GitLab tokens file."
+	echo "  -D, --deep            Run in deep mode."
+	echo "  -i, --inscope         Check inscope."
+	echo "  -o, --output          Specify the output file."
+	echo "  -h, --help            Display this help menu."
 }
 
 # Variables for input and output
 output_file=""
 
 # Input validation and argument parsing
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -d|--domain) domain="$2"; shift;;
-        -a|--amass) RUNAMASS=true;;
-        -s|--subfinder) RUNSUBFINDER=true;;
-        -g|--github-tokens) GITHUB_TOKENS="$2"; shift;;
-        -l|--gitlab-tokens) GITLAB_TOKENS="$2"; shift;;
-        -D|--deep) DEEP=true;;
-        -i|--inscope) INSCOPE=true;;
-        -o|--output) 
-            shift;
-            output_file="$1";
-            touch "$output_file" 2>/dev/null || { echo "Error: Cannot write to the specified output file."; exit 1; }
-            ;;
-        -h|--help) display_help; exit 0;;
-        *) echo "Unknown parameter passed: $1"; display_help; exit 1;;
-    esac
-    shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		domain="$2"
+		shift
+		;;
+	-a | --amass) RUNAMASS=true ;;
+	-s | --subfinder) RUNSUBFINDER=true ;;
+	-g | --github-tokens)
+		GITHUB_TOKENS="$2"
+		shift
+		;;
+	-l | --gitlab-tokens)
+		GITLAB_TOKENS="$2"
+		shift
+		;;
+	-D | --deep) DEEP=true ;;
+	-i | --inscope) INSCOPE=true ;;
+	-o | --output)
+		shift
+		output_file="$1"
+		touch "$output_file" 2>/dev/null || {
+			echo "Error: Cannot write to the specified output file."
+			exit 1
+		}
+		;;
+	-h | --help)
+		display_help
+		exit 0
+		;;
+	*)
+		echo "Unknown parameter passed: $1"
+		display_help
+		exit 1
+		;;
+	esac
+	shift
 done
 
 # Validate domain
 if [ -z "$domain" ]; then
-    echo "Error: Domain not provided."
-    display_help
-    exit 1
+	echo "Error: Domain not provided."
+	display_help
+	exit 1
 fi
 
 # Call the domain validation script
@@ -51,27 +70,29 @@ rftw_util_validatedomain "$domain" || exit 1
 
 # Main functionality
 
-[[ $RUNAMASS == true ]] && timeout -k 1m ${AMASS_ENUM_TIMEOUT} amass enum -passive -d $domain -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT -json .tmp/amass_json.json 2>>"$LOGFILE" &>/dev/null
+if [[ $RUNAMASS == true ]]; then
+	timeout -k 1m ${AMASS_ENUM_TIMEOUT} amass enum -passive -d $domain -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT -json .tmp/amass_json.json 2>>"$LOGFILE" >/dev/null
+fi
 [ -s ".tmp/amass_json.json" ] && cat .tmp/amass_json.json | jq -r '.name' | anew -q .tmp/amass_psub.txt
-[[ $RUNSUBFINDER == true ]] && subfinder -all -d "$domain" -silent -o .tmp/subfinder_psub.txt 2>>"$LOGFILE" >/dev/null		
+[[ $RUNSUBFINDER == true ]] && subfinder -all -d "$domain" -silent -o .tmp/subfinder_psub.txt 2>>"$LOGFILE" >/dev/null
 if [ -s "${GITHUB_TOKENS}" ]; then
-    if [ "$DEEP" = true ]; then
-        github-subdomains -d $domain -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
-    else
-        github-subdomains -d $domain -k -q -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
-    fi
+	if [ "$DEEP" = true ]; then
+		github-subdomains -d $domain -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
+	else
+		github-subdomains -d $domain -k -q -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
+	fi
 fi
 if [ -s "${GITLAB_TOKENS}" ]; then
-    gitlab-subdomains -d $domain -t $GITLAB_TOKENS > .tmp/gitlab_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
+gitlab-subdomains -d "$domain" -t "$GITLAB_TOKENS" 2>>"$LOGFILE" | tee .tmp/gitlab_subdomains_psub.txt >/dev/null
 fi
 # Check inscope if the flag is set
-if [[ "$INSCOPE" = true ]]; then
-    rftw_util_inscope .tmp/amass_psub.txt
-    rftw_util_inscope .tmp/subfinder_psub.txt
-    rftw_util_inscope .tmp/github_subdomains_psub.txt
-    rftw_util_inscope .tmp/gitlab_subdomains_psub.txt
+if [[ $INSCOPE == true ]]; then
+	rftw_util_inscope .tmp/amass_psub.txt
+	rftw_util_inscope .tmp/subfinder_psub.txt
+	rftw_util_inscope .tmp/github_subdomains_psub.txt
+	rftw_util_inscope .tmp/gitlab_subdomains_psub.txt
 fi
 # Save results to the specified output file if provided
 if [ -n "$output_file" ]; then
-    cat .tmp/*_psub.txt > "$output_file"
+	cat .tmp/*_psub.txt >"$output_file"
 fi
