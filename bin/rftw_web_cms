@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
 # Load environment variables
-if [ -f "reconftw.cfg" ]; then
+if [[ -f "reconftw.cfg" ]]; then
 	source reconftw.cfg
 else
 	echo "Error: reconftw.cfg not found!"
@@ -50,43 +49,28 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-if { [ ! -f "$called_fn_dir/.cms_scanner" ] || [ "$FORCE" = true ]; } && [ "$CMS_SCANNER" = true ]; then
-	start_func "cms_scanner" "CMS Scanner"
-
-	mkdir -p $dir/cms && rm -rf $dir/cms/*
-	anew -q .tmp/webs_all.txt < <(cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null)
-
-	if [ -s ".tmp/webs_all.txt" ]; then
-		tr '\n' ',' <.tmp/webs_all.txt >.tmp/cms.txt
-timeout -k 1m ${CMSSCAN_TIMEOUT}s python3 $tools/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r 2>>"$LOGFILE" >/dev/null
-		exit_status=$?
-		if [[ $exit_status -eq 125 ]]; then
-			echo "TIMEOUT cmseek.py - investigate manually for $dir" >>"$LOGFILE"
-			end_func "TIMEOUT cmseek.py - investigate manually for $dir" "cms_scanner"
-			exit 1
-		elif [[ $exit_status -ne 0 ]]; then
-			echo "ERROR cmseek.py - investigate manually for $dir" >>"$LOGFILE"
-			end_func "ERROR cmseek.py - investigate manually for $dir" "cms_scanner"
-			exit 1
+mkdir -p "${dir}"/cms && rm -rf "${dir}"/cms/*
+anew -q .tmp/webs_all.txt < <(cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null)
+if [[ -s ".tmp/webs_all.txt" ]]; then
+	tr '\n' ',' <.tmp/webs_all.txt >.tmp/cms.txt
+	timeout -k 1m ${CMSSCAN_TIMEOUT}s python3"${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r 2>>"${LOGFILE}" >/dev/null
+	exit_status=$?
+	if [[ $exit_status -eq 125 ]]; then
+		echo "TIMEOUT cmseek.py - investigate manually for $dir" >>"${LOGFILE}"
+		end_func "TIMEOUT cmseek.py - investigate manually for $dir" "cms_scanner"
+		exit 1
+	elif [[ $exit_status -ne 0 ]]; then
+		echo "ERROR cmseek.py - investigate manually for $dir" >>"${LOGFILE}"
+		end_func "ERROR cmseek.py - investigate manually for $dir" "cms_scanner"
+		exit 1
+	fi
+	while read -r sub; do
+		sub_out=$(echo "$sub" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+		cms_id=$(jq -r 'try .cms_id' "${tools}/CMSeeK/Result/${sub_out}/cms.json" 2>/dev/null)
+		if [[ -z $cms_id ]]; then
+			rm -rf "${tools}/CMSeeK/Result/${sub_out}"
+		else
+			mv -f "${tools}/CMSeeK/Result/${sub_out}" "${dir}"/cms/ 2>>"${LOGFILE}"
 		fi
-		while read -r sub; do
-			sub_out=$(echo "$sub" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-			cms_id=$(jq -r 'try .cms_id' "$tools/CMSeeK/Result/${sub_out}/cms.json" 2>/dev/null)
-			if [ -z "$cms_id" ]; then
-				rm -rf "$tools/CMSeeK/Result/${sub_out}"
-			else
-				mv -f "$tools/CMSeeK/Result/${sub_out}" $dir/cms/ 2>>"$LOGFILE"
-			fi
-		done <.tmp/webs_all.txt
-
-		end_func "Results are saved in $domain/cms/*subdomain* folder" "cms_scanner"
-	else
-		end_func "No $domain/web/webs.txts file found, cms scanner skipped" "cms_scanner"
-	fi
-else
-	if [ "$CMS_SCANNER" = false ]; then
-		printf "\n${yellow} cms_scanner skipped in this mode or defined in reconftw.cfg ${reset}\n"
-	else
-		printf "${yellow} cms_scanner is already processed. To force executing cms_scanner, delete\n    $called_fn_dir/.cms_scanner ${reset}\n\n"
-	fi
+	done <.tmp/webs_all.txt
 fi

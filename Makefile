@@ -5,7 +5,7 @@ PRIVATE_REPO := $(shell echo $${PRIV_REPO-reconftw-data})
 
 # bootstrap a private repo to store data
 bootstrap:
-	@if [ -z $(GH_CLI) ]; then echo "github cli is missing. please install"; exit 2; fi
+	@if [[ -z $(GH_CLI) ]]; then echo "github cli is missing. please install"; exit 2; fi
 	gh repo create $(PRIVATE_REPO) --private
 	gh repo clone $(PRIVATE_REPO) ~/$(PRIVATE_REPO)
 	cd ~/$(PRIVATE_REPO) && git commit --allow-empty -m "Empty commit" && \

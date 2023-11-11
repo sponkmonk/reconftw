@@ -2,27 +2,15 @@
 # Looks good, needs testing
 
 # Load environment variables
-if [ -f "reconftw.cfg" ]; then
+if [[ -f "reconftw.cfg" ]]; then
 	source reconftw.cfg
 else
 	echo "Error: reconftw.cfg not found!"
 	exit 1
 fi
 
-# Variables
-called_fn_dir="./called_functions"
-LOGFILE="./log.txt"
-IP_INFO=true
-OSINT=true
-WHOISXML_API_LOCAL="YOUR_API_KEY_HERE" # Replace with your actual API key
-
-# If WHOISXML_API is not in reconftw.cfg the use the one in the script
-if $WHOISXML_API; then
-	WHOISXML_API=$WHOISXML_API_LOCAL
-fi
-
 # If WHOISXML_API is not present or empty, exit the program
-if [ -z "$WHOISXML_API" ]; then
+if [[ -z $WHOISXML_API ]]; then
 	echo "No WHOISXML_API var defined, exiting..."
 	exit 1
 fi
@@ -55,21 +43,15 @@ end_func() {
 # Main function to gather IP info
 ip_info_func() {
 	local ip="$1"
-	if { [ ! -f "$called_fn_dir/.ip_info" ]; } && [ "$IP_INFO" = true ] && [ "$OSINT" = true ] && [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-		start_func "Searching IP info for $ip"
-
-		if [ -n "$WHOISXML_API" ]; then
-			# IP Relations
-			curl "https://reverse-ip.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ip=${ip}" 2>/dev/null | jq -r '.result[].name' 2>>"$LOGFILE" >>"$OUTPUT_FILE"
-			# IP Whois
-			curl "https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOISXML_API}&domainName=${ip}&outputFormat=json&da=2&registryRawText=1&registrarRawText=1&ignoreRawTexts=1" 2>/dev/null | jq 2>>"$LOGFILE" >>"$OUTPUT_FILE"
-			# IP Location
-			curl "https://ip-geolocation.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ipAddress=${ip}" 2>/dev/null | jq -r '.ip,.location' 2>>"$LOGFILE" >>"$OUTPUT_FILE"
-		else
-			echo "${yellow} No WHOISXML_API var defined, skipping function ${reset}"
-		fi
+	if [[ -n ${WHOISXML_API} ]]; then
+		# IP Relations
+		curl "https://reverse-ip.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ip=${ip}" 2>/dev/null | jq -r '.result[].name' 2>>"${LOGFILE}" >>"${output_file}"
+		# IP Whois
+		curl "https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOISXML_API}&domainName=${ip}&outputFormat=json&da=2&registryRawText=1&registrarRawText=1&ignoreRawTexts=1" 2>/dev/null | jq 2>>"${LOGFILE}" >>"${output_file}"
+		# IP Location
+		curl "https://ip-geolocation.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ipAddress=${ip}" 2>/dev/null | jq -r '.ip,.location' 2>>"${LOGFILE}" >>"${output_file}"
 	else
-		echo "Skipped ip_info for $ip due to conditions or configuration."
+		echo "${yellow} No WHOISXML_API var defined, skipping function ${reset}"
 	fi
 }
 
@@ -98,13 +80,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Input validation
-if [[ -z $INPUT_FILE || -z $OUTPUT_FILE ]]; then
+if [[ -z ${INPUT_FILE} || -z ${OUTPUT_FILE} ]]; then
 	help_menu
 fi
 
 # Process IPs
 while IFS= read -r IP; do
-	ip_info_func "$IP"
-done <"$INPUT_FILE"
+	ip_info_func "${IP}"
+done <"${INPUT_FILE}"
 
-echo "Completed. Check $OUTPUT_FILE for the results."
+echo "Completed. Check ${OUTPUT_FILE} for the results."

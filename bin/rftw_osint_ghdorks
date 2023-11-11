@@ -2,30 +2,33 @@
 
 # Help menu
 function help_menu() {
-    echo -e "Usage: ./rftw_osint_ghdorks.sh [OPTIONS]"
-    echo -e "Options:"
-    echo -e "  -d, --domain DOMAIN       Specify the domain"
-    echo -e "  -g, --github-tokens FILE  Specify the path to the GitHub tokens file"
-    echo -e "  -D, --deep                Use deep dorking (optional)"
-    echo -e "  -o, --output FILE         (Optional) Specify the output file"
-    echo -e "  -h, --help                Display this help menu"
-    exit 1
+	echo -e "Usage: ./rftw_osint_ghdorks.sh [OPTIONS]"
+	echo -e "Options:"
+	echo -e "  -d, --domain DOMAIN       Specify the domain"
+	echo -e "  -g, --github-tokens FILE  Specify the path to the GitHub tokens file"
+	echo -e "  -D, --deep                Use deep dorking (optional)"
+	echo -e "  -o, --output FILE         (Optional) Specify the output file"
+	echo -e "  -h, --help                Display this help menu"
+	exit 1
 }
 
 # Main function
 function github_dorks() {
-    local output_arg=""
-    if [ -n "$output" ]; then
-        output_arg="| tee -a ${output}"
-    fi
+	local output_arg=""
+	if [[ -n ${output} ]]; then
+		output_arg="| tee -a ${output}"
+	fi
 
-    if [ -s "${github_tokens}" ]; then
-        local dorks_file="$tools/gitdorks_go/Dorks/smalldorks.txt"
-        [ "$deep" = true ] && dorks_file="$tools/gitdorks_go/Dorks/medium_dorks.txt"
-        eval "gitdorks_go -gd \"$dorks_file\" -nws 20 -target \"$domain\" -tf \"${github_tokens}\" -ew 3 $output_arg" || { echo "gitdorks_go command failed" >&2; exit 1; }
-    else
-        echo -e "${bred}Required file ${github_tokens} not exists or empty${reset}" >&2
-    fi
+	if [[ -s ${github_tokens} ]]; then
+		local dorks_file="${tools}/gitdorks_go/Dorks/smalldorks.txt"
+		[[ ${deep} == true ]] && dorks_file="${tools}/gitdorks_go/Dorks/medium_dorks.txt"
+		eval "gitdorks_go -gd \"${dorks_file}\" -nws 20 -target \"${domain}\" -tf \"${github_tokens}\" -ew 3 ${output_arg}" || {
+			echo "gitdorks_go command failed" >&2
+			exit 1
+		}
+	else
+		echo -e "${bred}Required file ${github_tokens} not exists or empty${reset}" >&2
+	fi
 }
 
 # Default values
@@ -35,26 +38,38 @@ deep=false
 output=""
 
 # Parse command-line arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -d|--domain) domain="$2"; shift ;;
-        -g|--github-tokens) github_tokens="$2"; shift ;;
-        -D|--deep) deep=true ;;
-        -o|--output) output="$2"; shift ;;
-        -h|--help) help_menu ;;
-        *) echo -e "${bred}Unknown parameter passed: $1${reset}" >&2; help_menu ;;
-    esac
-    shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		domain="$2"
+		shift
+		;;
+	-g | --github-tokens)
+		github_tokens="$2"
+		shift
+		;;
+	-D | --deep) deep=true ;;
+	-o | --output)
+		output="$2"
+		shift
+		;;
+	-h | --help) help_menu ;;
+	*)
+		echo -e "${bred}Unknown parameter passed: $1${reset}" >&2
+		help_menu
+		;;
+	esac
+	shift
 done
 
 # Validate the domain using the utility script
-rftw_util_validatedomain "$domain" || exit 1
+rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 # Validate inputs
-if [ -z "$domain" ] || [ -z "$github_tokens" ]; then
-    echo -e "${bred}Error: Missing required parameters.${reset}" >&2
-    help_menu
-    exit 1
+if [[ -z ${DOMAIN} ]] || [[ -z ${github_tokens} ]]; then
+	echo -e "${bred}Error: Missing required parameters.${reset}" >&2
+	help_menu
+	exit 1
 fi
 
 # Execute the main function

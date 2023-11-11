@@ -46,39 +46,40 @@ while [[ $# -gt 0 ]]; do
 		;;
 	*)
 		# Set the domain if it's not specified with -d
-		[ -z "$DOMAIN" ] && DOMAIN="$1" || {
-			echo "Unknown parameter passed: $1"
-			exit 1
-		}
+		if [[ -z ${DOMAIN} ]]; then
+			DOMAIN="$1"
+		fi
 		;;
 	esac
 	shift
 done
 
 # Input validation
-if [ -z "$DOMAIN" ]; then
+if [[ -z ${DOMAIN} ]]; then
 	help_menu
 	exit 1
 fi
 
 # Validate domain format
-if [[ ! $DOMAIN =~ ^[a-zA-Z0-9.-]+$ ]]; then
+if [[ ! ${DOMAIN} =~ ^[a-zA-Z0-9.-]+$ ]]; then
 	echo "Invalid domain format."
 	exit 1
 fi
 
-pushd "$tools/fav-up" &>/dev/null || {
-	echo "Failed to cd to $tools/fav-up in favicon"
+pushd "${tools}/fav-up" &>/dev/null || {
+	echo "Failed to cd to ${tools}/fav-up in favicon"
 	exit 1
 }
-python3 favUp.py -w "$DOMAIN" -sc -o favicontest.json
-if [ -s "favicontest.json" ]; then
-	jq -r 'try .found_ips' favicontest.json | grep -v "not-found" >favicontest.txt
+python3 favUp.py -w "${DOMAIN}" -sc -o favicontest.json
+if [[ -s "favicontest.json" ]]; then
+	jq -r 'try .found_ips' favicontest.json >temp.txt
+	grep -v "not-found" temp.txt >favicontest.txt
+	rm temp.txt
 	sed -i "s/|/\n/g" favicontest.txt
 fi
 popd &>/dev/null || {
 	echo "Failed to cd back from favicon"
 	exit 1
 }
-[ -s "$tools/fav-up/favicontest.txt" ] && cp $tools/fav-up/favicontest.txt .
+[[ -s "${tools}/fav-up/favicontest.txt" ]] && cp "${tools}"/fav-up/favicontest.txt .
 cat favicontest.txt

@@ -1,66 +1,77 @@
 #!/bin/bash
 
-
 # Help menu
 display_help() {
-    echo "$(basename "$0") [Options]"
-    echo
-    echo "  -d, --domain            Domain for which subdomain enumeration is required"
-    echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
-    echo "  -o, --output            Output file location (Optional)"
-    echo "  -h, --help              Display this help and exit"
-    echo
-    echo "Example: $0 -d example.com -l /path/to/log"
-    exit 1
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -d, --domain            Domain for which subdomain enumeration is required"
+	echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
+	echo "  -o, --output            Output file location (Optional)"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -d example.com -l /path/to/log"
+	exit 1
 }
 
 # Variables for input and output
 output_file=""
 
 # Parse input arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -d|--domain) domain="$2"; shift ;;
-        -f|--file) domain_file="$2"; shift ;;
-        -o|--output) output_file="$2"; shift ;;  # New output flag
-        -h|--help) display_help ;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
-    esac
-    shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		DOMAIN="$2"
+		shift
+		;;
+	-f | --file)
+		domain_file="$2"
+		shift
+		;;
+	-o | --output)
+		output_file="$2"
+		shift
+		;; # New output flag
+	-h | --help) display_help ;;
+	*)
+		echo "Unknown parameter passed: $1"
+		exit 1
+		;;
+	esac
+	shift
 done
 
 # Input validation
-if [ -z "$domain_file" ] || [ -z "$domain" ]; then
-    display_help
-    exit 1
+if [[ -z ${domain_file} ]] || [[ -z ${DOMAIN} ]]; then
+	display_help
+	exit 1
 fi
 
 # Validate file
-if [[ ! -f "$domain_file" ]] || [[ ! -r "$domain_file" ]]; then
-    echo "Error: Specified file does not exist or is not readable."
-    exit 1
+if [[ ! -f ${domain_file} ]] || [[ ! -r ${domain_file} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
 fi
 
 # Validate domain
-rftw_util_validatedomain "$domain" || exit 1  # Domain validation
+rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
 
 sub_active() {
-    mkdir -p .tmp 2>/dev/null
-	if [ ! "$AXIOM" = true ]; then
+	mkdir -p .tmp 2>/dev/null
+	if [[ ${AXIOM} != true ]]; then
 		resolvers_update_quick_local
-		[ -s $domain_file ] && puredns resolve $domain_file -w .tmp/subdomains_tmp.txt -r $resolvers --resolvers-trusted $resolvers_trusted -l $PUREDNS_PUBLIC_LIMIT --rate-limit-trusted $PUREDNS_TRUSTED_LIMIT --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT  --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT 2>>"$LOGFILE" >/dev/null
+		[[ -s ${domain_file} ]] && puredns resolve "${domain_file}" -w .tmp/subdomains_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
 	else
 		resolvers_update_quick_axiom
-		[ -s $domain_file ] && axiom-scan $domain_file -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/subdomains_tmp.txt $AXIOM_EXTRA_ARGS 2>>"$LOGFILE" >/dev/null
+		[[ -s ${domain_file} ]] && axiom-scan ${domain_file} -m puredns-resolve -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
 	fi
-	echo $domain | dnsx -retry 3 -silent -r $resolvers_trusted 2>>"$LOGFILE" | anew -q .tmp/subdomains_tmp.txt
-	if [ "$DEEP" = true ]; then
+	echo "${DOMAIN}" | dnsx -retry 3 -silent -r $resolvers_trusted 2>>"${LOGFILE}" | anew -q .tmp/subdomains_tmp.txt
+	if [[ $DEEP == true ]]; then
 		cat .tmp/subdomains_tmp.txt | tlsx -san -cn -silent -ro -c $TLSX_THREADS -p $TLS_PORTS | anew -q .tmp/subdomains_tmp.txt
 	else
 		cat .tmp/subdomains_tmp.txt | tlsx -san -cn -silent -ro -c $TLSX_THREADS | anew -q .tmp/subdomains_tmp.txt
 	fi
-	[[ "$INSCOPE" = true ]] && rftw_util_inscope .tmp/subdomains_tmp.txt 2>>"$LOGFILE" >/dev/null
-    [ -s "$output_file" ] && cat .tmp/subdomains_tmp.txt >> "$output_file"
+	[[ ${INSCOPE} == true ]] && rftw_util_inscope .tmp/subdomains_tmp.txt 2>>"${LOGFILE}" >/dev/null
+	[[ -s ${output_file} ]] && cat .tmp/subdomains_tmp.txt >>"${output_file}"
 }
 
 # Run the function

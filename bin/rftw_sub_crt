@@ -2,60 +2,74 @@
 
 # Help Menu
 function display_help() {
-    echo "$(basename "$0") [OPTIONS]"
-    echo "Options:"
-    echo "  -d, --domain          Set the target domain. (Required)"
-    echo "  -l, --limit           Set the crt limit (default 100)."
-    echo "  -o, --output          Specify the output file. (Optional)"
-    echo "  -h, --help            Display this help menu."
+	echo "$(basename "$0") [OPTIONS]"
+	echo "Options:"
+	echo "  -d, --domain          Set the target domain. (Required)"
+	echo "  -l, --limit           Set the crt limit (default 100)."
+	echo "  -o, --output          Specify the output file. (Optional)"
+	echo "  -h, --help            Display this help menu."
 }
 
 # Variables for input and output
 output_file=""
-user_set_limit=false  # Variable to check if user set the limit
+user_set_limit=false # Variable to check if user set the limit
 
 # Input validation and argument parsing
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -d|--domain) domain="$2"; shift;;
-        -l|--limit) 
-            CTR_LIMIT_LOCAL="$2"; 
-            user_set_limit=true;  # User set the limit
-            shift;;
-        -o|--output) 
-            shift;
-            output_file="$1";
-            touch "$output_file" 2>/dev/null || { echo "Error: Cannot write to the specified output file."; exit 1; }
-            ;;
-        -h|--help) display_help; exit 0;;
-        *) echo "Unknown parameter passed: $1"; display_help; exit 1;;
-    esac
-    shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		DOMAIN="$2"
+		shift
+		;;
+	-l | --limit)
+		CTR_LIMIT_LOCAL="$2"
+		user_set_limit=true # User set the limit
+		shift
+		;;
+	-o | --output)
+		shift
+		output_file="$1"
+		touch "${output_file}" 2>/dev/null || {
+			echo "Error: Cannot write to the specified output file."
+			exit 1
+		}
+		;;
+	-h | --help)
+		display_help
+		exit 0
+		;;
+	*)
+		echo "Unknown parameter passed: $1"
+		display_help
+		exit 1
+		;;
+	esac
+	shift
 done
 
-if [[ "$user_set_limit" == false ]]; then
-    CTR_LIMIT_LOCAL=$CTR_LIMIT
+if [[ ${user_set_limit} == false ]]; then
+	CTR_LIMIT_LOCAL=${CTR_LIMIT}
 fi
 
 # Validate domain
-if [ -z "$domain" ]; then
-    echo "Error: Domain not provided."
-    display_help
-    exit 1
+if [[ -z ${DOMAIN} ]]; then
+	echo "Error: Domain not provided."
+	display_help
+	exit 1
 fi
 
 # Call the domain validation script
-rftw_util_validatedomain "$domain" || exit 1
+rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 # Main Functionality
-crt -s -json -l ${CTR_LIMIT_LOCAL} $domain 2>>"$LOGFILE" | jq -r '.[].subdomain' 2>>"$LOGFILE" | sed -e "s/^\\*\\.//" | anew -q .tmp/crtsh_subs_tmp.txt 2>>"$LOGFILE" >/dev/null
+crt -s -json -l "${CTR_LIMIT_LOCAL}" "${DOMAIN}" 2>>"${LOGFILE}" | jq -r '.[].subdomain' 2>>"${LOGFILE}" | sed -e 's/^\*\.//' | anew -q .tmp/crtsh_subs_tmp.txt 2>>"${LOGFILE}" >/dev/null
 
 # Check inscope
 rftw_util_inscope .tmp/crtsh_subs_tmp.txt
 
 # Save results to the specified output file if provided
-if [ -n "$output_file" ]; then
-    cat .tmp/crtsh_subs_tmp.txt > "$output_file"
+if [[ -n ${output_file} ]]; then
+	cat .tmp/crtsh_subs_tmp.txt >"${output_file}"
 else
-    cat .tmp/crtsh_subs_tmp.txt
+	cat .tmp/crtsh_subs_tmp.txt
 fi

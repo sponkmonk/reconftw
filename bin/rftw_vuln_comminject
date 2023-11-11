@@ -2,7 +2,7 @@
 
 # Load environment variables from reconftw.cfg
 # Load environment variables
-if [ -f "reconftw.cfg" ]; then
+if [[ -f "reconftw.cfg" ]]; then
     source reconftw.cfg
 else
     echo "Error: reconftw.cfg not found!"
@@ -25,11 +25,11 @@ function display_help() {
 
 # Validate requirements function
 function validate_requirements() {
-    if ! [ -x "$(command -v python3)" ]; then
+    if ! [[ -x "$(command -v python3)" ]]; then
         echo "Error: python3 not found." >&2
         exit 1
     fi
-    if ! [ -f "gf/rce.txt" ]; then
+    if ! [[ -f "gf/rce.txt" ]]; then
         echo "Error: rce.txt not found." >&2
         exit 1
     fi
@@ -37,19 +37,19 @@ function validate_requirements() {
 
 # Command Injection test function
 function command_injection_test() {
-    if { [ ! -f "$called_fn_dir/.command_injection" ] || [ "$DIFF" = true ]; } && [ "$COMM_INJ" = true ] && [ -s "gf/rce.txt" ]; then
+    if { [[ ! -f "${called_fn_dir}/.command_injection" ]] || [[ "$DIFF" = true ]]; } && [[ "$COMM_INJ" = true ]] && [[ -s "gf/rce.txt" ]]; then
         echo "[*] Starting Command Injection checks"
-        [ -s "gf/rce.txt" ] && cat gf/rce.txt | qsreplace FUZZ | sed '/FUZZ/!d'  | anew -q .tmp/tmp_rce.txt
-        if [ "$DEEP" = true ] || [[ $(cat .tmp/tmp_rce.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            [ -s ".tmp/tmp_rce.txt" ] && python3 $tools/commix/commix.py --batch -m .tmp/tmp_rce.txt --output-dir vulns/command_injection.txt 2>>"$LOGFILE" >/dev/null
+        [[ -s "gf/rce.txt" ]] && cat gf/rce.txt | qsreplace FUZZ | sed '/FUZZ/!d'  | anew -q .tmp/tmp_rce.txt
+        if [[ "$DEEP" = true ]] || [[ $(cat .tmp/tmp_rce.txt | wc -l) -le $DEEP_LIMIT ]]; then
+            [[ -s ".tmp/tmp_rce.txt" ]] && python3"${tools}"/commix/commix.py --batch -m .tmp/tmp_rce.txt --output-dir vulns/command_injection.txt 2>>"${LOGFILE}" >/dev/null
             echo "[+] Results are saved in vulns/command_injection folder"
         else
             echo "[!] Skipping Command injection: Too many URLs to test, try with --deep flag"
         fi
     else
-        if [ "$COMM_INJ" = false ]; then
+        if [[ "$COMM_INJ" = false ]]; then
             echo -e "\n${yellow} command_injection_test skipped in this mode or defined in reconftw.cfg ${reset}"
-        elif [ ! -s "gf/rce.txt" ]; then
+        elif [[ ! -s "gf/rce.txt" ]]; then
             echo -e "\n${yellow} command_injection_test No URLs potentially vulnerables to Command Injection ${reset}\n"
         else
             echo -e "${yellow} command_injection_test is already processed, to force executing command_injection_test delete\n    $called_fn_dir/.command_injection ${reset}\n"

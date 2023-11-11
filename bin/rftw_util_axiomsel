@@ -2,7 +2,7 @@
 
 # Load environment variables from reconftw.cfg
 # Load environment variables
-if [ -f "reconftw.cfg" ]; then
+if [[ -f "reconftw.cfg" ]]; then
     source reconftw.cfg
 else
     echo "Error: reconftw.cfg not found!"

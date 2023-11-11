@@ -22,7 +22,7 @@ output_file=""
 while [[ $# -gt 0 ]]; do
 	case $1 in
 	-d | --domain)
-		domain="$2"
+		DOMAIN="$2"
 		shift
 		;;
 	-a | --amass) RUNAMASS=true ;;
@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
 	-o | --output)
 		shift
 		output_file="$1"
-		touch "$output_file" 2>/dev/null || {
+		touch "${output_file}" 2>/dev/null || {
 			echo "Error: Cannot write to the specified output file."
 			exit 1
 		}
@@ -59,40 +59,40 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate domain
-if [ -z "$domain" ]; then
+if [[ -z ${DOMAIN} ]]; then
 	echo "Error: Domain not provided."
 	display_help
 	exit 1
 fi
 
 # Call the domain validation script
-rftw_util_validatedomain "$domain" || exit 1
+rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 # Main functionality
 
-if [[ $RUNAMASS == true ]]; then
-	timeout -k 1m ${AMASS_ENUM_TIMEOUT} amass enum -passive -d $domain -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT -json .tmp/amass_json.json 2>>"$LOGFILE" >/dev/null
+if [[ ${RUNAMASS} == true ]]; then
+	timeout -k 1m "${AMASS_ENUM_TIMEOUT}" amass enum -passive -d "${DOMAIN}" -config "${AMASS_CONFIG}" -timeout "${AMASS_ENUM_TIMEOUT}" -json .tmp/amass_json.json 2>>"${LOGFILE}" >/dev/null
 fi
-[ -s ".tmp/amass_json.json" ] && cat .tmp/amass_json.json | jq -r '.name' | anew -q .tmp/amass_psub.txt
-[[ $RUNSUBFINDER == true ]] && subfinder -all -d "$domain" -silent -o .tmp/subfinder_psub.txt 2>>"$LOGFILE" >/dev/null
-if [ -s "${GITHUB_TOKENS}" ]; then
-	if [ "$DEEP" = true ]; then
-		github-subdomains -d $domain -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
+[[ -s ".tmp/amass_json.json" ]] && cat .tmp/amass_json.json | jq -r '.name' | anew -q .tmp/amass_psub.txt
+[[ ${RUNSUBFINDER} == true ]] && subfinder -all -d "${DOMAIN}" -silent -o .tmp/subfinder_psub.txt 2>>"${LOGFILE}" >/dev/null
+if [[ -s ${GITHUB_TOKENS} ]]; then
+	if [[ ${DEEP} == true ]]; then
+		github-subdomains -d "${DOMAIN}" -t "${GITHUB_TOKENS}" -o .tmp/github_subdomains_psub.txt 2>>"${LOGFILE}" >/dev/null
 	else
-		github-subdomains -d $domain -k -q -t $GITHUB_TOKENS -o .tmp/github_subdomains_psub.txt 2>>"$LOGFILE" >/dev/null
+		github-subdomains -d "${DOMAIN}" -k -q -t "${GITHUB_TOKENS}" -o .tmp/github_subdomains_psub.txt 2>>"${LOGFILE}" >/dev/null
 	fi
 fi
-if [ -s "${GITLAB_TOKENS}" ]; then
-gitlab-subdomains -d "$domain" -t "$GITLAB_TOKENS" 2>>"$LOGFILE" | tee .tmp/gitlab_subdomains_psub.txt >/dev/null
+if [[ -s ${GITLAB_TOKENS} ]]; then
+	gitlab-subdomains -d "${DOMAIN}" -t "$GITLAB_TOKENS" 2>>"${LOGFILE}" | tee .tmp/gitlab_subdomains_psub.txt >/dev/null
 fi
 # Check inscope if the flag is set
-if [[ $INSCOPE == true ]]; then
+if [[ ${INSCOPE} == true ]]; then
 	rftw_util_inscope .tmp/amass_psub.txt
 	rftw_util_inscope .tmp/subfinder_psub.txt
 	rftw_util_inscope .tmp/github_subdomains_psub.txt
 	rftw_util_inscope .tmp/gitlab_subdomains_psub.txt
 fi
 # Save results to the specified output file if provided
-if [ -n "$output_file" ]; then
-	cat .tmp/*_psub.txt >"$output_file"
+if [[ -n ${output_file} ]]; then
+	cat .tmp/*_psub.txt >"${output_file}"
 fi

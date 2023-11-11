@@ -2,74 +2,80 @@
 
 # Help menu
 function help_menu() {
-    echo -e "Usage: ./rftw_osint_ghrepos.sh [OPTIONS]"
-    echo -e "Options:"
-    echo -e "  -d, --domain DOMAIN       Specify the domain"
-    echo -e "  -g, --github-tokens FILE  Specify the path to the GitHub tokens file"
-    echo -e "  -o, --output FILE         (Optional) Specify the output file path (prints to stdout if not set)"
-    echo -e "  -h, --help                Display this help menu"
-    exit 1
+	echo -e "Usage: ./rftw_osint_ghrepos.sh [OPTIONS]"
+	echo -e "Options:"
+	echo -e "  -d, --domain DOMAIN       Specify the domain"
+	echo -e "  -g, --github-tokens FILE  Specify the path to the GitHub tokens file"
+	echo -e "  -o, --output FILE         (Optional) Specify the output file path (prints to stdout if not set)"
+	echo -e "  -h, --help                Display this help menu"
+	exit 1
 }
 
 # Main function
 function github_repos() {
-    # Validate tools
-    mkdir -p .tmp
-    for tool in unfurl enumerepo jq interlace gitleaks trufflehog; do
-        if ! command -v $tool &> /dev/null; then
-            echo -e "${bred}Error: ${tool} is not installed.${reset}" >&2
-            exit 1
-        fi
-    done
+	# Validate tools
+	mkdir -p .tmp
 
-    if [ -s "${github_tokens}" ]; then
-        GH_TOKEN=$(cat ${github_tokens} | head -1)
-        echo $domain | unfurl format %r > .tmp/company_name.txt
-        enumerepo -token-string "${GH_TOKEN}" -usernames .tmp/company_name.txt -o .tmp/company_repos.txt
-        [ -s ".tmp/company_repos.txt" ] && jq -r '.[].repos[]|.url' < .tmp/company_repos.txt > .tmp/company_repos_url.txt
-        mkdir -p .tmp/github_repos
-        mkdir -p .tmp/github
-        [ -s ".tmp/company_repos_url.txt" ] && interlace -tL .tmp/company_repos_url.txt -threads ${INTERLACE_THREADS} -c "git clone _target_  .tmp/github_repos/_cleantarget_"
-        [ -d ".tmp/github/" ] && ls .tmp/github_repos > .tmp/github_repos_folders.txt
-        [ -s ".tmp/github_repos_folders.txt" ] && interlace -tL .tmp/github_repos_folders.txt -threads ${INTERLACE_THREADS} -c "gitleaks detect --source .tmp/github_repos/_target_ --no-banner --no-color -r .tmp/github/gh_secret_cleantarget_.json"
-        [ -s ".tmp/company_repos_url.txt" ] && interlace -tL .tmp/company_repos_url.txt -threads ${INTERLACE_THREADS} -c "trufflehog git _target_ -j 2>&1 | jq -c > _output_/_cleantarget_" -o .tmp/github/
-        if [ -d ".tmp/github/" ]; then
-            if [ -z "$output_file" ]; then
-                cat .tmp/github/* 2>/dev/null | jq -c | jq -r
-            else
-                cat .tmp/github/* 2>/dev/null | jq -c | jq -r > "$output_file"
-            fi
-        fi
-    else
-        printf "\n${bred} Required file ${GITHUB_TOKENS} not exists or empty${reset}\n"
-    fi
+	if [[ -s ${github_tokens} ]]; then
+		GH_TOKEN=$(cat "${github_tokens}" | head -1)
+		echo "${DOMAIN}" | unfurl format %r >.tmp/company_name.txt
+		enumerepo -token-string "${GH_TOKEN}" -usernames .tmp/company_name.txt -o .tmp/company_repos.txt
+		[[ -s ".tmp/company_repos.txt" ]] && jq -r '.[].repos[]|.url' <.tmp/company_repos.txt >.tmp/company_repos_url.txt
+		mkdir -p .tmp/github_repos
+		mkdir -p .tmp/github
+		[[ -s ".tmp/company_repos_url.txt" ]] && interlace -tL .tmp/company_repos_url.txt -threads "${INTERLACE_THREADS}" -c "git clone _target_  .tmp/github_repos/_cleantarget_"
+		[[ -d ".tmp/github/" ]] && ls .tmp/github_repos >.tmp/github_repos_folders.txt
+		[[ -s ".tmp/github_repos_folders.txt" ]] && interlace -tL .tmp/github_repos_folders.txt -threads "${INTERLACE_THREADS}" -c "gitleaks detect --source .tmp/github_repos/_target_ --no-banner --no-color -r .tmp/github/gh_secret_cleantarget_.json"
+		[[ -s ".tmp/company_repos_url.txt" ]] && interlace -tL .tmp/company_repos_url.txt -threads "${INTERLACE_THREADS}" -c "trufflehog git _target_ -j 2>&1 | jq -c > _output_/_cleantarget_" -o .tmp/github/
+		if [[ -d ".tmp/github/" ]]; then
+			if [[ -z $output_file ]]; then
+				cat .tmp/github/* 2>/dev/null | jq -c | jq -r
+			else
+				cat .tmp/github/* 2>/dev/null | jq -c | jq -r >"${output_file}"
+			fi
+		fi
+	else
+		printf "\n${bred} Required file ${GITHUB_TOKENS} not exists or empty${reset}\n"
+	fi
 }
 
 # Default values
-domain=""
+DOMAIN=""
 github_tokens=""
 output_file=""
 
 # Parse command-line arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -d|--domain) domain="$2"; shift ;;
-        -g|--github-tokens) github_tokens="$2"; shift ;;
-        -o|--output) output_file="$2"; shift ;;
-        -h|--help) help_menu ;;
-        *) echo -e "${bred}Unknown parameter passed: $1${reset}" >&2; help_menu ;;
-    esac
-    shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		DOMAIN="$2"
+		shift
+		;;
+	-g | --github-tokens)
+		github_tokens="$2"
+		shift
+		;;
+	-o | --output)
+		output_file="$2"
+		shift
+		;;
+	-h | --help) help_menu ;;
+	*)
+		echo -e "${bred}Unknown parameter passed: $1${reset}" >&2
+		help_menu
+		;;
+	esac
+	shift
 done
 
 # Validate the domain using the utility script
-rftw_util_validatedomain "$domain" || exit 1
+rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 # Validate inputs
-if [ -z "$domain" ] || [ -z "$github_tokens" ]; then
-    echo -e "${bred}Error: Missing required parameters.${reset}" >&2
-    help_menu
-    exit 1
+if [[ -z ${DOMAIN} ]] || [[ -z ${github_tokens} ]]; then
+	echo -e "${bred}Error: Missing required parameters.${reset}" >&2
+	help_menu
+	exit 1
 fi
 
 # Execute the main function

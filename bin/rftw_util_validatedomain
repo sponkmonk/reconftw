@@ -9,20 +9,20 @@ DOMAIN_VALIDATION_REGEX="^(?:[a-zA-Z0-9]+:\/\/)?(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[
 
 # Function to validate the domain
 validate_domain() {
-    local domain="$1"
-    if [[ $domain =~ $DOMAIN_VALIDATION_REGEX ]]; then
-        echo "Valid domain/URL."
-        exit 0
-    else
-        echo "Invalid domain/URL."
-        exit 1
-    fi
+	local DOMAIN="$1"
+	if [[ ${DOMAIN} =~ ${DOMAIN_VALIDATION_REGEX} ]]; then
+		echo "Valid domain/URL."
+		exit 0
+	else
+		echo "Invalid domain/URL."
+		exit 1
+	fi
 }
 
 # Check if a domain is provided
-if [ "$#" -ne 1 ]; then
-    echo "$(basename "$0") <domain/website/URL>"
-    exit 1
+if [[ $# -ne 1 ]]; then
+	echo "$(basename "$0") <domain/website/URL>"
+	exit 1
 fi
 
 # Call the validation function

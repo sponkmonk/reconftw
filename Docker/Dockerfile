@@ -120,6 +120,6 @@ EXPOSE 85-90
 
 WORKDIR /reconftw
 
-SHELL [ "/bin/bash", "-c" ]
-ENTRYPOINT [ "./reconftw.sh" ]
-CMD [ "--help" ]
+SHELL [[ "/bin/bash", "-c" ]
+ENTRYPOINT [[ "./reconftw.sh" ]
+CMD [[ "--help" ]

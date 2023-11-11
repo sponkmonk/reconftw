@@ -2,7 +2,7 @@
 
 # Load environment variables from reconftw.cfg
 # Load environment variables
-if [ -f "reconftw.cfg" ]; then
+if [[ -f "reconftw.cfg" ]]; then
     source reconftw.cfg
 else
     echo "Error: reconftw.cfg not found!"
@@ -25,11 +25,11 @@ function process_ip_cidr() {
     local OUTFILE=$2
     local IP_CIDR_REGEX='(((25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?))(\/([8-9]|[1-2][0-9]|3[0-2]))([^0-9.]|$)|(((25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)$)'
 
-    if [[ $IP_CIDR =~ ^$IP_CIDR_REGEX ]]; then
-        echo $IP_CIDR | mapcidr -silent | anew -q target_reconftw_ipcidr.txt
+    if [[ ${IP_CIDR} =~ ^${IP_CIDR_REGEX} ]]; then
+        echo ${IP_CIDR} | mapcidr -silent | anew -q target_reconftw_ipcidr.txt
 
-        if [ -s "./target_reconftw_ipcidr.txt" ]; then
-            [ "$REVERSE_IP" = true ] && cat ./target_reconftw_ipcidr.txt | hakip2host | cut -d' ' -f 3 | unfurl -u domains 2>/dev/null | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | anew -q ./target_reconftw_ipcidr.txt
+        if [[ -s "./target_reconftw_ipcidr.txt" ]]; then
+            [[ "${REVERSE_IP}" = true ]] && cat ./target_reconftw_ipcidr.txt | hakip2host | cut -d' ' -f 3 | unfurl -u domains 2>/dev/null | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | anew -q ./target_reconftw_ipcidr.txt
 
             if [[ $(cat ./target_reconftw_ipcidr.txt | wc -l) -eq 1 ]]; then
                 domain=$(cat ./target_reconftw_ipcidr.txt)
@@ -39,9 +39,9 @@ function process_ip_cidr() {
             fi
         fi
 
-        if [ -n "$OUTFILE" ]; then
-            cat $list | anew -q $OUTFILE
-            sed -i '/\/[0-9]*$/d' $OUTFILE
+        if [[ -n "${OUTFILE}" ]]; then
+            cat "${list}" | anew -q "${OUTFILE}"
+            sed -i '/\/[0-9]*$/d' "${OUTFILE}"
         fi
     else
         echo "Invalid IP CIDR format provided. Please check the input."

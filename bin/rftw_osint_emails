@@ -14,30 +14,23 @@ function help_menu() {
 # Main function
 function gather_emails() {
     # Validate tools
-    for tool in emailfinder anew; do
-        if ! command -v $tool &> /dev/null; then
-            echo -e "${bred}Error: ${tool} is not installed.${reset}" >&2
-            exit 1
-        fi
-    done
-
     echo "Searching emails/users/passwords leaks"
-    emailfinder -d "$domain" 2>>"$LOGFILE" | anew -q .tmp/emailfinder.txt || { echo "emailfinder command failed"; exit 1; }
-    if [ -z "$output_file" ]; then
+    emailfinder -d "${DOMAIN}" 2>>"${LOGFILE}" | anew -q .tmp/emailfinder.txt || { echo "emailfinder command failed"; exit 1; }
+    if [[ -z "${output_file}" ]]; then
         cat ".tmp/emailfinder.txt" 2>/dev/null | grep "@" | grep -iv "|_"
     else
-        cat ".tmp/emailfinder.txt" 2>/dev/null | grep "@" | grep -iv "|_" > "$output_file"
+        cat ".tmp/emailfinder.txt" 2>/dev/null | grep "@" | grep -iv "|_" > "${output_file}"
     fi
 }
 
 # Default values
-domain=""
+DOMAIN=""
 output_file=""
 
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -d|--domain) domain="$2"; shift ;;
+        -d|--domain) DOMAIN="$2"; shift ;;
         -o|--output) output_file="$2"; shift ;;
         -h|--help) help_menu ;;
         *) echo -e "${bred}Unknown parameter passed: $1${reset}" >&2; help_menu ;;
@@ -46,10 +39,10 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate the domain using the utility script
-rftw_util_validatedomain "$domain" || exit 1
+rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 # Validate inputs
-if [ -z "$domain" ]; then
+if [[ -z "${DOMAIN}" ]]; then
     echo -e "${bred}Error: Missing required parameters.${reset}" >&2
     help_menu
     exit 1

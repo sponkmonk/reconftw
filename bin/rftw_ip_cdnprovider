@@ -1,5 +1,4 @@
 #!/bin/bash
-# Check manually, the logic for extracting the ips from dnsx results should be on reconftw.sh script, this script should only scan the ips
 
 # Check if the config file exists
 if [[ -z ${RECONFTW_CFG} ]]; then
@@ -67,5 +66,7 @@ fi
 if [[ -z ${OUTPUT_FILE} ]]; then
 	cdncheck -silent -resp -nc <"${INPUT_FILE}"
 else
-	cdncheck -silent -resp -nc <"${INPUT_FILE}" | sort -u >"${OUTPUT_FILE}"
+	cdncheck -silent -resp -nc <"${INPUT_FILE}" >temp.txt
+	sort -u temp.txt >"${OUTPUT_FILE}"
+	rm temp.txt
 fi

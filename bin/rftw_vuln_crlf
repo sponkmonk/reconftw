@@ -2,7 +2,7 @@
 
 # Load environment variables from reconftw.cfg
 # Load environment variables
-if [ -f "reconftw.cfg" ]; then
+if [[ -f "reconftw.cfg" ]]; then
     source reconftw.cfg
 else
     echo "Error: reconftw.cfg not found!"
@@ -26,7 +26,7 @@ function display_help() {
 
 # Validate requirements function
 function validate_requirements() {
-    if ! [ -x "$(command -v crlfuzz)" ]; then
+    if ! [[ -x "$(command -v crlfuzz)" ]]; then
         echo "Error: crlfuzz is not installed." >&2
         exit 1
     fi
@@ -36,21 +36,21 @@ function validate_requirements() {
 function crlf_checks() {
     local deep_flag=$1
 
-    if { [ ! -f "$called_fn_dir/.crlf_checks" ] || [ "$DIFF" = true ]; } && [ "$CRLF_CHECKS" = true ]; then
+    if { [[ ! -f "${called_fn_dir}/.crlf_checks" ]] || [[ "$DIFF" = true ]]; } && [[ "$CRLF_CHECKS" = true ]]; then
         echo "[*] Starting CRLF checks"
         
-        if [ ! -s ".tmp/webs_all.txt" ]; then
+        if [[ ! -s ".tmp/webs_all.txt" ]]; then
             cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         fi
         
-        if [ "$deep_flag" = true ] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            crlfuzz -l .tmp/webs_all.txt -o vulns/crlf.txt 2>>"$LOGFILE" >/dev/null
+        if [[ "$deep_flag" = true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
+            crlfuzz -l .tmp/webs_all.txt -o vulns/crlf.txt 2>>"${LOGFILE}" >/dev/null
             echo "[+] Results are saved in vulns/crlf.txt"
         else
             echo "[!] Skipping CRLF: Too many URLs to test, try with --deep flag"
         fi
     else
-        if [ "$CRLF_CHECKS" = false ]; then
+        if [[ "$CRLF_CHECKS" = false ]]; then
             echo -e "\n${yellow} crlf_checks skipped in this mode or defined in reconftw.cfg ${reset}"
         else
             echo -e "${yellow} crlf_checks is already processed, to force executing crlf_checks delete\n    $called_fn_dir/.crlf_checks ${reset}\n"

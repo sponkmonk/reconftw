@@ -13,21 +13,15 @@ function help_menu() {
 # Main function
 function gather_metadata() {
     # Validate tools
-    for tool in metafinder; do
-        if ! command -v $tool &> /dev/null; then
-            echo -e "${bred}Error: ${tool} is not installed.${reset}" >&2
-            exit 1
-        fi
-    done
 
     echo -e "${yellow}Scanning metadata in public files${reset}"
-    metafinder -d "$domain" -l $METAFINDER_LIMIT -o osint -go -bi -ba &>> "$LOGFILE" || { echo "metafinder command failed"; exit 1; }
-    mv "osint/${domain}/"*".txt" "osint/" 2>>"$LOGFILE"
-    rm -rf "osint/${domain}" 2>>"$LOGFILE"
-    if [ -z "$output_file" ]; then
+    metafinder -d "${DOMAIN}" -l "${METAFINDER_LIMIT}" -o osint -go -bi -ba &>> "${LOGFILE}" || { echo "metafinder command failed"; exit 1; }
+    mv "osint/${domain}/"*".txt" "osint/" 2>>"${LOGFILE}"
+    rm -rf "osint/${domain}" 2>>"${LOGFILE}"
+    if [[ -z "${output_file}" ]]; then
         cat "osint/${domain}/*" 2>/dev/null
     else
-        cat "osint/${domain}/*" 2>/dev/null > "$output_file"
+        cat "osint/${domain}/*" 2>/dev/null > "${output_file}"
     fi
 }
 
@@ -47,10 +41,10 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate the domain using the utility script
-rftw_util_validatedomain "$domain" || exit 1
+rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 # Validate inputs
-if [ -z "$domain" ]; then
+if [[ -z "${DOMAIN}" ]]; then
     echo -e "${bred}Error: Missing required parameters.${reset}" >&2
     help_menu
     exit 1

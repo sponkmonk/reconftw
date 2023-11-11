@@ -2,57 +2,69 @@
 
 # Help menu
 display_help() {
-    echo "$(basename "$0") [Options]"
-    echo
-    echo "  -d, --domain       Domain to check"
-    echo "  -i, --inscope      Check inscope."
-    echo "  -o, --output-file  File to save results"
-    echo "  -h, --help         Display this help and exit"
-    echo
-    echo "Example: $0 -d example.com"
-    exit 1
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -d, --domain       Domain to check"
+	echo "  -i, --inscope      Check inscope."
+	echo "  -o, --output-file  File to save results"
+	echo "  -h, --help         Display this help and exit"
+	echo
+	echo "Example: $0 -d example.com"
+	exit 1
 }
 
 # Parse input arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -d|--domain) domain="$2"; shift ;;
-        -i|--inscope) INSCOPE=true;;
-        -o|--output) OUTPUTFILE="$2"; shift ;;  # New output flag
-        -h|--help) display_help ;;
-        *) echo "Unknown parameter passed: $1"; display_help ;;
-    esac
-    shift
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		domain="$2"
+		shift
+		;;
+	-i | --inscope) INSCOPE=true ;;
+	-o | --output)
+		OUTPUTFILE="$2"
+		shift
+		;; # New output flag
+	-h | --help) display_help ;;
+	*)
+		echo "Unknown parameter passed: $1"
+		display_help
+		;;
+	esac
+	shift
 done
 
 # Validate domain
-if [ -z "$domain" ]; then
-    echo "Error: Domain not provided."
-    display_help
-    exit 1
+if [[ -z ${DOMAIN} ]]; then
+	echo "Error: Domain not provided."
+	display_help
+	exit 1
 fi
 
-if [ -n "$OUTPUTFILE" ]; then
-    touch "$OUTPUTFILE" 2>/dev/null || { echo "Error: Cannot write to the specified output file."; exit 1; }
+if [[ -n ${OUTPUTFILE} ]]; then
+	touch "${OUTPUTFILE}" 2>/dev/null || {
+		echo "Error: Cannot write to the specified output file."
+		exit 1
+	}
 fi
 
 # Call the domain validation script
-rftw_util_validatedomain "$domain" || exit 1
+rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 mkdir -p .tmp 2>/dev/null
-if [[ $(echo "${RANDOM}thistotallynotexist${RANDOM}.$domain" | dnsx -r $resolvers -rcode noerror,nxdomain -retry 3 -silent | cut -d' ' -f2) == "[NXDOMAIN]" ]]; then 
-    if [ "$DEEP" = true ]; then
-        dnsx -d $domain -r $resolvers -silent -rcode noerror -w $subs_wordlist_big | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>>"$LOGFILE" >/dev/null
-    else
-        dnsx -d $domain -r $resolvers -silent -rcode noerror -w $subs_wordlist | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>>"$LOGFILE" >/dev/null
-    fi
-    # Output handling
-    if [ -n "$OUTPUTFILE" ]; then
-        cat .tmp/subs_noerror.txt > "$OUTPUTFILE"
-    else
-        cat .tmp/subs_noerror.txt
-    fi
-    [[ "$INSCOPE" = true ]] && check_inscope .tmp/subs_noerror.txt 2>>"$LOGFILE" >/dev/null
-else 
-	printf "\n${yellow} Detected DNSSEC black lies, skipping this technique ${reset}\n" 
+if [[ $(echo "${RANDOM}thistotallynotexist${RANDOM}.${domain}" | dnsx -r $resolvers -rcode noerror,nxdomain -retry 3 -silent | cut -d' ' -f2) == "[NXDOMAIN]" ]]; then
+	if [[ $DEEP == true ]]; then
+		dnsx -d "${DOMAIN}" -r $resolvers -silent -rcode noerror -w $subs_wordlist_big | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>>"${LOGFILE}" >/dev/null
+	else
+		dnsx -d "${DOMAIN}" -r $resolvers -silent -rcode noerror -w $subs_wordlist | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>>"${LOGFILE}" >/dev/null
+	fi
+	# Output handling
+	if [[ -n ${OUTPUTFILE} ]]; then
+		cat .tmp/subs_noerror.txt >"${OUTPUTFILE}"
+	else
+		cat .tmp/subs_noerror.txt
+	fi
+	[[ ${INSCOPE} == true ]] && check_inscope .tmp/subs_noerror.txt 2>>"${LOGFILE}" >/dev/null
+else
+	printf "\n${yellow} Detected DNSSEC black lies, skipping this technique ${reset}\n"
 fi
