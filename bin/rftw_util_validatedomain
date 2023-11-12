@@ -1,20 +1,28 @@
 #!/bin/bash
 
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
 # Description: Script to validate a domain, website, or URL
-# Author: Your Name
-# Date: Date
 
 # Regex for domain, website, or URL validation
-DOMAIN_VALIDATION_REGEX="^(?:[a-zA-Z0-9]+:\/\/)?(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(?::\d+)?(?:\/[^\s]*)?$"
+DOMAIN_VALIDATION_REGEX="^(https?:\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:\d+)?(\/[^\s]*)?$"
 
 # Function to validate the domain
 validate_domain() {
 	local DOMAIN="$1"
 	if [[ ${DOMAIN} =~ ${DOMAIN_VALIDATION_REGEX} ]]; then
-		echo "Valid domain/URL."
 		exit 0
 	else
-		echo "Invalid domain/URL."
+		echo "Invalid domain/website/url."
 		exit 1
 	fi
 }

@@ -1,57 +1,76 @@
 #!/bin/bash
 
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
 # Help menu
 function help_menu() {
-	echo -e "$(basename "$0") [OPTIONS]"
-	echo -e "Search for domain information."
-	echo -e "Options:"
-	echo -e "  -d, --domain DOMAIN   Specify the domain target"
-	echo -e "  -o, --output DIR      (Optional) Specify the output directory (default: osint/)"
-	echo -e "  -h, --help            Display this help menu"
-	exit 1
+    echo -e "$(basename "$0") [OPTIONS]"
+    echo -e "Search for domain information."
+    echo -e "Options:"
+    echo -e "  -d, --domain DOMAIN   Specify the domain target"
+    echo -e "  -o, --output DIR      (Optional) Specify the output directory (default: osint/)"
+    echo -e "  --deep                (Optional) Run deep analysis with amass"
+    echo -e "  -h, --help            Display this help menu"
+    exit 1
 }
 
 # Main function to gather domain info
 function domain_info_func() {
-	echo "[*] Searching domain info (whois, registrant name/email domains)"
+    echo "[*] Searching domain info (whois, registrant name/email domains)"
 
-	# Domain General Info
-	whois -H "${DOMAIN}" >"${output_dir}/domain_info_general.txt" || {
-		echo "whois command failed"
-		exit 1
-	}
+    # Domain General Info
+    whois -H "${DOMAIN}" > ${output_dir}/domain_info_general.txt || {
+        printf "${bred} whois command failed${reset}\n"
+    }
 
-	# Reverse Whois (if DEEP or REVERSE_WHOIS is true)
-	timeout -k 1m "${AMASS_INTEL_TIMEOUT}"m amass intel -d "${domain}" -whois -timeout "${AMASS_INTEL_TIMEOUT}" -o "${output_dir}/domain_info_reverse_whois.txt" 2>>"${LOGFILE}" >>/dev/null
+    # Reverse Whois (if DEEP is true)
+    if [[ ${DEEP} == true ]]; then
+        timeout -k 1m "${AMASS_INTEL_TIMEOUT}"m amass intel -d "${DOMAIN}" -whois -timeout "${AMASS_INTEL_TIMEOUT}" -o "${output_dir}/domain_info_reverse_whois.txt" || {
+            printf "${bred} amass intel command failed${reset}\n"
+        }
+    fi
 
-	# Azure Tenant Domains
-	curl -s "https://aadinternals.azurewebsites.net/api/tenantinfo?domainName=${domain}" -H "Origin: https://aadinternals.com" | jq -r .domains[].name >"${output_dir}/azure_tenant_domains.txt"
+    # Azure Tenant Domains
+    curl -s "https://aadinternals.azurewebsites.net/api/tenantinfo?domainName=${DOMAIN}" -H "Origin: https://aadinternals.com" | jq -r .domains[].name >"${output_dir}/azure_tenant_domains.txt"
 
-	echo "[+] Results are saved in ${output_dir}/domain_info_[general/name/email/ip].txt"
+    echo "[+] Results are saved in ${output_dir}/domain_info_[general/name/email/ip].txt"
 }
 
 # Default values
-domain=""
-output_dir="osint"
+DOMAIN=""
+output_dir=""
+DEEP=false
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
-	case $1 in
-	-d | --domain)
-		domain="$2"
-		shift
-		;;
-	-o | --output)
-		output_dir="$2"
-		shift
-		;;
-	-h | --help) help_menu ;;
-	*)
-		echo -e "${bred}Unknown parameter passed: $1${reset}" >&2
-		help_menu
-		;;
-	esac
-	shift
+    case $1 in
+    -d | --domain)
+        DOMAIN="$2"
+        shift
+        ;;
+    -o | --output)
+        output_dir="$2"
+        shift
+        ;;
+    --deep)
+        DEEP=true
+        ;;
+    -h | --help) help_menu ;;
+    *)
+        echo -e "${bred}Unknown parameter passed: $1${reset}" >&2
+        help_menu
+        ;;
+    esac
+    shift
 done
 
 # Validate the domain using the utility script
@@ -59,9 +78,9 @@ rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 # Validate inputs
 if [[ -z ${DOMAIN} ]]; then
-	echo -e "${bred}Error: Missing required parameters.${reset}" >&2
-	help_menu
-	exit 1
+    echo -e "${bred}Error: Missing required parameters.${reset}" >&2
+    help_menu
+    exit 1
 fi
 
 # Execute the main function

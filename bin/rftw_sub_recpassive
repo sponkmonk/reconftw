@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Load the configuration
-CONFIG_FILE="reconftw.cfg"
-if [[ -f $CONFIG_FILE ]]; then
-	source "$CONFIG_FILE"
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Configuration file '$CONFIG_FILE' not found. Exiting."
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 # Helper function to display usage/help menu
@@ -22,11 +24,11 @@ usage() {
 }
 
 # Input validation and parsing
-domain=""
+DOMAIN=""
 while [[ $# -gt 0 ]]; do
 	case $1 in
 	-d | --domain)
-		domain="$2"
+		DOMAIN="$2"
 		shift
 		;;
 	-h | --help) usage ;;
@@ -59,7 +61,7 @@ sub_recursive_passive() {
 			[[ -s ".tmp/passive_recursive.txt" ]] && axiom-scan .tmp/passive_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/passive_recurs_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
 		fi
 		[[ ${INSCOPE} == true ]] && check_inscope .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" >/dev/null
-		NUMOFLINES=$(cat .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" | grep "\.$domain$\|^$domain$" | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
+		NUMOFLINES=$(cat .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
 		end_subfunc "${NUMOFLINES} new subs (recursive)" ${FUNCNAME[0]}
 	else
 		if [[ "$SUB_RECURSIVE_PASSIVE" = false ]]; then

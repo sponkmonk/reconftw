@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
 # Help menu
 display_help() {
 	echo "$(basename "$0") [Options]"
@@ -17,7 +28,7 @@ display_help() {
 while [[ $# -gt 0 ]]; do
 	case $1 in
 	-d | --domain)
-		domain="$2"
+		DOMAIN="$2"
 		shift
 		;;
 	-i | --inscope) INSCOPE=true ;;
@@ -52,7 +63,7 @@ fi
 rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 mkdir -p .tmp 2>/dev/null
-if [[ $(echo "${RANDOM}thistotallynotexist${RANDOM}.${domain}" | dnsx -r $resolvers -rcode noerror,nxdomain -retry 3 -silent | cut -d' ' -f2) == "[NXDOMAIN]" ]]; then
+if [[ $(echo "${RANDOM}thistotallynotexist${RANDOM}.${DOMAIN}" | dnsx -r $resolvers -rcode noerror,nxdomain -retry 3 -silent | cut -d' ' -f2) == "[NXDOMAIN]" ]]; then
 	if [[ $DEEP == true ]]; then
 		dnsx -d "${DOMAIN}" -r $resolvers -silent -rcode noerror -w $subs_wordlist_big | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>>"${LOGFILE}" >/dev/null
 	else

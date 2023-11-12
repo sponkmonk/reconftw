@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 # Display help information
@@ -45,7 +47,7 @@ function sendToNotify() {
 		if grep -q -E "^(    )?${provider}" "${NOTIFY_CONFIG}"; then
 			case $provider in
 			telegram)
-				notification "Sending ${domain} data over Telegram" info
+				notification "Sending ${DOMAIN} data over Telegram" info
 				config_value=$(grep -E "^(    )?telegram_(chat_id|api_key)" "${NOTIFY_CONFIG}" | xargs)
 				telegram_chat_id=$(echo "$config_value" | cut -d' ' -f2)
 				telegram_key=$(echo "$config_value" | cut -d' ' -f4)
@@ -53,14 +55,14 @@ function sendToNotify() {
 				;;
 
 			discord)
-				notification "Sending ${domain} data over Discord" info
+				notification "Sending ${DOMAIN} data over Discord" info
 				discord_url=$(grep -E "^(    )?discord_webhook_url" "${NOTIFY_CONFIG}" | xargs | cut -d' ' -f2)
 				curl -v -i -H "Accept: application/json" -H "Content-Type: multipart/form-data" -X POST -F file1=@"$file" "$discord_url" 2>>"${LOGFILE}" >/dev/null
 				;;
 
 			slack)
 				if [[ -n $slack_channel ]] && [[ -n $slack_auth ]]; then
-					notification "Sending ${domain} data over Slack" info
+					notification "Sending ${DOMAIN} data over Slack" info
 					curl -F file=@"$file" -F "initial_comment=reconftw zip file" -F channels="$slack_channel" -H "Authorization: Bearer ${slack_auth}" https://slack.com/api/files.upload 2>>"${LOGFILE}" >/dev/null
 				fi
 				;;

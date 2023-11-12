@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-    source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found!"
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
 
@@ -45,7 +47,7 @@ run_s3buckets() {
         [[ -s ".tmp/s3buckets_tmp.txt" ]] && cat .tmp/s3buckets_tmp.txt .tmp/s3buckets_tmp2.txt 2>>"${LOGFILE}" | anew -q .tmp/s3buckets.txt && sed -i '/^$/d' .tmp/s3buckets.txt
     fi
     # Cloudenum
-    keyword=${domain%%.*}
+    keyword=${DOMAIN%%.*}
     python3 ~/Tools/cloud_enum/cloud_enum.py -k $keyword -qs -l .tmp/output_cloud.txt 2>>"${LOGFILE}" >/dev/null
 
     NUMOFLINES1=$(cat .tmp/output_cloud.txt 2>>"${LOGFILE}" | sed '/^#/d' | sed '/^$/d' | anew subdomains/cloud_assets.txt | wc -l)
@@ -63,7 +65,7 @@ run_s3buckets() {
 
 # Main
 FORCE_EXECUTION=false
-domain="$1"
+DOMAIN="$1"
 
 shift
 while [[ "$#" -gt 0 ]]; do

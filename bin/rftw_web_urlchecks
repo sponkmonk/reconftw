@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 # Help menu function
@@ -84,11 +87,11 @@ urlchecks() {
 		fi
 		[[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
 		[[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | anew -q .tmp/url_extract_tmp.txt
-		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${domain}" | grep -aEi "\.(js)" | anew -q .tmp/url_extract_js.txt
+		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${DOMAIN}" | grep -aEi "\.(js)" | anew -q .tmp/url_extract_js.txt
 		if [[ $DEEP == true ]]; then
 			[[ -s ".tmp/url_extract_js.txt" ]] && interlace -tL .tmp/url_extract_js.txt -threads 10 -c "python3"${tools}"/JSA/jsa.py -f target | anew -q .tmp/url_extract_tmp.txt" &>/dev/null
 		fi
-		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${domain}" | grep "=" | qsreplace -a 2>>"${LOGFILE}" | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | anew -q .tmp/url_extract_tmp2.txt
+		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${DOMAIN}" | grep "=" | qsreplace -a 2>>"${LOGFILE}" | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | anew -q .tmp/url_extract_tmp2.txt
 		[[ -s ".tmp/url_extract_tmp2.txt" ]] && cat .tmp/url_extract_tmp2.txt | python3"${tools}"/urless/urless/urless.py | anew -q .tmp/url_extract_uddup.txt 2>>"${LOGFILE}" >/dev/null
 	fi
 
@@ -98,7 +101,7 @@ urlchecks() {
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 	-d | --domain)
-		domain="$2"
+		DOMAIN="$2"
 		shift 2
 		;;
 	-h | --help)

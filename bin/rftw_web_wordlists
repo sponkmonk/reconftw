@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 # Help menu
@@ -59,7 +61,7 @@ wordlist_gen() {
 	fi
 	[[ -s ".tmp/js_endpoints.txt" ]] && cat .tmp/js_endpoints.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
 	[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
-	end_func "Results are saved in${domain}//webs/dict_[words|paths].txt" ${FUNCNAME[0]}
+	end_func "Results are saved in ${DOMAIN}/webs/dict_[words|paths].txt" ${FUNCNAME[0]}
 	if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/all_paths.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
 		notification "Sending urls to proxy" info
 		ffuf -mc all -w webs/all_paths.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null

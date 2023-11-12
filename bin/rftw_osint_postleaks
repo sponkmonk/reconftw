@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
 # Help menu
 function help_menu() {
     echo -e "$(basename "$0") [OPTIONS]"

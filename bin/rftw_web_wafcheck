@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 # Help function
@@ -63,6 +66,6 @@ if [[ -s ".tmp/webs_all.txt" ]]; then
 		sed -e 's/^[ \t]*//' -e 's/ \+ /\t/g' -e '/(None)/d' .tmp/wafs.txt | tr -s "\t" ";" >webs/webs_wafs.txt
 		NUMOFLINES=$(sed '/^$/d' webs/webs_wafs.txt 2>>"${LOGFILE}" | wc -l)
 		notification "${NUMOFLINES} websites protected by waf" info
-		end_func "Results are saved in${domain}//webs/webs_wafs.txt" "waf_checks"
+		end_func "Results are saved in ${DOMAIN}/webs/webs_wafs.txt" "waf_checks"
 	fi
 fi

@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
 # Function to display help menu
 help_menu() {
 	echo "$(basename "$0") [OPTIONS]"
@@ -24,7 +35,7 @@ validate_domain() {
 while [[ $# -gt 0 ]]; do
 	case $1 in
 	-d | --domain)
-		domain="$2"
+		DOMAIN="$2"
 		shift
 		;;
 	-f | --input-file)
@@ -77,13 +88,13 @@ notification() {
 
 # Main function to gather subdomain info
 subdomains_full_func() {
-	echo "Starting subdomain enumeration for${domain}/"
+	echo "Starting subdomain enumeration for${DOMAIN}/"
 
 	NUMOFLINES_subs="0"
 	NUMOFLINES_probed="0"
 	printf "${bgreen}#######################################################################\n\n"
-	! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Subdomain Enumeration${domain}/\n\n"
-	[[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Scanning IP${domain}/\n\n"
+	! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Subdomain Enumeration${DOMAIN}/\n\n"
+	[[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Scanning IP${DOMAIN}/\n\n"
 	[[ -s "subdomains/subdomains.txt" ]] && cp subdomains/subdomains.txt .tmp/subdomains_old.txt
 	[[ -s "webs/webs.txt" ]] && cp webs/webs.txt .tmp/probed_old.txt
 
@@ -132,7 +143,7 @@ subdomains_full_func() {
 	notification "- ${NUMOFLINES_probed} new web probed" good
 	[[ -s "webs/webs.txt" ]] && cat webs/webs.txt | sort
 	notification "Subdomain Enumeration Finished" good
-	printf "${bblue} Results are saved in${domain}//subdomains/subdomains.txt and webs/webs.txt${reset}\n"
+	printf "${bblue} Results are saved in${DOMAIN}/subdomains/subdomains.txt and webs/webs.txt${reset}\n"
 	printf "${bgreen}#######################################################################\n\n"
 }
 

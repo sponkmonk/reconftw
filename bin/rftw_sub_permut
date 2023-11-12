@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Configuration file loading
-CONFIG_FILE="reconftw.cfg"
-if [[ -f ${CONFIG_FILE} ]]; then
-	source "${CONFIG_FILE}"
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Configuration file '${CONFIG_FILE}' not found. Exiting."
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 # Helper function to display usage/help menu

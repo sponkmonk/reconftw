@@ -1,18 +1,15 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
-else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
-fi
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
 
-# Colors for console output
-yellow="\033[1;33m"
-red="\033[1;31m"
-reset="\033[0m"
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
 
 # Help menu function
 function display_help() {
@@ -35,9 +32,9 @@ function validate_args() {
 
 # Main zipping and sending function
 function zip_send_output_folder() {
-	local domain="$1"
+	local DOMAIN="$1"
 	local zip_name1=$(date +"%Y_%m_%d-%H.%M.%S")
-	local zip_name="${zip_name1}_${domain}.zip"
+	local zip_name="${zip_name1}_${DOMAIN}.zip"
 	(cd "${dir}" && zip -r "${zip_name}" .)
 
 	echo "Creating and sending zip file "${dir}/${zip_name}""

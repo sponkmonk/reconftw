@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-    source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found!"
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
 
@@ -32,7 +34,7 @@ function process_ip_cidr() {
             [[ "${REVERSE_IP}" = true ]] && cat ./target_reconftw_ipcidr.txt | hakip2host | cut -d' ' -f 3 | unfurl -u domains 2>/dev/null | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | anew -q ./target_reconftw_ipcidr.txt
 
             if [[ $(cat ./target_reconftw_ipcidr.txt | wc -l) -eq 1 ]]; then
-                domain=$(cat ./target_reconftw_ipcidr.txt)
+                DOMAIN=$(cat ./target_reconftw_ipcidr.txt)
             elif [[ $(cat ./target_reconftw_ipcidr.txt | wc -l) -gt 1 ]]; then
                 unset domain
                 list=${PWD}/target_reconftw_ipcidr.txt

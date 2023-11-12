@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 help_menu() {
@@ -41,14 +43,14 @@ run_zonetransfer() {
 		dig axfr "${DOMAIN}" @"$ns" >>subdomains/zonetransfer.txt
 	done
 	if [[ -s "subdomains/zonetransfer.txt" ]] && ! grep -q "Transfer failed" subdomains/zonetransfer.txt; then
-		notification "Zone transfer found on ${domain}!" info
+		notification "Zone transfer found on ${DOMAIN}!" info
 	fi
-	end_func "Results are saved in${domain}//subdomains/zonetransfer.txt" "zonetransfer"
+	end_func "Results are saved in${DOMAIN}/subdomains/zonetransfer.txt" "zonetransfer"
 }
 
 # Main
 FORCE_EXECUTION=false
-domain="$1"
+DOMAIN="$1"
 
 shift
 while [[ $# -gt 0 ]]; do

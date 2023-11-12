@@ -13,9 +13,8 @@ fi
 
 # Help menu
 function help_menu() {
-    echo -e "Usage: ./tools_installed_script.sh [OPTIONS]"
+    echo -e "Usage: ./rftw_util_tools.sh [OPTIONS]"
     echo -e "Options:"
-    echo -e "  -t, --tools-dir DIRECTORY  Specify the tools directory path"
     echo -e "  -h, --help                 Display this help menu"
     exit 1
 }
@@ -119,24 +118,6 @@ function tools_installed() {
 	printf "${bgreen}#######################################################################\n${reset}"
 
 }
-
-# Parse command-line arguments
-tools_dir=""
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -t|--tools-dir) tools_dir="$2"; shift ;;
-        -h|--help) help_menu ;;
-        *) echo -e "${bred}Unknown parameter passed: $1${reset}" >&2; help_menu ;;
-    esac
-    shift
-done
-
-# Validate tools directory
-if [[ -z "${tools_dir}" ]]; then
-    echo -e "${bred}Error: Tools directory not specified.${reset}" >&2
-    help_menu
-    exit 1
-fi
 
 # Execute the main function
 tools_installed

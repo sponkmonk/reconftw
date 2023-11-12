@@ -32,21 +32,21 @@ function banner() {
 
 rftw_util_version
 
-rftw_util_tools -t $tools
-
 ###############################################################################################################
 ################################################### OSINT #####################################################
 ###############################################################################################################
 
 function google_dorks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$GOOGLE_DORKS" = true ]] && [[ "$OSINT" = true ]]; then
-        rftw_osint_googledorks -d "${DOMAIN}" -o osint/dorks.txt || {
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $GOOGLE_DORKS == true ]] && [[ $OSINT == true ]]; then
+        start_func "${FUNCNAME[0]}" "Searching interesting Google Dorks"
+        spinny::start
+        rftw_osint_googledorks -d "${DOMAIN}" -o ${dir}/osint/dorks.txt || {
             echo "rftw_osint_googledorks command failed"
             exit 1
         } 2>>"${LOGFILE}" >/dev/null 2>&1
-        end_func "Results are saved in${domain}//osint/dorks.txt" "${FUNCNAME[0]}"
+        end_func "Results are saved in ${DOMAIN}/osint/dorks.txt" "${FUNCNAME[0]}"
     else
-        if [[ "$GOOGLE_DORKS" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $GOOGLE_DORKS == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} are already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -55,14 +55,17 @@ function google_dorks() {
 }
 
 function github_dorks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$GITHUB_DORKS" = true ]] && [[ "$OSINT" = true ]]; then
-        rftw_osint_ghdorks -d "${DOMAIN}" -g "$path_to_github_tokens" -o "path_to_output_file" || {
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $GITHUB_DORKS == true ]] && [[ $OSINT == true ]]; then
+        start_func "${FUNCNAME[0]}" "Searching interesting GitHub Dorks"
+        spinny::start
+        rftw_osint_ghdorks -d "${DOMAIN}" -g "${GITHUB_TOKENS}" -o "${dir}/osint/gh_dorks.txt" || {
             echo -e "${bred}Error: rftw_osint_ghdorks command failed.${reset}" >&2
             exit 1
         }
-        end_func "Results are saved in path_to_output_file" "${FUNCNAME[0]}"
+        spinny::stop
+        end_func "Results are saved in ${dir}/osint/gh_dorks.txt" "${FUNCNAME[0]}"
     else
-        if [[ "$GITHUB_DORKS" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $GITHUB_DORKS == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} are already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -71,15 +74,17 @@ function github_dorks() {
 }
 
 function github_repos() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$GITHUB_REPOS" = true ]] && [[ "$OSINT" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $GITHUB_REPOS == true ]] && [[ $OSINT == true ]]; then
         start_func "${FUNCNAME[0]}" "Github Repos analysis in process"
+        spinny::start
         rftw_osint_ghrepos -d "${DOMAIN}" -t "${GITHUB_TOKENS}" -o osint/ghrepos.txt || {
             echo "rftw_osint_ghrepos command failed"
             exit 1
         } 2>>"${LOGFILE}" >/dev/null 2>&1
-        end_func "Results are saved in${domain}//osint/ghrepos.txt" "${FUNCNAME[0]}"
+        spinny::stop
+        end_func "Results are saved in ${DOMAIN}/osint/ghrepos.txt" "${FUNCNAME[0]}"
     else
-        if [[ "$GITHUB_REPOS" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $GITHUB_REPOS == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -88,15 +93,17 @@ function github_repos() {
 }
 
 function metadata() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$METADATA" = true ]] && [[ "$OSINT" = true ]] && ! [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $METADATA == true ]] && [[ $OSINT == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func "${FUNCNAME[0]}" "Metadata analysis in process"
-        rftw_osint_metadata -d "${DOMAIN}" -o "osint/metadata.txt" || {
+        spinny::start
+        rftw_osint_metadata -d "${DOMAIN}" -o "${dir}/osint" || {
             echo -e "${bred}Error: rftw_osint_metadata command failed.${reset}" >&2
             exit 1
         }
-        end_func "Results are saved in${domain}//osint/metadata.txt" "${FUNCNAME[0]}"
+        spinny::stop
+        end_func "Results are saved in ${DOMAIN}/osint/metadata.txt" "${FUNCNAME[0]}"
     else
-        if [[ "$METADATA" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $METADATA == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed or input is an IP. To force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -105,15 +112,17 @@ function metadata() {
 }
 
 function postleaks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$POSTLEAKS" = true ]] && [[ "$OSINT" = true ]]; then
-        start_func "${FUNCNAME[0]}" "Post leaks in process"
-        rftw_osint_postleaks -d "${DOMAIN}" -o "osint/postleaks.txt" || {
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $POSTLEAKS == true ]] && [[ $OSINT == true ]]; then
+        start_func "${FUNCNAME[0]}" "Postleaks in process"
+        spinny::start
+        rftw_osint_postleaks -d "${DOMAIN}" -o "${dir}/osint/postleaks.txt" || {
             echo "rftw_osint_postleaks command failed"
             exit 1
         } 2>>"${LOGFILE}" >/dev/null 2>&1
-        end_func "Results are saved in${domain}//osint/postleaks.txt" "${FUNCNAME[0]}"
+        spinny::stop
+        end_func "Results are saved in ${DOMAIN}/osint/postleaks.txt" "${FUNCNAME[0]}"
     else
-        if [[ "$POSTLEAKS" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $POSTLEAKS == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -122,57 +131,70 @@ function postleaks() {
 }
 
 function emails() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$EMAILS" = true ]] && [[ "$OSINT" = true ]] && ! [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $EMAILS == true ]] && [[ $OSINT == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func "${FUNCNAME[0]}" "Emails search in process"
-        rftw_osint_emails -d "${DOMAIN}" -o "osint/emails.txt" || {
+        spinny::start
+        rftw_osint_emails -d "${DOMAIN}" -o "${dir}/osint/emails.txt" || {
             echo "rftw_osint_emails command failed"
             exit 1
         } 2>>"${LOGFILE}" >/dev/null 2>&1
-        end_func "Results are saved in${domain}//osint/emails.txt" "${FUNCNAME[0]}"
+        spinny::stop
+        end_func "Results are saved in ${DOMAIN}/osint/emails.txt" "${FUNCNAME[0]}"
     else
-        if [[ "$EMAILS" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $EMAILS == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
         fi
     fi
+    spinny::stop
 }
 
 function domain_info() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$DOMAIN_INFO" = true ]] && [[ "$OSINT" = true ]] && ! [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $DOMAIN_INFO == true ]] && [[ $OSINT == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func "${FUNCNAME[0]}" "Searching domain info (whois, registrant name/email domains)"
-        rftw_osint_whois -d "${DOMAIN}" -o "$domain/osint" || {
+        spinny::start
+        if [[ $DEEP == true ]]; then
+            rftw_osint_whois -d "${DOMAIN}" --deep -o "${dir}/osint" || {
             echo "rftw_osint_whois command failed"
             exit 1
-        } 2>>"${LOGFILE}" >/dev/null 2>&1
-        end_func "Results are saved in${domain}//osint/domain_info_[general/name/email/ip].txt" "${FUNCNAME[0]}"
+            } 2>>"${LOGFILE}" >/dev/null 2>&1
+        else
+            rftw_osint_whois -d "${DOMAIN}" -o "${dir}/osint" || {
+            echo "rftw_osint_whois command failed"
+            exit 1
+            } 2>>"${LOGFILE}" >/dev/null 2>&1
+        fi
+        spinny::stop
+        end_func "Results are saved in ${DOMAIN}/osint/domain_info_[general/name/email/ip].txt" "${FUNCNAME[0]}"
     else
-        if [[ "$DOMAIN_INFO" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $DOMAIN_INFO == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
         fi
     fi
+    spinny::stop
 }
 
 function ip_info() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$IP_INFO" = true ]] && [[ "$OSINT" = true ]] && [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $IP_INFO == true ]] && [[ $OSINT == true ]] && [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "Searching ip info"
-        if [[ -n "$WHOISXML_API" ]]; then
-            curl "https://reverse-ip.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ip=${domain}" 2>/dev/null | jq -r '.result[].name' 2>>"${LOGFILE}" | sed -e "s/$/ ${domain}/" | anew -q osint/ip_${domain}_relations.txt
-            curl "https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOISXML_API}&domainName=${domain}&outputFormat=json&da=2&registryRawText=1&registrarRawText=1&ignoreRawTexts=1" 2>/dev/null | jq 2>>"${LOGFILE}" | anew -q osint/ip_${domain}_whois.txt
-            curl "https://ip-geolocation.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ipAddress=${domain}" 2>/dev/null | jq -r '.ip,.location' 2>>"${LOGFILE}" | anew -q osint/ip_${domain}_location.txt
-            end_func "Results are saved in${domain}//osint/ip_[domain_relations|whois|location].txt" ${FUNCNAME[0]}
+        if [[ -n $WHOISXML_API ]]; then
+            curl "https://reverse-ip.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ip=${DOMAIN}" 2>/dev/null | jq -r '.result[].name' 2>>"${LOGFILE}" | sed -e "s/$/ ${DOMAIN}/" | anew -q osint/ip_${DOMAIN}_relations.txt
+            curl "https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOISXML_API}&domainName=${DOMAIN}&outputFormat=json&da=2&registryRawText=1&registrarRawText=1&ignoreRawTexts=1" 2>/dev/null | jq 2>>"${LOGFILE}" | anew -q osint/ip_${DOMAIN}_whois.txt
+            curl "https://ip-geolocation.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ipAddress=${DOMAIN}" 2>/dev/null | jq -r '.ip,.location' 2>>"${LOGFILE}" | anew -q osint/ip_${DOMAIN}_location.txt
+            end_func "Results are saved in ${DOMAIN}/osint/ip_[domain_relations|whois|location].txt" ${FUNCNAME[0]}
         else
             printf "\n${yellow} No WHOISXML_API var defined, skipping function ${reset}\n"
         fi
     else
-        if [[ "$IP_INFO" = false ]] || [[ "$OSINT" = false ]]; then
+        if [[ $IP_INFO == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-        elif [[ ! "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+        elif [[ ! ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
             return
         else
-            if [[ "$IP_INFO" = false ]] || [[ "$OSINT" = false ]]; then
+            if [[ $IP_INFO == false ]] || [[ $OSINT == false ]]; then
                 printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
             else
                 printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -187,7 +209,7 @@ function ip_info() {
 
 function subdomains_full() {
     rftw_sub_full -d "${DOMAIN}" || {
-        echo "Error: rftw_sub_full failed for${domain}/"
+        echo "Error: rftw_sub_full failed for${DOMAIN}/"
         exit 1
     }
 }
@@ -199,7 +221,7 @@ function sub_passive() {
         NUMOFLINES=$(find .tmp -type f -iname "*_psub.txt" -exec cat {} + | sed "s/*.//" | anew .tmp/passive_subs.txt | sed '/^$/d' | wc -l)
         end_subfunc "${NUMOFLINES} new subs (passive)" ${FUNCNAME[0]}
     else
-        if [[ "$SUBPASSIVE" = false ]]; then
+        if [[ $SUBPASSIVE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -208,13 +230,13 @@ function sub_passive() {
 }
 
 function sub_crt() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBCRT" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBCRT == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Crtsh Subdomain Enumeration"
         rftw_sub_crt -d "${DOMAIN}" -o "path_to_output_file"
         NUMOFLINES=$(cat .tmp/crtsh_subs_tmp.txt 2>>"${LOGFILE}" | sed 's/\*.//g' | anew .tmp/crtsh_subs.txt | sed '/^$/d' | wc -l)
         end_subfunc "${NUMOFLINES} new subs (cert transparency)" ${FUNCNAME[0]}
     else
-        if [[ "$SUBCRT" = false ]]; then
+        if [[ $SUBCRT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -223,12 +245,12 @@ function sub_crt() {
 }
 
 function sub_active() {
-    if [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; then
+    if [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Active Subdomain Enumeration"
         find .tmp -type f -iname "*_subs.txt" -exec cat {} + | anew -q .tmp/subs_no_resolved.txt
-        [[ -s "$outOfScope_file" ]] && deleteOutScoped $outOfScope_file .tmp/subs_no_resolved.txt
+        [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/subs_no_resolved.txt
         rftw_sub_active -d "${DOMAIN}" -f .tmp/subs_no_resolved.txt -o .tmp/subdomains_active_tmp.txt
-        NUMOFLINES=$(cat .tmp/subdomains_active_tmp.txt 2>>"${LOGFILE}" | grep "\.$domain$\|^$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        NUMOFLINES=$(cat .tmp/subdomains_active_tmp.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         end_subfunc "${NUMOFLINES} subs DNS resolved from passive" ${FUNCNAME[0]}
     else
         printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -236,14 +258,14 @@ function sub_active() {
 }
 
 function sub_noerror() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBNOERROR" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBNOERROR == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Checking NOERROR DNS response"
         resolvers_update_quick_local
         rftw_sub_noerror -d "${DOMAIN}" -o .tmp/subs_noerror_ok.txt
-        NUMOFLINES=$(cat .tmp/subs_noerror_ok.txt 2>>"${LOGFILE}" | sed "s/*.//" | grep ".$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        NUMOFLINES=$(cat .tmp/subs_noerror_ok.txt 2>>"${LOGFILE}" | sed "s/*.//" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         end_subfunc "${NUMOFLINES} new subs (DNS noerror)" ${FUNCNAME[0]}
     else
-        if [[ "$SUBBRUTE" = false ]]; then
+        if [[ $SUBBRUTE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -252,11 +274,11 @@ function sub_noerror() {
 }
 
 function sub_dns() {
-    if [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; then
+    if [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : DNS Subdomain Enumeration and PTR search"
         rftw_sub_dns -f subdomains/subdomains.txt -o .tmp/subdomains_dns_okresolved.txt
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/subdomains_dns_okresolved.txt 2>>"${LOGFILE}" >/dev/null
-        NUMOFLINES=$(cat .tmp/subdomains_dns_okresolved.txt 2>>"${LOGFILE}" | grep "\.$domain$\|^$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        NUMOFLINES=$(cat .tmp/subdomains_dns_okresolved.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         end_subfunc "${NUMOFLINES} new subs (dns resolution)" ${FUNCNAME[0]}
     else
         printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -264,11 +286,11 @@ function sub_dns() {
 }
 
 function sub_brute() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBBRUTE" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBBRUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Bruteforce Subdomain Enumeration"
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             resolvers_update_quick_local
-            if [[ "$DEEP" = true ]]; then
+            if [[ $DEEP == true ]]; then
                 puredns bruteforce $subs_wordlist_big "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
             else
                 puredns bruteforce $subs_wordlist "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
@@ -276,7 +298,7 @@ function sub_brute() {
             [[ -s ".tmp/subs_brute.txt" ]] && puredns resolve .tmp/subs_brute.txt -w .tmp/subs_brute_valid.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
         else
             resolvers_update_quick_axiom
-            if [[ "$DEEP" = true ]]; then
+            if [[ $DEEP == true ]]; then
                 axiom-scan $subs_wordlist_big -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
             else
                 axiom-scan $subs_wordlist -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -284,10 +306,10 @@ function sub_brute() {
             [[ -s ".tmp/subs_brute.txt" ]] && axiom-scan .tmp/subs_brute.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/subs_brute_valid.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
         fi
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/subs_brute_valid.txt 2>>"${LOGFILE}" >/dev/null
-        NUMOFLINES=$(cat .tmp/subs_brute_valid.txt 2>>"${LOGFILE}" | sed "s/*.//" | grep ".$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        NUMOFLINES=$(cat .tmp/subs_brute_valid.txt 2>>"${LOGFILE}" | sed "s/*.//" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         end_subfunc "${NUMOFLINES} new subs (bruteforce)" ${FUNCNAME[0]}
     else
-        if [[ "$SUBBRUTE" = false ]]; then
+        if [[ $SUBBRUTE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -296,19 +318,19 @@ function sub_brute() {
 }
 
 function sub_scraping() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBSCRAPING" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBSCRAPING == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Source code scraping subdomain search"
         touch .tmp/scrap_subs.txt
         if [[ -s ""${dir}"/subdomains/subdomains.txt" ]]; then
-            if [[ $(cat subdomains/subdomains.txt | wc -l) -le $DEEP_LIMIT ]] || [[ "$DEEP" = true ]]; then
-                if [[ ! ${AXIOM} = true ]]; then
+            if [[ $(cat subdomains/subdomains.txt | wc -l) -le $DEEP_LIMIT ]] || [[ $DEEP == true ]]; then
+                if [[ ! ${AXIOM} == true ]]; then
                     resolvers_update_quick_local
                     cat subdomains/subdomains.txt | httpx -follow-host-redirects -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info1.txt 2>>"${LOGFILE}" >/dev/null
                     [[ -s ".tmp/web_full_info1.txt" ]] && cat .tmp/web_full_info1.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
                     [[ -s ".tmp/probed_tmp_scrap.txt" ]] && cat .tmp/probed_tmp_scrap.txt | httpx -tls-grab -tls-probe -csp-probe -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info2.txt 2>>"${LOGFILE}" >/dev/null
                     [[ -s ".tmp/web_full_info2.txt" ]] && cat .tmp/web_full_info2.txt | jq -r 'try ."tls-grab"."dns_names"[],try .csp.domains[],try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | sort -u | httpx -silent | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
 
-                    if [[ "$DEEP" = true ]]; then
+                    if [[ $DEEP == true ]]; then
                         [[ -s ".tmp/probed_tmp_scrap.txt" ]] && katana -silent -list .tmp/probed_tmp_scrap.txt -jc -kf all -c $KATANA_THREADS -d 3 -fs rdn -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
                     else
                         [[ -s ".tmp/probed_tmp_scrap.txt" ]] && katana -silent -list .tmp/probed_tmp_scrap.txt -jc -kf all -c $KATANA_THREADS -d 2 -fs rdn -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
@@ -319,19 +341,19 @@ function sub_scraping() {
                     [[ -s ".tmp/web_full_info1.txt" ]] && cat .tmp/web_full_info1.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
                     [[ -s ".tmp/probed_tmp_scrap.txt" ]] && axiom-scan .tmp/probed_tmp_scrap.txt -m httpx -tls-grab -tls-probe -csp-probe -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info2.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                     [[ -s ".tmp/web_full_info2.txt" ]] && cat .tmp/web_full_info2.txt | jq -r 'try ."tls-grab"."dns_names"[],try .csp.domains[],try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | sort -u | httpx -silent | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
-                    if [[ "$DEEP" = true ]]; then
+                    if [[ $DEEP == true ]]; then
                         [[ -s ".tmp/probed_tmp_scrap.txt" ]] && axiom-scan .tmp/probed_tmp_scrap.txt -m katana -jc -kf all -d 3 -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                     else
                         [[ -s ".tmp/probed_tmp_scrap.txt" ]] && axiom-scan .tmp/probed_tmp_scrap.txt -m katana -jc -kf all -d 2 -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                     fi
                 fi
                 sed -i '/^.\{2048\}./d' .tmp/katana.txt
-                [[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | unfurl -u domains 2>>"${LOGFILE}" | grep ".$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew -q .tmp/scrap_subs.txt
+                [[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | unfurl -u domains 2>>"${LOGFILE}" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew -q .tmp/scrap_subs.txt
                 [[ -s ".tmp/scrap_subs.txt" ]] && puredns resolve .tmp/scrap_subs.txt -w .tmp/scrap_subs_resolved.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-                if [[ "${INSCOPE}" = true ]]; then
+                if [[ ${INSCOPE} == true ]]; then
                     check_inscope .tmp/scrap_subs_resolved.txt 2>>"${LOGFILE}" >/dev/null
                 fi
-                NUMOFLINES=$(cat .tmp/scrap_subs_resolved.txt 2>>"${LOGFILE}" | grep "\.$domain$\|^$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | tee .tmp/diff_scrap.txt | sed '/^$/d' | wc -l)
+                NUMOFLINES=$(cat .tmp/scrap_subs_resolved.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | tee .tmp/diff_scrap.txt | sed '/^$/d' | wc -l)
                 [[ -s ".tmp/diff_scrap.txt" ]] && cat .tmp/diff_scrap.txt | httpx -follow-host-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info3.txt 2>>"${LOGFILE}" >/dev/null
                 [[ -s ".tmp/web_full_info3.txt" ]] && cat .tmp/web_full_info3.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
                 cat .tmp/web_full_info1.txt .tmp/web_full_info2.txt .tmp/web_full_info3.txt 2>>"${LOGFILE}" | jq -s 'try .' | jq 'try unique_by(.input)' | jq 'try .[]' 2>>"${LOGFILE}" >.tmp/web_full_info.txt
@@ -343,7 +365,7 @@ function sub_scraping() {
             end_subfunc "No subdomains to search (code scraping)" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$SUBSCRAPING" = false ]]; then
+        if [[ $SUBSCRAPING == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -352,14 +374,14 @@ function sub_scraping() {
 }
 
 function sub_analytics() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBANALYTICS" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBANALYTICS == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Analytics Subdomain Enumeration"
         if [[ -s ".tmp/probed_tmp_scrap.txt" ]]; then
             mkdir -p .tmp/output_analytics/
             analyticsrelationships -ch <.tmp/probed_tmp_scrap.txt >>.tmp/analytics_subs_tmp.txt 2>>"${LOGFILE}"
 
-            [[ -s ".tmp/analytics_subs_tmp.txt" ]] && cat .tmp/analytics_subs_tmp.txt | grep "\.$domain$\|^$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/|__ //" | anew -q .tmp/analytics_subs_clean.txt
-            if [[ ! ${AXIOM} = true ]]; then
+            [[ -s ".tmp/analytics_subs_tmp.txt" ]] && cat .tmp/analytics_subs_tmp.txt | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/|__ //" | anew -q .tmp/analytics_subs_clean.txt
+            if [[ ! ${AXIOM} == true ]]; then
                 resolvers_update_quick_local
                 [[ -s ".tmp/analytics_subs_clean.txt" ]] && puredns resolve .tmp/analytics_subs_clean.txt -w .tmp/analytics_subs_resolved.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
             else
@@ -371,7 +393,7 @@ function sub_analytics() {
         NUMOFLINES=$(cat .tmp/analytics_subs_resolved.txt 2>>"${LOGFILE}" | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         end_subfunc "${NUMOFLINES} new subs (analytics relationship)" ${FUNCNAME[0]}
     else
-        if [[ "$SUBANALYTICS" = false ]]; then
+        if [[ $SUBANALYTICS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -380,16 +402,16 @@ function sub_analytics() {
 }
 
 function sub_permut() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBPERMUTE" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBPERMUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Permutations Subdomain Enumeration"
-        if [[ "$DEEP" = true ]] || [[ "$(cat subdomains/subdomains.txt | wc -l)" -le $DEEP_LIMIT ]]; then
-            if [[ "$PERMUTATIONS_OPTION" = "gotator" ]]; then
+        if [[ $DEEP == true ]] || [[ "$(cat subdomains/subdomains.txt | wc -l)" -le $DEEP_LIMIT ]]; then
+            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
                 [[ -s "subdomains/subdomains.txt" ]] && gotator -sub subdomains/subdomains.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
             else
                 [[ -s "subdomains/subdomains.txt" ]] && ripgen -d subdomains/subdomains.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
             fi
         elif [[ "$(cat .tmp/subs_no_resolved.txt | wc -l)" -le $DEEP_LIMIT2 ]]; then
-            if [[ "$PERMUTATIONS_OPTION" = "gotator" ]]; then
+            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
                 [[ -s ".tmp/subs_no_resolved.txt" ]] && gotator -sub .tmp/subs_no_resolved.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
             else
                 [[ -s ".tmp/subs_no_resolved.txt" ]] && ripgen -d .tmp/subs_no_resolved.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
@@ -398,7 +420,7 @@ function sub_permut() {
             end_subfunc "Skipping Permutations: Too Many Subdomains" ${FUNCNAME[0]}
             return 1
         fi
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             resolvers_update_quick_local
             [[ -s ".tmp/gotator1.txt" ]] && puredns resolve .tmp/gotator1.txt -w .tmp/permute1.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
         else
@@ -406,13 +428,13 @@ function sub_permut() {
             [[ -s ".tmp/gotator1.txt" ]] && axiom-scan .tmp/gotator1.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute1.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
         fi
 
-        if [[ "$PERMUTATIONS_OPTION" = "gotator" ]]; then
+        if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
             [[ -s ".tmp/permute1.txt" ]] && gotator -sub .tmp/permute1.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2.txt
         else
             [[ -s ".tmp/permute1.txt" ]] && ripgen -d .tmp/permute1.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2.txt
         fi
 
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             [[ -s ".tmp/gotator2.txt" ]] && puredns resolve .tmp/gotator2.txt -w .tmp/permute2.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
         else
             [[ -s ".tmp/gotator2.txt" ]] && axiom-scan .tmp/gotator2.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute2.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -420,15 +442,15 @@ function sub_permut() {
         cat .tmp/permute1.txt .tmp/permute2.txt 2>>"${LOGFILE}" | anew -q .tmp/permute_subs.txt
 
         if [[ -s ".tmp/permute_subs.txt" ]]; then
-            [[ -s "$outOfScope_file" ]] && deleteOutScoped $outOfScope_file .tmp/permute_subs.txt
+            [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/permute_subs.txt
             [[ ${INSCOPE} == true ]] && check_inscope .tmp/permute_subs.txt 2>>"${LOGFILE}" >/dev/null
-            NUMOFLINES=$(cat .tmp/permute_subs.txt 2>>"${LOGFILE}" | grep ".$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+            NUMOFLINES=$(cat .tmp/permute_subs.txt 2>>"${LOGFILE}" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         else
             NUMOFLINES=0
         fi
         end_subfunc "${NUMOFLINES} new subs (permutations)" ${FUNCNAME[0]}
     else
-        if [[ "$SUBPERMUTE" = false ]]; then
+        if [[ $SUBPERMUTE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -437,36 +459,36 @@ function sub_permut() {
 }
 
 function sub_regex_permut() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBREGEXPERMUTE" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBREGEXPERMUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Permutations by regex analysis"
         pushd "${tools}/regulator" &>/dev/null || {
             echo "Failed to cd to regulator"
             exit 1
         }
-        python3 main.py -t "${DOMAIN}" -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/${domain}.brute
+        python3 main.py -t "${DOMAIN}" -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/${DOMAIN}.brute
         popd &>/dev/null || {
             echo "Failed to cd back"
             exit 1
         }
 
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             resolvers_update_quick_local
-            [[ -s ".tmp/${domain}.brute" ]] && puredns resolve .tmp/${domain}.brute -w .tmp/regulator.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
+            [[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w .tmp/regulator.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
         else
             resolvers_update_quick_axiom
-            [[ -s ".tmp/${domain}.brute" ]] && axiom-scan .tmp/${domain}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/regulator.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+            [[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/regulator.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
         fi
 
         if [[ -s ".tmp/regulator.txt" ]]; then
-            [[ -s "$outOfScope_file" ]] && deleteOutScoped $outOfScope_file .tmp/regulator.txt
+            [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/regulator.txt
             [[ ${INSCOPE} == true ]] && check_inscope .tmp/regulator.txt 2>>"${LOGFILE}" >/dev/null
-            NUMOFLINES=$(cat .tmp/regulator.txt 2>>"${LOGFILE}" | grep ".$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+            NUMOFLINES=$(cat .tmp/regulator.txt 2>>"${LOGFILE}" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         else
             NUMOFLINES=0
         fi
         end_subfunc "${NUMOFLINES} new subs (permutations by regex)" ${FUNCNAME[0]}
     else
-        if [[ "$SUBREGEXPERMUTE" = false ]]; then
+        if [[ $SUBREGEXPERMUTE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -475,11 +497,11 @@ function sub_regex_permut() {
 }
 
 function sub_recursive_passive() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUB_RECURSIVE_PASSIVE" = true ]] && [[ -s "subdomains/subdomains.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUB_RECURSIVE_PASSIVE == true ]] && [[ -s "subdomains/subdomains.txt" ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Subdomains recursive search passive"
         # Passive recursive
         [[ -s "subdomains/subdomains.txt" ]] && dsieve -if subdomains/subdomains.txt -f 3 -top $DEEP_RECURSIVE_PASSIVE >.tmp/subdomains_recurs_top.txt
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             resolvers_update_quick_local
             [[ -s ".tmp/subdomains_recurs_top.txt" ]] && timeout -k 1m ${AMASS_ENUM_TIMEOUT}m amass enum -passive -df .tmp/subdomains_recurs_top.txt -nf subdomains/subdomains.txt -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT 2>>"${LOGFILE}" | anew -q .tmp/passive_recursive.txt
             [[ -s ".tmp/passive_recursive.txt" ]] && puredns resolve .tmp/passive_recursive.txt -w .tmp/passive_recurs_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
@@ -490,10 +512,10 @@ function sub_recursive_passive() {
             [[ -s ".tmp/passive_recursive.txt" ]] && axiom-scan .tmp/passive_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/passive_recurs_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
         fi
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" >/dev/null
-        NUMOFLINES=$(cat .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" | grep "\.$domain$\|^$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
+        NUMOFLINES=$(cat .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
         end_subfunc "${NUMOFLINES} new subs (recursive)" ${FUNCNAME[0]}
     else
-        if [[ "$SUB_RECURSIVE_PASSIVE" = false ]]; then
+        if [[ $SUB_RECURSIVE_PASSIVE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -502,39 +524,39 @@ function sub_recursive_passive() {
 }
 
 function sub_recursive_brute() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUB_RECURSIVE_BRUTE" = true ]] && [[ -s "subdomains/subdomains.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUB_RECURSIVE_BRUTE == true ]] && [[ -s "subdomains/subdomains.txt" ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Subdomains recursive search active"
         if [[ $(cat subdomains/subdomains.txt | wc -l) -le $DEEP_LIMIT ]]; then
             [[ ! -s ".tmp/subdomains_recurs_top.txt" ]] && dsieve -if subdomains/subdomains.txt -f 3 -top $DEEP_RECURSIVE_PASSIVE >.tmp/subdomains_recurs_top.txt
             ripgen -d .tmp/subdomains_recurs_top.txt -w $subs_wordlist >.tmp/brute_recursive_wordlist.txt
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 resolvers_update_quick_local
-                [[ -s ".tmp/brute_recursive_wordlist.txt" ]] && puredns resolve .tmp/brute_recursive_wordlist.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null -w .tmp/brute_recursive_result.txt 2>>"${LOGFILE}" >/dev/null
+                [[ -s ".tmp/brute_recursive_wordlist.txt" ]] && puredns resolve .tmp/brute_recursive_wordlist.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -w .tmp/brute_recursive_result.txt 2>>"${LOGFILE}" >/dev/null
             else
                 resolvers_update_quick_axiom
                 [[ -s ".tmp/brute_recursive_wordlist.txt" ]] && axiom-scan .tmp/brute_recursive_wordlist.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/brute_recursive_result.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
             fi
             [[ -s ".tmp/brute_recursive_result.txt" ]] && cat .tmp/brute_recursive_result.txt | anew -q .tmp/brute_recursive.txt
 
-            if [[ "$PERMUTATIONS_OPTION" = "gotator" ]]; then
+            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
                 [[ -s ".tmp/brute_recursive.txt" ]] && gotator -sub .tmp/brute_recursive.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1_recursive.txt
             else
                 [[ -s ".tmp/brute_recursive.txt" ]] && ripgen -d .tmp/brute_recursive.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1_recursive.txt
             fi
 
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 [[ -s ".tmp/gotator1_recursive.txt" ]] && puredns resolve .tmp/gotator1_recursive.txt -w .tmp/permute1_recursive.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
             else
                 [[ -s ".tmp/gotator1_recursive.txt" ]] && axiom-scan .tmp/gotator1_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute1_recursive.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
             fi
 
-            if [[ "$PERMUTATIONS_OPTION" = "gotator" ]]; then
+            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
                 [[ -s ".tmp/permute1_recursive.txt" ]] && gotator -sub .tmp/permute1_recursive.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2_recursive.txt
             else
                 [[ -s ".tmp/permute1_recursive.txt" ]] && ripgen -d .tmp/permute1_recursive.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2_recursive.txt
             fi
 
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 [[ -s ".tmp/gotator2_recursive.txt" ]] && puredns resolve .tmp/gotator2_recursive.txt -w .tmp/permute2_recursive.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
             else
                 [[ -s ".tmp/gotator2_recursive.txt" ]] && axiom-scan .tmp/gotator2_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute2_recursive.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -543,23 +565,23 @@ function sub_recursive_brute() {
         else
             end_subfunc "skipped in this mode or defined in reconftw.cfg" ${FUNCNAME[0]}
         fi
-        if [[ "${INSCOPE}" = true ]]; then
+        if [[ ${INSCOPE} == true ]]; then
             check_inscope .tmp/permute_recursive.txt 2>>"${LOGFILE}" >/dev/null
             check_inscope .tmp/brute_recursive.txt 2>>"${LOGFILE}" >/dev/null
         fi
 
         # Last validation
         cat .tmp/permute_recursive.txt .tmp/brute_recursive.txt 2>>"${LOGFILE}" | anew -q .tmp/brute_perm_recursive.txt
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             [[ -s ".tmp/brute_recursive.txt" ]] && puredns resolve .tmp/brute_perm_recursive.txt -w .tmp/brute_perm_recursive_final.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
         else
             [[ -s ".tmp/brute_recursive.txt" ]] && axiom-scan .tmp/brute_perm_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/brute_perm_recursive_final.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
         fi
 
-        NUMOFLINES=$(cat .tmp/brute_perm_recursive_final.txt 2>>"${LOGFILE}" | grep "\.$domain$\|^$domain$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
+        NUMOFLINES=$(cat .tmp/brute_perm_recursive_final.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
         end_subfunc "${NUMOFLINES} new subs (recursive active)" ${FUNCNAME[0]}
     else
-        if [[ "$SUB_RECURSIVE_BRUTE" = false ]]; then
+        if [[ $SUB_RECURSIVE_BRUTE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -568,11 +590,11 @@ function sub_recursive_brute() {
 }
 
 function subtakeover() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUBTAKEOVER" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBTAKEOVER == true ]]; then
         start_func ${FUNCNAME[0]} "Looking for possible subdomain and DNS takeover"
         touch .tmp/tko.txt
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             nuclei -update 2>>"${LOGFILE}" >/dev/null
             cat subdomains/subdomains.txt .tmp/webs_all.txt 2>/dev/null | nuclei -silent -nh -tags takeover -severity info,low,medium,high,critical -retries 3 -rl $NUCLEI_RATELIMIT -t ${NUCLEI_TEMPLATES_PATH} -o .tmp/tko.txt
         else
@@ -587,12 +609,12 @@ function subtakeover() {
         sed -i '/^$/d' .tmp/tko.txt
 
         NUMOFLINES=$(cat .tmp/tko.txt 2>>"${LOGFILE}" | anew webs/takeover.txt | sed '/^$/d' | wc -l)
-        if [[ "$NUMOFLINES" -gt 0 ]]; then
+        if [[ $NUMOFLINES -gt 0 ]]; then
             notification "${NUMOFLINES} new possible takeovers found" info
         fi
-        end_func "Results are saved in${domain}//webs/takeover.txt" ${FUNCNAME[0]}
+        end_func "Results are saved in ${DOMAIN}/webs/takeover.txt" ${FUNCNAME[0]}
     else
-        if [[ "$SUBTAKEOVER" = false ]]; then
+        if [[ $SUBTAKEOVER == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -601,20 +623,20 @@ function subtakeover() {
 }
 
 function zonetransfer() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$ZONETRANSFER" = true ]] && ! [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $ZONETRANSFER == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "Zone transfer check"
         for ns in $(dig +short ns "${DOMAIN}"); do dig axfr "${DOMAIN}" @"$ns" >>subdomains/zonetransfer.txt; done
         if [[ -s "subdomains/zonetransfer.txt" ]]; then
-            if ! grep -q "Transfer failed" subdomains/zonetransfer.txt; then notification "Zone transfer found on ${domain}!" info; fi
+            if ! grep -q "Transfer failed" subdomains/zonetransfer.txt; then notification "Zone transfer found on ${DOMAIN}!" info; fi
         fi
-        end_func "Results are saved in${domain}//subdomains/zonetransfer.txt" ${FUNCNAME[0]}
+        end_func "Results are saved in${DOMAIN}/subdomains/zonetransfer.txt" ${FUNCNAME[0]}
     else
-        if [[ "$ZONETRANSFER" = false ]]; then
+        if [[ $ZONETRANSFER == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-        elif [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+        elif [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
             return
         else
-            if [[ "$ZONETRANSFER" = false ]]; then
+            if [[ $ZONETRANSFER == false ]]; then
                 printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
             else
                 printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -624,36 +646,36 @@ function zonetransfer() {
 }
 
 function s3buckets() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$S3BUCKETS" = true ]] && ! [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $S3BUCKETS == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "AWS S3 buckets search"
         # S3Scanner
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             [[ -s "subdomains/subdomains.txt" ]] && s3scanner scan -f subdomains/subdomains.txt 2>>"${LOGFILE}" | anew -q .tmp/s3buckets.txt
         else
             axiom-scan subdomains/subdomains.txt -m s3scanner -o .tmp/s3buckets_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
             [[ -s ".tmp/s3buckets_tmp.txt" ]] && cat .tmp/s3buckets_tmp.txt .tmp/s3buckets_tmp2.txt 2>>"${LOGFILE}" | anew -q .tmp/s3buckets.txt && sed -i '/^$/d' .tmp/s3buckets.txt
         fi
         # Cloudenum
-        keyword=${domain%%.*}
+        keyword=${DOMAIN%%.*}
         python3 ~/Tools/cloud_enum/cloud_enum.py -k $keyword -qs -l .tmp/output_cloud.txt 2>>"${LOGFILE}" >/dev/null
 
         NUMOFLINES1=$(cat .tmp/output_cloud.txt 2>>"${LOGFILE}" | sed '/^#/d' | sed '/^$/d' | anew subdomains/cloud_assets.txt | wc -l)
-        if [[ "$NUMOFLINES1" -gt 0 ]]; then
+        if [[ $NUMOFLINES1 -gt 0 ]]; then
             notification "${NUMOFLINES1} new cloud assets found" info
         fi
         NUMOFLINES2=$(cat .tmp/s3buckets.txt 2>>"${LOGFILE}" | grep -aiv "not_exist" | grep -aiv "Warning:" | grep -aiv "invalid_name" | grep -aiv "^http" | awk 'NF' | anew subdomains/s3buckets.txt | sed '/^$/d' | wc -l)
-        if [[ "$NUMOFLINES2" -gt 0 ]]; then
+        if [[ $NUMOFLINES2 -gt 0 ]]; then
             notification "${NUMOFLINES2} new S3 buckets found" info
         fi
 
         end_func "Results are saved in subdomains/s3buckets.txt and subdomains/cloud_assets.txt" ${FUNCNAME[0]}
     else
-        if [[ "$S3BUCKETS" = false ]]; then
+        if [[ $S3BUCKETS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-        elif [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+        elif [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
             return
         else
-            if [[ "$S3BUCKETS" = false ]]; then
+            if [[ $S3BUCKETS == false ]]; then
                 printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
             else
                 printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -667,9 +689,9 @@ function s3buckets() {
 ###############################################################################################################
 
 function webprobe_simple() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$WEBPROBESIMPLE" = true ]]; then
-        start_subfunc ${FUNCNAME[0]} "Running : Http probing${domain}/"
-        if [[ ! ${AXIOM} = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBPROBESIMPLE == true ]]; then
+        start_subfunc ${FUNCNAME[0]} "Running : Http probing${DOMAIN}/"
+        if [[ ! ${AXIOM} == true ]]; then
             cat subdomains/subdomains.txt | httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o .tmp/web_full_info_probe.txt 2>>"${LOGFILE}" >/dev/null
         else
             axiom-scan subdomains/subdomains.txt -m httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o .tmp/web_full_info_probe.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -677,16 +699,16 @@ function webprobe_simple() {
         cat .tmp/web_full_info.txt .tmp/web_full_info_probe.txt webs/web_full_info.txt 2>>"${LOGFILE}" | jq -s 'try .' | jq 'try unique_by(.input)' | jq 'try .[]' 2>>"${LOGFILE}" >webs/web_full_info.txt
         [[ -s "webs/web_full_info.txt" ]] && cat webs/web_full_info.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew -q .tmp/probed_tmp.txt
         [[ -s "webs/web_full_info.txt" ]] && cat webs/web_full_info.txt | jq -r 'try . |"\(.url) [\(.status_code)] [\(.title)] [\(.webserver)] \(.tech)"' | grep "${DOMAIN}" | anew -q webs/web_full_info_plain.txt
-        [[ -s "$outOfScope_file" ]] && deleteOutScoped $outOfScope_file .tmp/probed_tmp.txt
+        [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/probed_tmp.txt
         NUMOFLINES=$(cat .tmp/probed_tmp.txt 2>>"${LOGFILE}" | anew webs/webs.txt | sed '/^$/d' | wc -l)
         cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         end_subfunc "${NUMOFLINES} new websites resolved" ${FUNCNAME[0]}
-        if [[ "$PROXY" = true ]] && [[ -n "$proxy_url" ]] && [[ $(cat webs/webs.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
+        if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/webs.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
             notification "Sending websites to proxy" info
             ffuf -mc all -w webs/webs.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
         fi
     else
-        if [[ "$WEBPROBESIMPLE" = false ]]; then
+        if [[ $WEBPROBESIMPLE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -695,10 +717,10 @@ function webprobe_simple() {
 }
 
 function webprobe_full() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$WEBPROBEFULL" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBPROBEFULL == true ]]; then
         start_func ${FUNCNAME[0]} "Http probing non standard ports"
         if [[ -s "subdomains/subdomains.txt" ]]; then
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 if [[ -s "subdomains/subdomains.txt" ]]; then
                     cat subdomains/subdomains.txt | httpx -follow-host-redirects -random-agent -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt 2>>"${LOGFILE}" >/dev/null
                 fi
@@ -711,7 +733,7 @@ function webprobe_full() {
         [[ -s ".tmp/web_full_info_uncommon.txt" ]] && cat .tmp/web_full_info_uncommon.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew -q .tmp/probed_uncommon_ports_tmp.txt
         [[ -s ".tmp/web_full_info_uncommon.txt" ]] && cat .tmp/web_full_info_uncommon.txt | jq -r 'try . |"\(.url) [\(.status_code)] [\(.title)] [\(.webserver)] \(.tech)"' | anew -q webs/web_full_info_uncommon_plain.txt
         if [[ -s ".tmp/web_full_info_uncommon.txt" ]]; then
-            if [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+            if [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
                 cat .tmp/web_full_info_uncommon.txt 2>>"${LOGFILE}" | anew -q webs/web_full_info_uncommon.txt
             else
                 cat .tmp/web_full_info_uncommon.txt 2>>"${LOGFILE}" | grep "${DOMAIN}" | anew -q webs/web_full_info_uncommon.txt
@@ -721,13 +743,13 @@ function webprobe_full() {
         notification "Uncommon web ports: ${NUMOFLINES} new websites" good
         [[ -s "webs/webs_uncommon_ports.txt" ]] && cat webs/webs_uncommon_ports.txt
         cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        end_func "Results are saved in${domain}//webs/webs_uncommon_ports.txt" ${FUNCNAME[0]}
-        if [[ "$PROXY" = true ]] && [[ -n "$proxy_url" ]] && [[ $(cat webs/webs_uncommon_ports.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
+        end_func "Results are saved in ${DOMAIN}/webs/webs_uncommon_ports.txt" ${FUNCNAME[0]}
+        if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/webs_uncommon_ports.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
             notification "Sending websites with uncommon ports to proxy" info
             ffuf -mc all -w webs/webs_uncommon_ports.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
         fi
     else
-        if [[ "$WEBPROBEFULL" = false ]]; then
+        if [[ $WEBPROBEFULL == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -736,21 +758,21 @@ function webprobe_full() {
 }
 
 function screenshot() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$WEBSCREENSHOT" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBSCREENSHOT == true ]]; then
         start_func ${FUNCNAME[0]} "Web Screenshots"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 
         num_lines=$(wc -l <.tmp/webs_all.txt)
         dynamic_gowitness_timeout=$(expr $num_lines \* $GOWITNESS_TIMEOUT_PER_SITE)
 
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             [[ -s ".tmp/webs_all.txt" ]] && timeout -k 1m ${dynamic_gowitness_timeout}s gowitness file -f .tmp/webs_all.txt -t $GOWITNESS_THREADS $GOWITNESS_FLAGS 2>>"${LOGFILE}"
         else
             timeout -k 1m ${dynamic_gowitness_timeout}s axiom-scan .tmp/webs_all.txt -m gowitness -t $GOWITNESS_THREADS $GOWITNESS_FLAGS -o screenshots "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
         fi
-        end_func "Results are saved in${domain}//screenshots folder" ${FUNCNAME[0]}
+        end_func "Results are saved in ${DOMAIN}/screenshots folder" ${FUNCNAME[0]}
     else
-        if [[ "$WEBSCREENSHOT" = false ]]; then
+        if [[ $WEBSCREENSHOT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -759,7 +781,7 @@ function screenshot() {
 }
 
 function virtualhosts() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$VIRTUALHOSTS" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $VIRTUALHOSTS == true ]]; then
         start_func ${FUNCNAME[0]} "Virtual Hosts dicovery"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ -s ".tmp/webs_all.txt" ]]; then
@@ -770,12 +792,12 @@ function virtualhosts() {
                 [[ -s ""${dir}"/.tmp/virtualhosts/${sub_out}.json" ]] && cat "${dir}"/.tmp/virtualhosts/${sub_out}.json | jq -r 'try .results[] | "\(.status) \(.length) \(.url)"' | sort | anew -q "${dir}"/virtualhosts/${sub_out}.txt
             done
             find "${dir}"/virtualhosts/ -type f -iname "*.txt" -exec cat {} + 2>>"${LOGFILE}" | anew -q "${dir}"/virtualhosts/virtualhosts_full.txt
-            end_func "Results are saved in${domain}//virtualhosts/*subdomain*.txt" ${FUNCNAME[0]}
+            end_func "Results are saved in ${DOMAIN}/virtualhosts/*subdomain*.txt" ${FUNCNAME[0]}
         else
-            end_func "No${domain}//web/webs.txts file found, virtualhosts skipped " ${FUNCNAME[0]}
+            end_func "No${DOMAIN}//web/webs.txts file found, virtualhosts skipped " ${FUNCNAME[0]}
         fi
     else
-        if [[ "$VIRTUALHOSTS" = false ]]; then
+        if [[ $VIRTUALHOSTS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -788,9 +810,9 @@ function virtualhosts() {
 ###############################################################################################################
 
 function favicon() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$FAVICON" = true ]] && ! [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $FAVICON == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "Favicon Ip Lookup"
-        rftw_ip_cdnprovider -d${domain}/
+        rftw_ip_cdnprovider -d${DOMAIN}/
         if [[ -s "favicontest.json" ]]; then
             cat favicontest.txt 2>>"${LOGFILE}"
             mv favicontest.txt "${dir}"/hosts/favicontest.txt 2>>"${LOGFILE}"
@@ -798,12 +820,12 @@ function favicon() {
         fi
         end_func "Results are saved in hosts/favicontest.txt" ${FUNCNAME[0]}
     else
-        if [[ "$FAVICON" = false ]]; then
+        if [[ $FAVICON == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-        elif [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+        elif [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
             return
         else
-            if [[ "$FAVICON" = false ]]; then
+            if [[ $FAVICON == false ]]; then
                 printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
             else
                 printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -813,9 +835,9 @@ function favicon() {
 }
 
 function portscan() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$PORTSCANNER" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $PORTSCANNER == true ]]; then
         start_func ${FUNCNAME[0]} "Port scan"
-        if ! [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
+        if ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
             [[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try . | "\(.host) \(.a[0])"' | anew -q .tmp/subs_ips.txt
             [[ -s ".tmp/subs_ips.txt" ]] && awk '{ print $2 " " $1}' .tmp/subs_ips.txt | sort -k2 -n | anew -q hosts/subs_ips_vhosts.txt
             [[ -s "hosts/subs_ips_vhosts.txt" ]] && cat hosts/subs_ips_vhosts.txt | cut -d ' ' -f1 | grep -aEiv "^(127|10|169\.154|172\.1[6789]|172\.2[0-9]|172\.3[01]|192\.168)\." | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | anew -q hosts/ips.txt
@@ -827,11 +849,11 @@ function portscan() {
         printf "${bblue}\n Resolved IP addresses (No CDN) ${reset}\n\n"
         [[ -s ".tmp/ips_nocdn.txt" ]] && cat .tmp/ips_nocdn.txt | sort
         printf "${bblue}\n Scanning ports... ${reset}\n\n"
-        if [[ "$PORTSCAN_PASSIVE" = true ]] && [[ ! -f "hosts/portscan_passive.txt" ]] && [[ -s ".tmp/ips_nocdn.txt" ]]; then
+        if [[ $PORTSCAN_PASSIVE == true ]] && [[ ! -f "hosts/portscan_passive.txt" ]] && [[ -s ".tmp/ips_nocdn.txt" ]]; then
             smap -iL .tmp/ips_nocdn.txt >hosts/portscan_passive.txt
         fi
-        if [[ "$PORTSCAN_ACTIVE" = true ]]; then
-            if [[ ! ${AXIOM} = true ]]; then
+        if [[ $PORTSCAN_ACTIVE == true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 [[ -s ".tmp/ips_nocdn.txt" ]] && $SUDO nmap --top-ports 200 -sV -n --max-retries 2 -Pn --open --script vulners -iL .tmp/ips_nocdn.txt -oA hosts/portscan_active 2>>"${LOGFILE}" >/dev/null
             else
                 [[ -s ".tmp/ips_nocdn.txt" ]] && axiom-scan .tmp/ips_nocdn.txt -m nmapx --top-ports 200 -sV -n -Pn --open --max-retries 2 --script vulners -oA hosts/portscan_active "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -839,7 +861,7 @@ function portscan() {
         fi
         end_func "Results are saved in hosts/portscan_[passive|active].txt" ${FUNCNAME[0]}
     else
-        if [[ "$PORTSCANNER" = false ]]; then
+        if [[ $PORTSCANNER == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -848,13 +870,13 @@ function portscan() {
 }
 
 function cdnprovider() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$CDN_IP" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $CDN_IP == true ]]; then
         start_func ${FUNCNAME[0]} "CDN provider check"
         [[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try . | .a[]' | grep -aEiv "^(127|10|169\.154|172\.1[6789]|172\.2[0-9]|172\.3[01]|192\.168)\." | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | sort -u >.tmp/ips_cdn.txt
         [[ -s ".tmp/ips_cdn.txt" ]] && cat .tmp/ips_cdn.txt | rftw_ip_cdnprovider | anew -q "${dir}"/hosts/cdn_providers.txt
         end_func "Results are saved in hosts/cdn_providers.txt" ${FUNCNAME[0]}
     else
-        if [[ "$CDN_IP" = false ]]; then
+        if [[ $CDN_IP == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -867,11 +889,11 @@ function cdnprovider() {
 ###############################################################################################################
 
 function waf_checks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$WAF_DETECTION" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WAF_DETECTION == true ]]; then
         start_func ${FUNCNAME[0]} "Website's WAF detection"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ -s ".tmp/webs_all.txt" ]]; then
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 wafw00f -i .tmp/webs_all.txt -o .tmp/wafs.txt 2>>"${LOGFILE}" >/dev/null
             else
                 axiom-scan .tmp/webs_all.txt -m wafw00f -o .tmp/wafs.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -880,7 +902,7 @@ function waf_checks() {
                 cat .tmp/wafs.txt | sed -e 's/^[ \t]*//' -e 's/ \+ /\t/g' -e '/(None)/d' | tr -s "\t" ";" >webs/webs_wafs.txt
                 NUMOFLINES=$(cat webs/webs_wafs.txt 2>>"${LOGFILE}" | sed '/^$/d' | wc -l)
                 notification "${NUMOFLINES} websites protected by waf" info
-                end_func "Results are saved in${domain}//webs/webs_wafs.txt" ${FUNCNAME[0]}
+                end_func "Results are saved in ${DOMAIN}/webs/webs_wafs.txt" ${FUNCNAME[0]}
             else
                 end_func "No results found" ${FUNCNAME[0]}
             fi
@@ -888,7 +910,7 @@ function waf_checks() {
             end_func "No websites to scan" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$WAF_DETECTION" = false ]]; then
+        if [[ $WAF_DETECTION == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -897,13 +919,13 @@ function waf_checks() {
 }
 
 function nuclei_check() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$NUCLEICHECK" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $NUCLEICHECK == true ]]; then
         start_func ${FUNCNAME[0]} "Templates based web scanner"
         nuclei -update 2>>"${LOGFILE}" >/dev/null
         mkdir -p nuclei_output
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         [[ ! -s ".tmp/webs_subs.txt" ]] && cat subdomains/subdomains.txt .tmp/webs_all.txt 2>>"${LOGFILE}" | anew -q .tmp/webs_subs.txt
-        if [[ ! ${AXIOM} = true ]]; then # avoid globbing (expansion of *).
+        if [[ ! ${AXIOM} == true ]]; then # avoid globbing (expansion of *).
             IFS=',' read -ra severity_array <<<"$NUCLEI_SEVERITY"
             for crit in "${severity_array[@]}"; do
                 printf "${yellow}\n Running : Nuclei $crit ${reset}\n\n"
@@ -921,9 +943,9 @@ function nuclei_check() {
                 printf "\n\n"
             fi
         fi
-        end_func "Results are saved in${domain}//nuclei_output folder" ${FUNCNAME[0]}
+        end_func "Results are saved in ${DOMAIN}/nuclei_output folder" ${FUNCNAME[0]}
     else
-        if [[ "$NUCLEICHECK" = false ]]; then
+        if [[ $NUCLEICHECK == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -932,12 +954,12 @@ function nuclei_check() {
 }
 
 function fuzz() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$FUZZ" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $FUZZ == true ]]; then
         start_func ${FUNCNAME[0]} "Web directory fuzzing"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ -s ".tmp/webs_all.txt" ]]; then
             mkdir -p "${dir}"/fuzzing "${dir}"/.tmp/fuzzing
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 interlace -tL .tmp/webs_all.txt -threads "${INTERLACE_THREADS}" -c "ffuf ${FFUF_FLAGS} -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -w ${fuzz_wordlist} -maxtime ${FFUF_MAXTIME} -u _target_/FUZZ -o _output_/_cleantarget_.json" -o "${dir}"/.tmp/fuzzing 2>>"${LOGFILE}" >/dev/null
                 for sub in $(cat .tmp/webs_all.txt); do
                     sub_out=$(echo $sub | sed -e 's|^[^/]*//||' -e 's|/.*$||')
@@ -955,12 +977,12 @@ function fuzz() {
                 done
                 find "${dir}"/fuzzing/ -type f -iname "*.txt" -exec cat {} + 2>>"${LOGFILE}" | sort -k1 | anew -q "${dir}"/fuzzing/fuzzing_full.txt
             fi
-            end_func "Results are saved in${domain}//fuzzing/*subdomain*.txt" ${FUNCNAME[0]}
+            end_func "Results are saved in ${DOMAIN}/fuzzing/*subdomain*.txt" ${FUNCNAME[0]}
         else
-            end_func "No${domain}//web/webs.txts file found, fuzzing skipped " ${FUNCNAME[0]}
+            end_func "No${DOMAIN}//web/webs.txts file found, fuzzing skipped " ${FUNCNAME[0]}
         fi
     else
-        if [[ "$FUZZ" = false ]]; then
+        if [[ $FUZZ == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -969,12 +991,12 @@ function fuzz() {
 }
 
 function cms_scanner() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$CMS_SCANNER" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $CMS_SCANNER == true ]]; then
         start_func ${FUNCNAME[0]} "CMS Scanner"
         mkdir -p "${dir}"/cms && rm -rf "${dir}"/cms/*
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ -s ".tmp/webs_all.txt" ]]; then
-            tr '\n' ',' < .tmp/webs_all.txt | timeout -k 1m ${CMSSCAN_TIMEOUT}s python3"${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r 2>>"${LOGFILE}" >/dev/null
+            tr '\n' ',' <.tmp/webs_all.txt | timeout -k 1m ${CMSSCAN_TIMEOUT}s python3"${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r 2>>"${LOGFILE}" >/dev/null
             timeout -k 1m ${CMSSCAN_TIMEOUT}s python3"${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r 2>>"${LOGFILE}" >/dev/null
             exit_status=$?
             if [[ $exit_status -eq 125 ]]; then
@@ -989,18 +1011,18 @@ function cms_scanner() {
             for sub in $(cat .tmp/webs_all.txt); do
                 sub_out=$(echo $sub | sed -e 's|^[^/]*//||' -e 's|/.*$||')
                 cms_id=$(cat"${tools}"/CMSeeK/Result/${sub_out}/cms.json 2>/dev/null | jq -r 'try .cms_id')
-                if [[ -z "$cms_id" ]]; then
+                if [[ -z $cms_id ]]; then
                     rm -rf"${tools}"/CMSeeK/Result/${sub_out}
                 else
                     mv -f"${tools}"/CMSeeK/Result/${sub_out} "${dir}"/cms/ 2>>"${LOGFILE}"
                 fi
             done
-            end_func "Results are saved in${domain}//cms/*subdomain* folder" ${FUNCNAME[0]}
+            end_func "Results are saved in ${DOMAIN}/cms/*subdomain* folder" ${FUNCNAME[0]}
         else
-            end_func "No${domain}//web/webs.txts file found, cms scanner skipped" ${FUNCNAME[0]}
+            end_func "No${DOMAIN}//web/webs.txts file found, cms scanner skipped" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$CMS_SCANNER" = false ]]; then
+        if [[ $CMS_SCANNER == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1009,28 +1031,28 @@ function cms_scanner() {
 }
 
 function urlchecks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$URL_CHECK" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $URL_CHECK == true ]]; then
         start_func ${FUNCNAME[0]} "URL Extraction"
         mkdir -p js
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ -s ".tmp/webs_all.txt" ]]; then
-            if [[ ! ${AXIOM} = true ]]; then
-                if [[ "$URL_CHECK_PASSIVE" = true ]]; then
-                    if [[ "$DEEP" = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
+                if [[ $URL_CHECK_PASSIVE == true ]]; then
+                    if [[ $DEEP == true ]]; then
                         cat .tmp/webs_all.txt | unfurl -u domains >.tmp/waymore_input.txt
                         python3"${tools}"/waymore/waymore.py -i .tmp/waymore_input.txt -mode U -f -oU .tmp/url_extract_tmp.txt 2>>"${LOGFILE}" >/dev/null
                     else
                         cat .tmp/webs_all.txt | gau --threads $GAU_THREADS | anew -q .tmp/url_extract_tmp.txt
                     fi
-                    if [[ -s "${GITHUB_TOKENS}" ]]; then
+                    if [[ -s ${GITHUB_TOKENS} ]]; then
                         github-endpoints -q -k -d "${DOMAIN}" -t ${GITHUB_TOKENS} -o .tmp/github-endpoints.txt 2>>"${LOGFILE}" >/dev/null
                         [[ -s ".tmp/github-endpoints.txt" ]] && cat .tmp/github-endpoints.txt | anew -q .tmp/url_extract_tmp.txt
                     fi
                 fi
                 diff_webs=$(diff <(sort -u .tmp/probed_tmp.txt 2>>"${LOGFILE}") <(sort -u .tmp/webs_all.txt 2>>"${LOGFILE}") | wc -l)
                 if [[ $diff_webs != "0" ]] || [[ ! -s ".tmp/katana.txt" ]]; then
-                    if [[ "$URL_CHECK_ACTIVE" = true ]]; then
-                        if [[ "$DEEP" = true ]]; then
+                    if [[ $URL_CHECK_ACTIVE == true ]]; then
+                        if [[ $DEEP == true ]]; then
                             katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 3 -fs rdn -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
                         else
                             katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 2 -fs rdn -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
@@ -1038,22 +1060,22 @@ function urlchecks() {
                     fi
                 fi
             else
-                if [[ "$URL_CHECK_PASSIVE" = true ]]; then
-                    if [[ "$DEEP" = true ]]; then
+                if [[ $URL_CHECK_PASSIVE == true ]]; then
+                    if [[ $DEEP == true ]]; then
                         cat .tmp/webs_all.txt | unfurl -u domains >.tmp/waymore_input.txt
                         axiom-scan .tmp/waymore_input.txt -m waymore -o .tmp/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                     else
                         axiom-scan .tmp/webs_all.txt -m gau -o .tmp/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                     fi
-                    if [[ -s "${GITHUB_TOKENS}" ]]; then
+                    if [[ -s ${GITHUB_TOKENS} ]]; then
                         github-endpoints -q -k -d "${DOMAIN}" -t ${GITHUB_TOKENS} -o .tmp/github-endpoints.txt 2>>"${LOGFILE}" >/dev/null
                         [[ -s ".tmp/github-endpoints.txt" ]] && cat .tmp/github-endpoints.txt | anew -q .tmp/url_extract_tmp.txt
                     fi
                 fi
                 diff_webs=$(diff <(sort -u .tmp/probed_tmp.txt) <(sort -u .tmp/webs_all.txt) | wc -l)
                 if [[ $diff_webs != "0" ]] || [[ ! -s ".tmp/katana.txt" ]]; then
-                    if [[ "$URL_CHECK_ACTIVE" = true ]]; then
-                        if [[ "$DEEP" = true ]]; then
+                    if [[ $URL_CHECK_ACTIVE == true ]]; then
+                        if [[ $DEEP == true ]]; then
                             axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 3 -fs rdn -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                         else
                             axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 2 -fs rdn -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -1063,22 +1085,22 @@ function urlchecks() {
             fi
             [[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
             [[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | anew -q .tmp/url_extract_tmp.txt
-            [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${domain}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | grep -aEi "\.(js)" | anew -q .tmp/url_extract_js.txt
-            if [[ "$DEEP" = true ]]; then
+            [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | grep -aEi "\.(js)" | anew -q .tmp/url_extract_js.txt
+            if [[ $DEEP == true ]]; then
                 [[ -s ".tmp/url_extract_js.txt" ]] && interlace -tL .tmp/url_extract_js.txt -threads 10 -c "python3"${tools}"/JSA/jsa.py -f target | anew -q .tmp/url_extract_tmp.txt" &>/dev/null
             fi
-            [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${domain}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | grep "=" | qsreplace -a 2>>"${LOGFILE}" | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | anew -q .tmp/url_extract_tmp2.txt
+            [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | grep "=" | qsreplace -a 2>>"${LOGFILE}" | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | anew -q .tmp/url_extract_tmp2.txt
             [[ -s ".tmp/url_extract_tmp2.txt" ]] && cat .tmp/url_extract_tmp2.txt | python3"${tools}"/urless/urless/urless.py | anew -q .tmp/url_extract_uddup.txt 2>>"${LOGFILE}" >/dev/null
             NUMOFLINES=$(cat .tmp/url_extract_uddup.txt 2>>"${LOGFILE}" | anew webs/url_extract.txt | sed '/^$/d' | wc -l)
             notification "${NUMOFLINES} new urls with params" info
-            end_func "Results are saved in${domain}//webs/url_extract.txt" ${FUNCNAME[0]}
-            if [[ "$PROXY" = true ]] && [[ -n "$proxy_url" ]] && [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
+            end_func "Results are saved in ${DOMAIN}/webs/url_extract.txt" ${FUNCNAME[0]}
+            if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
                 notification "Sending urls to proxy" info
                 ffuf -mc all -w webs/url_extract.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
             fi
         fi
     else
-        if [[ "$URL_CHECK" = false ]]; then
+        if [[ $URL_CHECK == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1087,7 +1109,7 @@ function urlchecks() {
 }
 
 function url_gf() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$URL_GF" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $URL_GF == true ]]; then
         start_func ${FUNCNAME[0]} "Vulnerable Pattern Search"
         mkdir -p gf
         if [[ -s "webs/url_extract.txt" ]]; then
@@ -1102,9 +1124,9 @@ function url_gf() {
             [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q gf/endpoints.txt
             gf lfi webs/url_extract.txt | anew -q gf/lfi.txt
         fi
-        end_func "Results are saved in${domain}//gf folder" ${FUNCNAME[0]}
+        end_func "Results are saved in ${DOMAIN}/gf folder" ${FUNCNAME[0]}
     else
-        if [[ "$URL_GF" = false ]]; then
+        if [[ $URL_GF == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1113,7 +1135,7 @@ function url_gf() {
 }
 
 function url_ext() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$URL_EXT" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $URL_EXT == true ]]; then
         if [[ -s ".tmp/url_extract_tmp.txt" ]]; then
             start_func ${FUNCNAME[0]} "Urls by extension"
             ext=("7z" "achee" "action" "adr" "apk" "arj" "ascx" "asmx" "asp" "aspx" "axd" "backup" "bak" "bat" "bin" "bkf" "bkp" "bok" "cab" "cer" "cfg" "cfm" "cfml" "cgi" "cnf" "conf" "config" "cpl" "crt" "csr" "csv" "dat" "db" "dbf" "deb" "dmg" "dmp" "doc" "docx" "drv" "email" "eml" "emlx" "env" "exe" "gadget" "gz" "html" "ica" "inf" "ini" "iso" "jar" "java" "jhtml" "json" "jsp" "key" "log" "lst" "mai" "mbox" "mbx" "md" "mdb" "msg" "msi" "nsf" "ods" "oft" "old" "ora" "ost" "pac" "passwd" "pcf" "pdf" "pem" "pgp" "php" "php3" "php4" "php5" "phtm" "phtml" "pkg" "pl" "plist" "pst" "pwd" "py" "rar" "rb" "rdp" "reg" "rpm" "rtf" "sav" "sh" "shtm" "shtml" "skr" "sql" "swf" "sys" "tar" "tar.gz" "tmp" "toast" "tpl" "txt" "url" "vcd" "vcf" "wml" "wpd" "wsdl" "wsf" "xls" "xlsm" "xlsx" "xml" "xsd" "yaml" "yml" "z" "zip")
@@ -1125,10 +1147,10 @@ function url_ext() {
                     cat .tmp/url_extract_tmp.txt | grep -aEi "\.(${t})($|\/|\?)" >>webs/urls_by_ext.txt
                 fi
             done
-            end_func "Results are saved in${domain}//webs/urls_by_ext.txt" ${FUNCNAME[0]}
+            end_func "Results are saved in ${DOMAIN}/webs/urls_by_ext.txt" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$URL_EXT" = false ]]; then
+        if [[ $URL_EXT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1137,11 +1159,11 @@ function url_ext() {
 }
 
 function jschecks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$JSCHECKS" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $JSCHECKS == true ]]; then
         start_func ${FUNCNAME[0]} "Javascript Scan"
         if [[ -s ".tmp/url_extract_js.txt" ]]; then
             printf "${yellow} Running : Fetching Urls 1/5${reset}\n"
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 cat .tmp/url_extract_js.txt | subjs -ua "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0" -c 40 | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew -q .tmp/subjslinks.txt
             else
                 axiom-scan .tmp/url_extract_js.txt -m subjs -o .tmp/subjslinks.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -1150,7 +1172,7 @@ function jschecks() {
             [[ -s ".tmp/subjslinks.txt" ]] && cat .tmp/subjslinks.txt | grep -iE "\.js($|\?)" | anew -q .tmp/url_extract_js.txt
             cat .tmp/url_extract_js.txt | python3"${tools}"/urless/urless/urless.py | anew -q js/url_extract_js.txt 2>>"${LOGFILE}" >/dev/null
             printf "${yellow} Running : Resolving JS Urls 2/5${reset}\n"
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 [[ -s "js/url_extract_js.txt" ]] && cat js/url_extract_js.txt | httpx -follow-redirects -random-agent -silent -timeout $HTTPX_TIMEOUT -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -status-code -content-type -retries 2 -no-color | grep "[200]" | grep "javascript" | cut -d ' ' -f1 | anew -q js/js_livelinks.txt
             else
                 [[ -s "js/url_extract_js.txt" ]] && axiom-scan js/url_extract_js.txt -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -content-type -retries 2 -no-color -o .tmp/js_livelinks.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -1164,7 +1186,7 @@ function jschecks() {
                 cat .tmp/js_endpoints.txt | anew -q js/js_endpoints.txt
             fi
             printf "${yellow} Running : Gathering secrets 4/5${reset}\n"
-            if [[ ! ${AXIOM} = true ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 [[ -s "js/js_livelinks.txt" ]] && cat js/js_livelinks.txt | Mantra -ua ${HEADER} -s | anew -q js/js_secrets.txt
             else
                 [[ -s "js/js_livelinks.txt" ]] && axiom-scan js/js_livelinks.txt -m mantra -ua \"${HEADER}\" -s -o js/js_secrets.txt "${AXIOM_EXTRA_ARGS}" &>/dev/null
@@ -1172,12 +1194,12 @@ function jschecks() {
             [[ -s "js/js_secrets.txt" ]] && sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" -i js/js_secrets.txt
             printf "${yellow} Running : Building wordlist 5/5${reset}\n"
             [[ -s "js/js_livelinks.txt" ]] && interlace -tL js/js_livelinks.txt -threads "${INTERLACE_THREADS}" -c "python3"${tools}"/getjswords.py '_target_' | anew -q webs/dict_words.txt" 2>>"${LOGFILE}" >/dev/null
-            end_func "Results are saved in${domain}//js folder" ${FUNCNAME[0]}
+            end_func "Results are saved in ${DOMAIN}/js folder" ${FUNCNAME[0]}
         else
-            end_func "No JS urls found for${domain}/, function skipped" ${FUNCNAME[0]}
+            end_func "No JS urls found for${DOMAIN}/, function skipped" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$JSCHECKS" = false ]]; then
+        if [[ $JSCHECKS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1186,7 +1208,7 @@ function jschecks() {
 }
 
 function wordlist_gen() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$WORDLIST" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WORDLIST == true ]]; then
         start_func ${FUNCNAME[0]} "Wordlist generation"
         if [[ -s ".tmp/url_extract_tmp.txt" ]]; then
             cat .tmp/url_extract_tmp.txt | unfurl -u keys 2>>"${LOGFILE}" | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_params.txt
@@ -1195,13 +1217,13 @@ function wordlist_gen() {
         fi
         [[ -s ".tmp/js_endpoints.txt" ]] && cat .tmp/js_endpoints.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
         [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
-        end_func "Results are saved in${domain}//webs/dict_[words|paths].txt" ${FUNCNAME[0]}
-        if [[ "$PROXY" = true ]] && [[ -n "$proxy_url" ]] && [[ $(cat webs/all_paths.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
+        end_func "Results are saved in ${DOMAIN}/webs/dict_[words|paths].txt" ${FUNCNAME[0]}
+        if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/all_paths.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
             notification "Sending urls to proxy" info
             ffuf -mc all -w webs/all_paths.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
         fi
     else
-        if [[ "$WORDLIST" = false ]]; then
+        if [[ $WORDLIST == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1210,15 +1232,15 @@ function wordlist_gen() {
 }
 
 function wordlist_gen_roboxtractor() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$ROBOTSWORDLIST" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $ROBOTSWORDLIST == true ]]; then
         start_func ${FUNCNAME[0]} "Robots wordlist generation"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ -s ".tmp/webs_all.txt" ]]; then
             cat .tmp/webs_all.txt | roboxtractor -m 1 -wb 2>/dev/null | anew -q webs/robots_wordlist.txt
         fi
-        end_func "Results are saved in${domain}//webs/robots_wordlist.txt" ${FUNCNAME[0]}
+        end_func "Results are saved in ${DOMAIN}/webs/robots_wordlist.txt" ${FUNCNAME[0]}
     else
-        if [[ "$ROBOTSWORDLIST" = false ]]; then
+        if [[ $ROBOTSWORDLIST == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1227,13 +1249,13 @@ function wordlist_gen_roboxtractor() {
 }
 
 function password_dict() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$PASSWORD_DICT" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $PASSWORD_DICT == true ]]; then
         start_func ${FUNCNAME[0]} "Password dictionary generation"
-        word=${domain%%.*}
+        word=${DOMAIN%%.*}
         python3"${tools}"/pydictor/pydictor.py -extend $word --leet 0 1 2 11 21 --len ${PASSWORD_MIN_LENGTH} ${PASSWORD_MAX_LENGTH} -o webs/password_dict.txt 2>>"${LOGFILE}" >/dev/null
-        end_func "Results are saved in${domain}//webs/password_dict.txt" ${FUNCNAME[0]}
+        end_func "Results are saved in ${DOMAIN}/webs/password_dict.txt" ${FUNCNAME[0]}
     else
-        if [[ "$PASSWORD_DICT" = false ]]; then
+        if [[ $PASSWORD_DICT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1246,12 +1268,12 @@ function password_dict() {
 ###############################################################################################################
 
 function brokenLinks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$BROKENLINKS" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $BROKENLINKS == true ]]; then
         start_func ${FUNCNAME[0]} "Broken links checks"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ ! ${AXIOM} = true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
             if [[ ! -s ".tmp/katana.txt" ]]; then
-                if [[ "$DEEP" = true ]]; then
+                if [[ $DEEP == true ]]; then
                     [[ -s ".tmp/webs_all.txt" ]] && katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 3 -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
                 else
                     [[ -s ".tmp/webs_all.txt" ]] && katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 2 -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
@@ -1260,7 +1282,7 @@ function brokenLinks() {
             [[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
         else
             if [[ ! -s ".tmp/katana.txt" ]]; then
-                if [[ "$DEEP" = true ]]; then
+                if [[ $DEEP == true ]]; then
                     [[ -s ".tmp/webs_all.txt" ]] && axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 3 -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                 else
                     [[ -s ".tmp/webs_all.txt" ]] && axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 2 -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
@@ -1273,7 +1295,7 @@ function brokenLinks() {
         notification "${NUMOFLINES} new broken links found" info
         end_func "Results are saved in vulns/brokenLinks.txt" ${FUNCNAME[0]}
     else
-        if [[ "$BROKENLINKS" = false ]]; then
+        if [[ $BROKENLINKS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1282,12 +1304,12 @@ function brokenLinks() {
 }
 
 function xss() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$XSS" = true ]] && [[ -s "gf/xss.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $XSS == true ]] && [[ -s "gf/xss.txt" ]]; then
         start_func ${FUNCNAME[0]} "XSS Analysis"
         [[ -s "gf/xss.txt" ]] && cat gf/xss.txt | qsreplace FUZZ | sed '/FUZZ/!d' | Gxss -c 100 -p Xss | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/xss_reflected.txt
-        if [[ ! ${AXIOM} = true ]]; then
-            if [[ "$DEEP" = true ]]; then
-                if [[ -n "$XSS_SERVER" ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
+            if [[ $DEEP == true ]]; then
+                if [[ -n $XSS_SERVER ]]; then
                     [[ -s ".tmp/xss_reflected.txt" ]] && cat .tmp/xss_reflected.txt | dalfox pipe --silence --no-color --no-spinner --only-poc r --ignore-return 302,404,403 --skip-bav -b ${XSS_SERVER} -w $DALFOX_THREADS 2>>"${LOGFILE}" | anew -q vulns/xss.txt
                 else
                     printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
@@ -1295,7 +1317,7 @@ function xss() {
                 fi
             else
                 if [[ $(cat .tmp/xss_reflected.txt | wc -l) -le $DEEP_LIMIT ]]; then
-                    if [[ -n "$XSS_SERVER" ]]; then
+                    if [[ -n $XSS_SERVER ]]; then
                         cat .tmp/xss_reflected.txt | dalfox pipe --silence --no-color --no-spinner --skip-bav --skip-mining-dom --skip-mining-dict --only-poc r --ignore-return 302,404,403 -b ${XSS_SERVER} -w $DALFOX_THREADS 2>>"${LOGFILE}" | anew -q vulns/xss.txt
                     else
                         printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
@@ -1306,8 +1328,8 @@ function xss() {
                 fi
             fi
         else
-            if [[ "$DEEP" = true ]]; then
-                if [[ -n "$XSS_SERVER" ]]; then
+            if [[ $DEEP == true ]]; then
+                if [[ -n $XSS_SERVER ]]; then
                     [[ -s ".tmp/xss_reflected.txt" ]] && axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav -b ${XSS_SERVER} -w $DALFOX_THREADS -o vulns/xss.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                 else
                     printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
@@ -1315,7 +1337,7 @@ function xss() {
                 fi
             else
                 if [[ $(cat .tmp/xss_reflected.txt | wc -l) -le $DEEP_LIMIT ]]; then
-                    if [[ -n "$XSS_SERVER" ]]; then
+                    if [[ -n $XSS_SERVER ]]; then
                         axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav --skip-grepping --skip-mining-all --skip-mining-dict -b ${XSS_SERVER} -w $DALFOX_THREADS -o vulns/xss.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
                     else
                         printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
@@ -1328,7 +1350,7 @@ function xss() {
         fi
         end_func "Results are saved in vulns/xss.txt" ${FUNCNAME[0]}
     else
-        if [[ "$XSS" = false ]]; then
+        if [[ $XSS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         elif [[ ! -s "gf/xss.txt" ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} No URLs potentially vulnerables to XSS ${reset}\n\n"
@@ -1339,13 +1361,13 @@ function xss() {
 }
 
 function cors() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$CORS" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $CORS == true ]]; then
         start_func ${FUNCNAME[0]} "CORS Scan"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         [[ -s ".tmp/webs_all.txt" ]] && python3"${tools}"/Corsy/corsy.py -i .tmp/webs_all.txt -o vulns/cors.txt 2>>"${LOGFILE}" >/dev/null
         end_func "Results are saved in vulns/cors.txt" ${FUNCNAME[0]}
     else
-        if [[ "$CORS" = false ]]; then
+        if [[ $CORS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1354,9 +1376,9 @@ function cors() {
 }
 
 function open_redirect() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$OPEN_REDIRECT" = true ]] && [[ -s "gf/redirect.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $OPEN_REDIRECT == true ]] && [[ -s "gf/redirect.txt" ]]; then
         start_func ${FUNCNAME[0]} "Open redirects checks"
-        if [[ "$DEEP" = true ]] || [[ $(cat gf/redirect.txt | wc -l) -le $DEEP_LIMIT ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat gf/redirect.txt | wc -l) -le $DEEP_LIMIT ]]; then
             cat gf/redirect.txt | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/tmp_redirect.txt
             python3"${tools}"/Oralyzer/oralyzer.py -l .tmp/tmp_redirect.txt -p"${tools}"/Oralyzer/payloads.txt >vulns/redirect.txt
             sed -r -i "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" vulns/redirect.txt
@@ -1366,7 +1388,7 @@ function open_redirect() {
             printf "${bgreen}#######################################################################${reset}\n"
         fi
     else
-        if [[ "$OPEN_REDIRECT" = false ]]; then
+        if [[ $OPEN_REDIRECT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         elif [[ ! -s "gf/redirect.txt" ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} No URLs potentially vulnerables to Open Redirect ${reset}\n\n"
@@ -1377,9 +1399,9 @@ function open_redirect() {
 }
 
 function ssrf_checks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SSRF_CHECKS" = true ]] && [[ -s "gf/ssrf.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SSRF_CHECKS == true ]] && [[ -s "gf/ssrf.txt" ]]; then
         start_func ${FUNCNAME[0]} "SSRF checks"
-        if [[ -z "$COLLAB_SERVER" ]]; then
+        if [[ -z $COLLAB_SERVER ]]; then
             interactsh-client &>.tmp/ssrf_callback.txt &
             sleep 2
             COLLAB_SERVER_FIX="FFUFHASH.$(cat .tmp/ssrf_callback.txt | tail -n1 | cut -c 16-)"
@@ -1389,7 +1411,7 @@ function ssrf_checks() {
             COLLAB_SERVER_FIX="FFUFHASH.$(echo ${COLLAB_SERVER} | sed -r "s/https?:\/\///")"
             INTERACT=false
         fi
-        if [[ "$DEEP" = true ]] || [[ $(cat gf/ssrf.txt | wc -l) -le $DEEP_LIMIT ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat gf/ssrf.txt | wc -l) -le $DEEP_LIMIT ]]; then
             cat gf/ssrf.txt | qsreplace ${COLLAB_SERVER_FIX} | anew -q .tmp/tmp_ssrf.txt
             cat gf/ssrf.txt | qsreplace ${COLLAB_SERVER_URL} | anew -q .tmp/tmp_ssrf.txt
             ffuf -v -H "${HEADER}" -t $FFUF_THREADS -rate $FFUF_RATELIMIT -w .tmp/tmp_ssrf.txt -u FUZZ 2>/dev/null | grep "URL" | sed 's/| URL | //' | anew -q vulns/ssrf_requested_url.txt
@@ -1397,14 +1419,14 @@ function ssrf_checks() {
             ffuf -v -w .tmp/tmp_ssrf.txt:W1,$tools/headers_inject.txt:W2 -H "${HEADER}" -H "W2: ${COLLAB_SERVER_URL}" -t $FFUF_THREADS -rate $FFUF_RATELIMIT -u W1 2>/dev/null | anew -q vulns/ssrf_requested_headers.txt
             sleep 5
             [[ -s ".tmp/ssrf_callback.txt" ]] && cat .tmp/ssrf_callback.txt | tail -n+11 | anew -q vulns/ssrf_callback.txt && NUMOFLINES=$(cat .tmp/ssrf_callback.txt | tail -n+12 | sed '/^$/d' | wc -l)
-            [[ "$INTERACT" = true ]] && notification "SSRF: ${NUMOFLINES} callbacks received" info
+            [[ $INTERACT == true ]] && notification "SSRF: ${NUMOFLINES} callbacks received" info
             end_func "Results are saved in vulns/ssrf_*" ${FUNCNAME[0]}
         else
             end_func "Skipping SSRF: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
         fi
         pkill -f interactsh-client &
     else
-        if [[ "$SSRF_CHECKS" = false ]]; then
+        if [[ $SSRF_CHECKS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         elif [[ ! -s "gf/ssrf.txt" ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} No URLs potentially vulnerables to SSRF ${reset}\n\n"
@@ -1415,17 +1437,17 @@ function ssrf_checks() {
 }
 
 function crlf_checks() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$CRLF_CHECKS" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $CRLF_CHECKS == true ]]; then
         start_func ${FUNCNAME[0]} "CRLF checks"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ "$DEEP" = true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
             crlfuzz -l .tmp/webs_all.txt -o vulns/crlf.txt 2>>"${LOGFILE}" >/dev/null
             end_func "Results are saved in vulns/crlf.txt" ${FUNCNAME[0]}
         else
             end_func "Skipping CRLF: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$CRLF_CHECKS" = false ]]; then
+        if [[ $CRLF_CHECKS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1434,11 +1456,11 @@ function crlf_checks() {
 }
 
 function lfi() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$LFI" = true ]] && [[ -s "gf/lfi.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $LFI == true ]] && [[ -s "gf/lfi.txt" ]]; then
         start_func ${FUNCNAME[0]} "LFI checks"
         if [[ -s "gf/lfi.txt" ]]; then
             cat gf/lfi.txt | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/tmp_lfi.txt
-            if [[ "$DEEP" = true ]] || [[ $(cat .tmp/tmp_lfi.txt | wc -l) -le $DEEP_LIMIT ]]; then
+            if [[ $DEEP == true ]] || [[ $(cat .tmp/tmp_lfi.txt | wc -l) -le $DEEP_LIMIT ]]; then
                 interlace -tL .tmp/tmp_lfi.txt -threads "${INTERLACE_THREADS}" -c "ffuf -v -r -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -w ${lfi_wordlist} -u \"_target_\" -mr \"root:\" " 2>/dev/null | grep "URL" | sed 's/| URL | //' | anew -q vulns/lfi.txt
                 end_func "Results are saved in vulns/lfi.txt" ${FUNCNAME[0]}
             else
@@ -1446,7 +1468,7 @@ function lfi() {
             fi
         fi
     else
-        if [[ "$LFI" = false ]]; then
+        if [[ $LFI == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         elif [[ ! -s "gf/lfi.txt" ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} No URLs potentially vulnerables to LFI ${reset}\n\n"
@@ -1457,11 +1479,11 @@ function lfi() {
 }
 
 function ssti() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SSTI" = true ]] && [[ -s "gf/ssti.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SSTI == true ]] && [[ -s "gf/ssti.txt" ]]; then
         start_func ${FUNCNAME[0]} "SSTI checks"
         if [[ -s "gf/ssti.txt" ]]; then
             cat gf/ssti.txt | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/tmp_ssti.txt
-            if [[ "$DEEP" = true ]] || [[ $(cat .tmp/tmp_ssti.txt | wc -l) -le $DEEP_LIMIT ]]; then
+            if [[ $DEEP == true ]] || [[ $(cat .tmp/tmp_ssti.txt | wc -l) -le $DEEP_LIMIT ]]; then
                 interlace -tL .tmp/tmp_ssti.txt -threads "${INTERLACE_THREADS}" -c "ffuf -v -r -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -w ${ssti_wordlist} -u \"_target_\" -mr \"ssti49\" " 2>/dev/null | grep "URL" | sed 's/| URL | //' | anew -q vulns/ssti.txt
                 end_func "Results are saved in vulns/ssti.txt" ${FUNCNAME[0]}
             else
@@ -1469,7 +1491,7 @@ function ssti() {
             fi
         fi
     else
-        if [[ "$SSTI" = false ]]; then
+        if [[ $SSTI == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         elif [[ ! -s "gf/ssti.txt" ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} No URLs potentially vulnerables to SSTI ${reset}\n\n"
@@ -1480,15 +1502,15 @@ function ssti() {
 }
 
 function sqli() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SQLI" = true ]] && [[ -s "gf/sqli.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SQLI == true ]] && [[ -s "gf/sqli.txt" ]]; then
         start_func ${FUNCNAME[0]} "SQLi checks"
 
         cat gf/sqli.txt | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/tmp_sqli.txt
-        if [[ "$DEEP" = true ]] || [[ $(cat .tmp/tmp_sqli.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            if [[ "$SQLMAP" = true ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat .tmp/tmp_sqli.txt | wc -l) -le $DEEP_LIMIT ]]; then
+            if [[ $SQLMAP == true ]]; then
                 python3"${tools}"/sqlmap/sqlmap.py -m .tmp/tmp_sqli.txt -b -o --smart --batch --disable-coloring --random-agent --output-dir=vulns/sqlmap 2>>"${LOGFILE}" >/dev/null
             fi
-            if [[ "$GHAURI" = true ]]; then
+            if [[ $GHAURI == true ]]; then
                 interlace -tL .tmp/tmp_sqli.txt -threads "${INTERLACE_THREADS}" -c "ghauri -u _target_ --batch -H \"${HEADER}\" --force-ssl >> vulns/ghauri_log.txt" 2>>"${LOGFILE}" >/dev/null
             fi
             end_func "Results are saved in vulns/sqlmap folder" ${FUNCNAME[0]}
@@ -1496,7 +1518,7 @@ function sqli() {
             end_func "Skipping SQLi: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$SQLI" = false ]]; then
+        if [[ $SQLI == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         elif [[ ! -s "gf/sqli.txt" ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} No URLs potentially vulnerables to SQLi ${reset}\n\n"
@@ -1507,12 +1529,12 @@ function sqli() {
 }
 
 function test_ssl() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$TEST_SSL" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $TEST_SSL == true ]]; then
         start_func ${FUNCNAME[0]} "SSL Test"
-       "${tools}"/testssl.sh/testssl.sh --quiet --color 0 -U -iL hosts/ips.txt 2>>"${LOGFILE}" >vulns/testssl.txt
+        "${tools}"/testssl.sh/testssl.sh --quiet --color 0 -U -iL hosts/ips.txt 2>>"${LOGFILE}" >vulns/testssl.txt
         end_func "Results are saved in vulns/testssl.txt" ${FUNCNAME[0]}
     else
-        if [[ "$TEST_SSL" = false ]]; then
+        if [[ $TEST_SSL == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1521,7 +1543,7 @@ function test_ssl() {
 }
 
 function spraying() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SPRAY" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SPRAY == true ]]; then
         start_func ${FUNCNAME[0]} "Password spraying"
         pushd "${tools}/brutespray" &>/dev/null || {
             echo "Failed to cd to brutespray"
@@ -1534,7 +1556,7 @@ function spraying() {
         }
         end_func "Results are saved in vulns/brutespray folder" ${FUNCNAME[0]}
     else
-        if [[ "$SPRAY" = false ]]; then
+        if [[ $SPRAY == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1543,17 +1565,17 @@ function spraying() {
 }
 
 function command_injection() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$COMM_INJ" = true ]] && [[ -s "gf/rce.txt" ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $COMM_INJ == true ]] && [[ -s "gf/rce.txt" ]]; then
         start_func ${FUNCNAME[0]} "Command Injection checks"
         [[ -s "gf/rce.txt" ]] && cat gf/rce.txt | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/tmp_rce.txt
-        if [[ "$DEEP" = true ]] || [[ $(cat .tmp/tmp_rce.txt | wc -l) -le $DEEP_LIMIT ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat .tmp/tmp_rce.txt | wc -l) -le $DEEP_LIMIT ]]; then
             [[ -s ".tmp/tmp_rce.txt" ]] && python3"${tools}"/commix/commix.py --batch -m .tmp/tmp_rce.txt --output-dir vulns/command_injection.txt 2>>"${LOGFILE}" >/dev/null
             end_func "Results are saved in vulns/command_injection folder" ${FUNCNAME[0]}
         else
             end_func "Skipping Command injection: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$COMM_INJ" = false ]]; then
+        if [[ $COMM_INJ == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         elif [[ ! -s "gf/rce.txt" ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} No URLs potentially vulnerables to Command Injection ${reset}\n\n"
@@ -1564,8 +1586,8 @@ function command_injection() {
 }
 
 function 4xxbypass() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$BYPASSER4XX" = true ]]; then
-        if [[ $(cat fuzzing/fuzzing_full.txt 2>/dev/null | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | wc -l) -le 1000 ]] || [[ "$DEEP" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $BYPASSER4XX == true ]]; then
+        if [[ $(cat fuzzing/fuzzing_full.txt 2>/dev/null | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | wc -l) -le 1000 ]] || [[ $DEEP == true ]]; then
             start_func "403 bypass"
             cat "${dir}"/fuzzing/fuzzing_full.txt 2>/dev/null | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 >"${dir}"/.tmp/403test.txt
             pushd "${tools}/byp4xx" &>/dev/null || {
@@ -1583,7 +1605,7 @@ function 4xxbypass() {
             notification "Too many urls to bypass, skipping" warn
         fi
     else
-        if [[ "$BYPASSER4XX" = false ]]; then
+        if [[ $BYPASSER4XX == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1592,9 +1614,9 @@ function 4xxbypass() {
 }
 
 function prototype_pollution() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$PROTO_POLLUTION" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $PROTO_POLLUTION == true ]]; then
         start_func ${FUNCNAME[0]} "Prototype Pollution checks"
-        if [[ "$DEEP" = true ]] || [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT ]]; then
             [[ -s "webs/url_extract.txt" ]] && ppfuzz -l webs/url_extract.txt -c $PPFUZZ_THREADS 2>/dev/null | anew -q .tmp/prototype_pollution.txt
             [[ -s ".tmp/prototype_pollution.txt" ]] && cat .tmp/prototype_pollution.txt | sed -e '1,8d' | sed '/^\[ERR/d' | anew -q vulns/prototype_pollution.txt
             end_func "Results are saved in vulns/prototype_pollution.txt" ${FUNCNAME[0]}
@@ -1602,7 +1624,7 @@ function prototype_pollution() {
             end_func "Skipping Prototype Pollution: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$PROTO_POLLUTION" = false ]]; then
+        if [[ $PROTO_POLLUTION == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1611,10 +1633,10 @@ function prototype_pollution() {
 }
 
 function smuggling() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SMUGGLING" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SMUGGLING == true ]]; then
         start_func ${FUNCNAME[0]} "HTTP Request Smuggling checks"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ "$DEEP" = true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
             pushd "${tools}/smuggler" &>/dev/null || {
                 echo "Failed to cd to smuggler"
                 exit 1
@@ -1630,7 +1652,7 @@ function smuggling() {
             end_func "Skipping Prototype Pollution: Too many webs to test, try with --deep flag" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$SMUGGLING" = false ]]; then
+        if [[ $SMUGGLING == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1639,10 +1661,10 @@ function smuggling() {
 }
 
 function webcache() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$WEBCACHE" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBCACHE == true ]]; then
         start_func ${FUNCNAME[0]} "Web Cache Poisoning checks"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ "$DEEP" = true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
             pushd "${tools}/Web-Cache-Vulnerability-Scanner" &>/dev/null || {
                 echo "Failed to cd to Web-Cache-Vulnerability-Scanner"
                 exit 1
@@ -1658,7 +1680,7 @@ function webcache() {
             end_func "Web Cache Poisoning: Too many webs to test, try with --deep flag" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$WEBCACHE" = false ]]; then
+        if [[ $WEBCACHE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1667,10 +1689,10 @@ function webcache() {
 }
 
 function fuzzparams() {
-    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$FUZZPARAMS" = true ]]; then
+    if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $FUZZPARAMS == true ]]; then
         start_func ${FUNCNAME[0]} "Fuzzing params values checks"
-        if [[ "$DEEP" = true ]] || [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
-            if [[ ! ${AXIOM} = true ]]; then
+        if [[ $DEEP == true ]] || [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
+            if [[ ! ${AXIOM} == true ]]; then
                 nuclei -update 2>>"${LOGFILE}" >/dev/null
                 git -C"${tools}"/fuzzing-templates pull
                 cat webs/url_extract.txt 2>/dev/null | nuclei -silent -retries 3 -rl $NUCLEI_RATELIMIT -t"${tools}"/fuzzing-templates -o .tmp/fuzzparams.txt
@@ -1684,7 +1706,7 @@ function fuzzparams() {
             end_func "Fuzzing params values: Too many entries to test, try with --deep flag" ${FUNCNAME[0]}
         fi
     else
-        if [[ "$FUZZPARAMS" = false ]]; then
+        if [[ $FUZZPARAMS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
         else
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -1697,7 +1719,7 @@ function fuzzparams() {
 ###############################################################################################################
 
 function deleteOutScoped() {
-    if [[ -s "$1" ]]; then
+    if [[ -s $1 ]]; then
         cat $1 | while read outscoped; do
             if grep -q "^[*]" <<<$outscoped; then
                 outscoped="${outscoped:1}"
@@ -1724,7 +1746,7 @@ function getElapsedTime {
 
 function zipSnedOutputFolder {
     zip_name1=$(date +"%Y_%m_%d-%H.%M.%S")
-    zip_name="${zip_name1}_${domain}.zip" 2>>"${LOGFILE}" >/dev/null
+    zip_name="${zip_name1}_${DOMAIN}.zip" 2>>"${LOGFILE}" >/dev/null
     (cd "${dir}" && zip -r "$zip_name" .)
 
     echo "Sending zip file "${dir}/${zip_name}""
@@ -1760,23 +1782,23 @@ function remove_big_files() {
 }
 
 function notification() {
-    if [[ -n "$1" ]] && [[ -n "$2" ]]; then
+    if [[ -n $1 ]] && [[ -n $2 ]]; then
         case $2 in
         info)
             text="\n${bblue} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${domain}\n" | ${NOTIFY}
+            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
             ;;
         warn)
             text="\n${yellow} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${domain}\n" | ${NOTIFY}
+            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
             ;;
         error)
             text="\n${bred} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${domain}\n" | ${NOTIFY}
+            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
             ;;
         good)
             text="\n${bgreen} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${domain}\n" | ${NOTIFY}
+            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
             ;;
         esac
     fi
@@ -1790,11 +1812,11 @@ function transfer {
     if tty -s; then
         file="$1"
         file_name=$(basename "$file")
-        if [[ ! -e "$file" ]]; then
+        if [[ ! -e $file ]]; then
             echo "$file: No such file or directory" >&2
             return 1
         fi
-        if [[ -d "$file" ]]; then
+        if [[ -d $file ]]; then
             file_name="$file_name.zip"
             (cd "$file" && zip -r -q - .) | curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name" | tee /dev/null
         else
@@ -1819,18 +1841,18 @@ function sendToNotify {
             return 0
         fi
         if grep -q '^ telegram\|^telegram\|^    telegram' ${NOTIFY_CONFIG}; then
-            notification "Sending ${domain} data over Telegram" info
+            notification "Sending ${DOMAIN} data over Telegram" info
             telegram_chat_id=$(cat ${NOTIFY_CONFIG} | grep '^    telegram_chat_id\|^telegram_chat_id\|^    telegram_chat_id' | xargs | cut -d' ' -f2)
             telegram_key=$(cat ${NOTIFY_CONFIG} | grep '^    telegram_api_key\|^telegram_api_key\|^    telegram_apikey' | xargs | cut -d' ' -f2)
             curl -F document=@${1} "https://api.telegram.org/bot${telegram_key}/sendDocument?chat_id=${telegram_chat_id}" 2>>"${LOGFILE}" >/dev/null
         fi
         if grep -q '^ discord\|^discord\|^    discord' ${NOTIFY_CONFIG}; then
-            notification "Sending ${domain} data over Discord" info
+            notification "Sending ${DOMAIN} data over Discord" info
             discord_url=$(cat ${NOTIFY_CONFIG} | grep '^ discord_webhook_url\|^discord_webhook_url\|^    discord_webhook_url' | xargs | cut -d' ' -f2)
             curl -v -i -H "Accept: application/json" -H "Content-Type: multipart/form-data" -X POST -F file1=@${1} $discord_url 2>>"${LOGFILE}" >/dev/null
         fi
         if [[ -n $slack_channel ]] && [[ -n $slack_auth ]]; then
-            notification "Sending ${domain} data over Slack" info
+            notification "Sending ${DOMAIN} data over Slack" info
             curl -F file=@${1} -F "initial_comment=reconftw zip file" -F channels=${slack_channel} -H "Authorization: Bearer ${slack_auth}" https://slack.com/api/files.upload 2>>"${LOGFILE}" >/dev/null
         fi
     fi
@@ -1872,17 +1894,17 @@ function check_inscope() {
 }
 
 function resolvers_update() {
-    if [[ "$generate_resolvers" = true ]]; then
-        if [[ ! ${AXIOM} = true ]]; then
-            if [[ ! -s "$resolvers" ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
+    if [[ $generate_resolvers == true ]]; then
+        if [[ ! ${AXIOM} == true ]]; then
+            if [[ ! -s $resolvers ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
                 notification "Resolvers seem older than 1 day\n Generating custom resolvers..." warn
                 eval rm -f $resolvers 2>>"${LOGFILE}"
                 dnsvalidator -tL https://public-dns.info/nameservers.txt -threads $DNSVALIDATOR_THREADS -o $resolvers 2>>"${LOGFILE}" >/dev/null
                 dnsvalidator -tL https://raw.githubusercontent.com/blechschmidt/massdns/master/lists/resolvers.txt -threads $DNSVALIDATOR_THREADS -o tmp_resolvers 2>>"${LOGFILE}" >/dev/null
                 [[ -s "tmp_resolvers" ]] && cat tmp_resolvers | anew -q $resolvers
                 [[ -s "tmp_resolvers" ]] && rm -f tmp_resolvers 2>>"${LOGFILE}" >/dev/null
-                [[ ! -s "$resolvers" ]] && wget -q -O - ${resolvers_url} >$resolvers
-                [[ ! -s "$resolvers_trusted" ]] && wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
+                [[ ! -s $resolvers ]] && wget -q -O - ${resolvers_url} >$resolvers
+                [[ ! -s $resolvers_trusted ]] && wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
                 notification "Updated\n" good
             fi
         else
@@ -1896,7 +1918,7 @@ function resolvers_update() {
         generate_resolvers=false
     else
 
-        if [[ ! -s "$resolvers" ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
+        if [[ ! -s $resolvers ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
             notification "Resolvers seem older than 1 day\n Downloading new resolvers..." warn
             wget -q -O - ${resolvers_url} >$resolvers
             wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
@@ -1906,7 +1928,7 @@ function resolvers_update() {
 }
 
 function resolvers_update_quick_local() {
-    if [[ "$update_resolvers" = true ]]; then
+    if [[ $update_resolvers == true ]]; then
         wget -q -O - ${resolvers_url} >$resolvers
         wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
     fi
@@ -1922,15 +1944,15 @@ function ipcidr_target() {
     if [[ $1 =~ ^${IP_CIDR_REGEX} ]]; then
         echo $1 | mapcidr -silent | anew -q target_reconftw_ipcidr.txt
         if [[ -s "./target_reconftw_ipcidr.txt" ]]; then
-            [[ "$REVERSE_IP" = true ]] && cat ./target_reconftw_ipcidr.txt | hakip2host | cut -d' ' -f 3 | unfurl -u domains 2>/dev/null | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | anew -q ./target_reconftw_ipcidr.txt
+            [[ $REVERSE_IP == true ]] && cat ./target_reconftw_ipcidr.txt | hakip2host | cut -d' ' -f 3 | unfurl -u domains 2>/dev/null | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | anew -q ./target_reconftw_ipcidr.txt
             if [[ $(cat ./target_reconftw_ipcidr.txt | wc -l) -eq 1 ]]; then
-                domain=$(cat ./target_reconftw_ipcidr.txt)
+                DOMAIN=$(cat ./target_reconftw_ipcidr.txt)
             elif [[ $(cat ./target_reconftw_ipcidr.txt | wc -l) -gt 1 ]]; then
                 unset domain
                 list=${PWD}/target_reconftw_ipcidr.txt
             fi
         fi
-        if [[ -n "$2" ]]; then
+        if [[ -n $2 ]]; then
             cat $list | anew -q $2
             sed -i '/\/[0-9]*$/d' $2
         fi
@@ -1939,7 +1961,7 @@ function ipcidr_target() {
 
 function axiom_lauch() {
     # let's fire up a FLEET!
-    if [[ "${AXIOM_FLEET_LAUNCH}" = true ]] && [[ -n "${AXIOM_FLEET_NAME}" ]] && [[ -n "${AXIOM_FLEET_COUNT}" ]]; then
+    if [[ ${AXIOM_FLEET_LAUNCH} == true ]] && [[ -n ${AXIOM_FLEET_NAME} ]] && [[ -n ${AXIOM_FLEET_COUNT} ]]; then
         start_func ${FUNCNAME[0]} "Launching our Axiom fleet"
         python3 -m pip install --upgrade linode-cli 2>>"${LOGFILE}" >/dev/null
         # Check to see if we have a fleet already, if so, SKIP THIS!
@@ -1960,7 +1982,7 @@ function axiom_lauch() {
             echo "axiom-fleet ${AXIOM_FLEET_NAME} ${AXIOM_ARGS}"
             axiom-fleet ${AXIOM_FLEET_NAME} ${AXIOM_ARGS}
             axiom-select "${AXIOM}_FLEET_NAME*"
-            if [[ -n "${AXIOM_POST_START}" ]]; then
+            if [[ -n ${AXIOM_POST_START} ]]; then
                 eval "${AXIOM_POST_START}" 2>>"${LOGFILE}" >/dev/null
             fi
 
@@ -1972,9 +1994,9 @@ function axiom_lauch() {
 }
 
 function axiom_shutdown() {
-    if [[ "${AXIOM_FLEET_LAUNCH}" = true ]] && [[ "${AXIOM_FLEET_SHUTDOWN}" = true ]] && [[ -n "${AXIOM_FLEET_NAME}" ]]; then
+    if [[ ${AXIOM_FLEET_LAUNCH} == true ]] && [[ ${AXIOM_FLEET_SHUTDOWN} == true ]] && [[ -n ${AXIOM_FLEET_NAME} ]]; then
         #if [[ "$mode" == "subs_menu" ]] || [[ "$mode" == "list_recon" ]] || [[ "$mode" == "passive" ]] || [[ "$mode" == "all" ]]; then
-        if [[ "$mode" == "subs_menu" ]] || [[ "$mode" == "passive" ]] || [[ "$mode" == "all" ]]; then
+        if [[ $mode == "subs_menu" ]] || [[ $mode == "passive" ]] || [[ $mode == "all" ]]; then
             notification "Automatic Axiom fleet shutdown is not enabled in this mode" info
             return
         fi
@@ -2001,28 +2023,26 @@ function start() {
 
     global_start=$(date +%s)
 
-    if [[ "$NOTIFICATION" = true ]]; then
+    if [[ $NOTIFICATION == true ]]; then
         NOTIFY="notify -silent"
     else
         NOTIFY=""
     fi
 
     printf "\n${bgreen}#######################################################################${reset}"
-    notification "Recon succesfully started on ${domain}" good
-    [[ "$SOFT_NOTIFICATION" = true ]] && echo "Recon succesfully started on ${domain}" | notify -silent
+    notification "Recon succesfully started on ${DOMAIN}" good
+    [[ $SOFT_NOTIFICATION == true ]] && echo "Recon succesfully started on ${DOMAIN}" | notify -silent
     printf "${bgreen}#######################################################################${reset}\n"
-    if [[ "$upgrade_before_running" = true ]]; then
+    if [[ $upgrade_before_running == true ]]; then
         ${SCRIPTPATH}/install.sh --tools
     fi
-    tools_installed
+    rftw_util_tools
 
-    #[[ -n "${DOMAIN}" ]] && ipcidr_target${domain}/
-
-    if [[ -z "${DOMAIN}" ]]; then
-        if [[ -n "$list" ]]; then
-            if [[ -z "${DOMAIN}" ]]; then
-                domain="Multi"
-                dir="$SCRIPTPATH/Recon/$domain"
+    if [[ -z ${DOMAIN} ]]; then
+        if [[ -n $list ]]; then
+            if [[ -z ${DOMAIN} ]]; then
+                DOMAIN="Multi"
+                dir="$SCRIPTPATH/Recon/$DOMAIN"
                 called_fn_dir="${dir}"/.called_fn
             fi
             if [[ $list == /* ]]; then
@@ -2032,16 +2052,16 @@ function start() {
             fi
         fi
     else
-        dir="$SCRIPTPATH/Recon/$domain"
+        dir="$SCRIPTPATH/Recon/$DOMAIN"
         called_fn_dir="${dir}"/.called_fn
     fi
 
-    if [[ -z "${DOMAIN}" ]]; then
+    if [[ -z ${DOMAIN} ]]; then
         notification "\n\n${bred} No domain or list provided ${reset}\n\n" error
         exit
     fi
 
-    if [[ ! -d "$called_fn_dir" ]]; then
+    if [[ ! -d $called_fn_dir ]]; then
         mkdir -p "$called_fn_dir"
     fi
     mkdir -p "${dir}"
@@ -2049,8 +2069,8 @@ function start() {
         echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"
         exit 1
     }
-    if [[ ${AXIOM} = true ]]; then
-        if [[ -n "${DOMAIN}" ]]; then
+    if [[ ${AXIOM} == true ]]; then
+        if [[ -n ${DOMAIN} ]]; then
             echo "${DOMAIN}" | anew -q target.txt
             list="${dir}/target.txt"
         fi
@@ -2064,7 +2084,8 @@ function start() {
     echo "Start ${NOW} ${NOWT}" >"${LOGFILE}"
 
     printf "\n"
-    printf "${bred} Target: ${domain}\n\n"
+    printf "${bred} Target: ${DOMAIN}\n\n"
+
 }
 
 function end() {
@@ -2074,34 +2095,34 @@ function end() {
 
     echo "End $(date +"%F") $(date +"%T")" >>"${LOGFILE}"
 
-    if [[ ! "$PRESERVE" = true ]]; then
+    if [[ ! $PRESERVE == true ]]; then
         find $dir -type f -empty | grep -v "called_fn" | xargs rm -f 2>>"${LOGFILE}" >/dev/null
         find $dir -type d -empty | grep -v "called_fn" | xargs rm -rf 2>>"${LOGFILE}" >/dev/null
     fi
 
-    if [[ "$REMOVETMP" = true ]]; then
+    if [[ $REMOVETMP == true ]]; then
         rm -rf "${dir}"/.tmp
     fi
 
-    if [[ "$REMOVELOG" = true ]]; then
+    if [[ $REMOVELOG == true ]]; then
         rm -rf "${dir}"/.log
     fi
 
-    if [[ -n "$dir_output" ]]; then
+    if [[ -n $dir_output ]]; then
         output
         finaldir=$dir_output
     else
         finaldir=$dir
     fi
     #Zip the output folder and send it via tg/discord/slack
-    if [[ "$SENDZIPNOTIFY" = true ]]; then
+    if [[ $SENDZIPNOTIFY == true ]]; then
         zipSnedOutputFolder
     fi
     global_end=$(date +%s)
     getElapsedTime $global_start $global_end
     printf "${bgreen}#######################################################################${reset}\n"
-    notification "Finished Recon on: ${domain} under ${finaldir} in: ${runtime}" good
-    [[ "$SOFT_NOTIFICATION" = true ]] && echo "Finished Recon on: ${domain} under ${finaldir} in: ${runtime}" | notify -silent
+    notification "Finished Recon on: ${DOMAIN} under ${finaldir} in: ${runtime}" good
+    [[ $SOFT_NOTIFICATION == true ]] && echo "Finished Recon on: ${DOMAIN} under ${finaldir} in: ${runtime}" | notify -silent
     printf "${bgreen}#######################################################################${reset}\n"
     #Seperator for more clear messges in telegram_Bot
     echo "******  Stay safe 🦠 and secure 🔐  ******" | ${NOTIFY}
@@ -2120,6 +2141,7 @@ function passive() {
     github_dorks
     github_repos
     metadata
+    postleaks
     SUBNOERROR=false
     SUBANALYTICS=false
     SUBBRUTE=false
@@ -2128,7 +2150,7 @@ function passive() {
     SUBREGEXPERMUTE=false
     SUB_RECURSIVE_BRUTE=false
     WEBPROBESIMPLE=false
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_lauch
         axiom_selected
     fi
@@ -2140,7 +2162,7 @@ function passive() {
     PORTSCAN_ACTIVE=false
     portscan
 
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_shutdown
     fi
 
@@ -2162,12 +2184,13 @@ function osint() {
     github_dorks
     github_repos
     metadata
+    postleaks
     zonetransfer
     favicon
 }
 
 function vulns() {
-    if [[ "$VULNS_GENERAL" = true ]]; then
+    if [[ $VULNS_GENERAL == true ]]; then
         cors
         open_redirect
         ssrf_checks
@@ -2192,15 +2215,15 @@ function multi_osint() {
 
     global_start=$(date +%s)
 
-    if [[ "$NOTIFICATION" = true ]]; then
+    if [[ $NOTIFICATION == true ]]; then
         NOTIFY="notify -silent"
     else
         NOTIFY=""
     fi
 
-    #[[ -n "${DOMAIN}" ]] && ipcidr_target${domain}/
+    #[[ -n "${DOMAIN}" ]] && ipcidr_target${DOMAIN}/
 
-    if [[ -s "$list" ]]; then
+    if [[ -s $list ]]; then
         sed -i 's/\r$//' $list
         targets=$(cat $list)
     else
@@ -2226,7 +2249,7 @@ function multi_osint() {
     echo "Start ${NOW} ${NOWT}" >"${LOGFILE}"
 
     for domain in $targets; do
-        dir=$workdir/targets/$domain
+        dir=$workdir/targets/$DOMAIN
         called_fn_dir="${dir}"/.called_fn
         mkdir -p $dir
         cd "${dir}" || {
@@ -2246,6 +2269,7 @@ function multi_osint() {
         github_dorks
         github_repos
         metadata
+        postleaks
         zonetransfer
         favicon
     done
@@ -2254,7 +2278,7 @@ function multi_osint() {
         exit 1
     }
     dir=$workdir
-    domain=$multi
+    DOMAIN=$multi
     end
 }
 
@@ -2266,10 +2290,11 @@ function recon() {
     github_dorks
     github_repos
     metadata
+    postleaks
     zonetransfer
     favicon
 
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_lauch
         axiom_selected
     fi
@@ -2289,7 +2314,7 @@ function recon() {
     urlchecks
     jschecks
 
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_shutdown
     fi
 
@@ -2305,15 +2330,15 @@ function multi_recon() {
 
     global_start=$(date +%s)
 
-    if [[ "$NOTIFICATION" = true ]]; then
+    if [[ $NOTIFICATION == true ]]; then
         NOTIFY="notify -silent"
     else
         NOTIFY=""
     fi
 
-    #[[ -n "${DOMAIN}" ]] && ipcidr_target${domain}/
+    #[[ -n "${DOMAIN}" ]] && ipcidr_target${DOMAIN}/
 
-    if [[ -s "$list" ]]; then
+    if [[ -s $list ]]; then
         sed -i 's/\r$//' $list
         targets=$(cat $list)
     else
@@ -2338,10 +2363,10 @@ function multi_recon() {
     touch .log/${NOW}_${NOWT}.txt
     echo "Start ${NOW} ${NOWT}" >"${LOGFILE}"
 
-    [[ -n "$flist" ]] && LISTTOTAL=$(cat "$flist" | wc -l)
+    [[ -n $flist ]] && LISTTOTAL=$(cat "$flist" | wc -l)
 
     for domain in $targets; do
-        dir=$workdir/targets/$domain
+        dir=$workdir/targets/$DOMAIN
         called_fn_dir="${dir}"/.called_fn
         mkdir -p $dir
         cd "${dir}" || {
@@ -2364,6 +2389,7 @@ function multi_recon() {
         github_dorks
         github_repos
         metadata
+        postleaks
         zonetransfer
         favicon
         currently=$(date +"%H:%M:%S")
@@ -2371,8 +2397,8 @@ function multi_recon() {
         getElapsedTime $loopstart $loopend
         printf "${bgreen}#######################################################################${reset}\n"
         printf "${bgreen} "${DOMAIN}" finished 1st loop in ${runtime}  $currently ${reset}\n"
-        if [[ -n "$flist" ]]; then
-            POSINLIST=$(eval grep -nrE "^$domain$" "$flist" | cut -f1 -d':')
+        if [[ -n $flist ]]; then
+            POSINLIST=$(eval grep -nrE "^$DOMAIN$" "$flist" | cut -f1 -d':')
             printf "\n${yellow}  "${DOMAIN}" is $POSINLIST of $LISTTOTAL${reset}\n"
         fi
         printf "${bgreen}#######################################################################${reset}\n"
@@ -2382,14 +2408,14 @@ function multi_recon() {
         exit 1
     }
 
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_lauch
         axiom_selected
     fi
 
     for domain in $targets; do
         loopstart=$(date +%s)
-        dir=$workdir/targets/$domain
+        dir=$workdir/targets/$DOMAIN
         called_fn_dir="${dir}"/.called_fn
         cd "${dir}" || {
             echo "Failed to cd directory '$dir' in ${FUNCNAME[0]} @ line ${LINENO}"
@@ -2408,8 +2434,8 @@ function multi_recon() {
         getElapsedTime $loopstart $loopend
         printf "${bgreen}#######################################################################${reset}\n"
         printf "${bgreen} "${DOMAIN}" finished 2nd loop in ${runtime}  $currently ${reset}\n"
-        if [[ -n "$flist" ]]; then
-            POSINLIST=$(eval grep -nrE "^$domain$" "$flist" | cut -f1 -d':')
+        if [[ -n $flist ]]; then
+            POSINLIST=$(eval grep -nrE "^$DOMAIN$" "$flist" | cut -f1 -d':')
             printf "\n${yellow}  "${DOMAIN}" is $POSINLIST of $LISTTOTAL${reset}\n"
         fi
         printf "${bgreen}#######################################################################${reset}\n"
@@ -2448,7 +2474,7 @@ function multi_recon() {
     nuclei_check
     for domain in $targets; do
         loopstart=$(date +%s)
-        dir=$workdir/targets/$domain
+        dir=$workdir/targets/$DOMAIN
         called_fn_dir="${dir}"/.called_fn
         cd "${dir}" || {
             echo "Failed to cd directory '$dir' in ${FUNCNAME[0]} @ line ${LINENO}"
@@ -2463,20 +2489,20 @@ function multi_recon() {
         getElapsedTime $loopstart $loopend
         printf "${bgreen}#######################################################################${reset}\n"
         printf "${bgreen} "${DOMAIN}" finished 3rd loop in ${runtime}  $currently ${reset}\n"
-        if [[ -n "$flist" ]]; then
-            POSINLIST=$(eval grep -nrE "^$domain$" "$flist" | cut -f1 -d':')
+        if [[ -n $flist ]]; then
+            POSINLIST=$(eval grep -nrE "^$DOMAIN$" "$flist" | cut -f1 -d':')
             printf "\n${yellow}  "${DOMAIN}" is $POSINLIST of $LISTTOTAL${reset}\n"
         fi
         printf "${bgreen}#######################################################################${reset}\n"
     done
 
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_shutdown
     fi
 
     for domain in $targets; do
         loopstart=$(date +%s)
-        dir=$workdir/targets/$domain
+        dir=$workdir/targets/$DOMAIN
         called_fn_dir="${dir}"/.called_fn
         cd "${dir}" || {
             echo "Failed to cd directory '$dir' in ${FUNCNAME[0]} @ line ${LINENO}"
@@ -2493,8 +2519,8 @@ function multi_recon() {
         getElapsedTime $loopstart $loopend
         printf "${bgreen}#######################################################################${reset}\n"
         printf "${bgreen} "${DOMAIN}" finished final loop in ${runtime}  $currently ${reset}\n"
-        if [[ -n "$flist" ]]; then
-            POSINLIST=$(eval grep -nrE "^$domain$" "$flist" | cut -f1 -d':')
+        if [[ -n $flist ]]; then
+            POSINLIST=$(eval grep -nrE "^$DOMAIN$" "$flist" | cut -f1 -d':')
             printf "\n${yellow}  "${DOMAIN}" is $POSINLIST of $LISTTOTAL${reset}\n"
         fi
         printf "${bgreen}#######################################################################${reset}\n"
@@ -2504,14 +2530,14 @@ function multi_recon() {
         exit 1
     }
     dir=$workdir
-    domain=$multi
+    DOMAIN=$multi
     end
 }
 
 function subs_menu() {
     start
 
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_lauch
         axiom_selected
     fi
@@ -2525,7 +2551,7 @@ function subs_menu() {
     zonetransfer
     s3buckets
 
-    if [[ ${AXIOM} = true ]]; then
+    if [[ ${AXIOM} == true ]]; then
         axiom_shutdown
     fi
 
@@ -2606,6 +2632,8 @@ function help() {
 ########################################### START SCRIPT  #####################################################
 ###############################################################################################################
 
+source assets/spinny/spinny.sh
+
 # macOS PATH initialization, thanks @0xtavian <3
 if [[ $OSTYPE == "darwin"* ]]; then
     PATH="/usr/local/opt/gnu-getopt/bin:$PATH"
@@ -2621,7 +2649,7 @@ unset PROGARGS
 while true; do
     case "$1" in
     '-d' | '--domain')
-        domain=$2
+        DOMAIN=$2
         ipcidr_target $2
         shift 2
         continue
@@ -2729,7 +2757,7 @@ while true; do
         . ./reconftw.cfg
         banner
         help
-        tools_installed
+        rftw_util_tools -t "${tools}"
         exit 1
         ;;
     esac
@@ -2744,7 +2772,7 @@ SCRIPTPATH="$(
     echo "Error importing reconftw.ctg"
     exit 1
 }
-if [[ -s "$CUSTOM_CONFIG" ]]; then
+if [[ -s $CUSTOM_CONFIG ]]; then
     # shellcheck source=/home/six2dez/Tools/reconftw/custom_config.cfg
     . "${CUSTOM_CONFIG}" || {
         echo "Error importing reconftw.ctg"
@@ -2762,17 +2790,17 @@ if [[ $rate_limit ]]; then
     HTTPX_RATELIMIT=$rate_limit
 fi
 
-if [[ -n "$outOfScope_file" ]]; then
+if [[ -n $outOfScope_file ]]; then
     isAsciiText $outOfScope_file
-    if [[ "False" = "$IS_ASCII" ]]; then
+    if [[ "False" == "$IS_ASCII" ]]; then
         printf "\n\n${bred} Out of Scope file is not a text file${reset}\n\n"
         exit
     fi
 fi
 
-if [[ -n "${INSCOPE}_file" ]]; then
-    isAsciiText ${INSCOPE}_file
-    if [[ "False" = "$IS_ASCII" ]]; then
+if [[ -n "${INSCOPE_file}" ]]; then
+    isAsciiText ${INSCOPE_file}
+    if [[ "False" == "$IS_ASCII" ]]; then
         printf "\n\n${bred} In Scope file is not a text file${reset}\n\n"
         exit
     fi
@@ -2788,10 +2816,10 @@ startdir=${PWD}
 
 banner
 
-check_version
+rftw_util_version
 
 startdir=${PWD}
-if [[ -n "$list" ]]; then
+if [[ -n $list ]]; then
     if [[ $list == ./* ]]; then
         flist="${startdir}/${list:2}"
     elif [[ $list == ~* ]]; then
@@ -2807,15 +2835,15 @@ fi
 
 case $opt_mode in
 'r')
-    if [[ -n "$multi" ]]; then
-        if [[ ${AXIOM} = true ]]; then
+    if [[ -n $multi ]]; then
+        if [[ ${AXIOM} == true ]]; then
             mode="multi_recon"
         fi
         multi_recon
         exit
     fi
-    if [[ -n "$list" ]]; then
-        if [[ ${AXIOM} = true ]]; then
+    if [[ -n $list ]]; then
+        if [[ ${AXIOM} == true ]]; then
             mode="list_recon"
         fi
         sed -i 's/\r$//' $list
@@ -2825,7 +2853,7 @@ case $opt_mode in
             end
         done
     else
-        if [[ ${AXIOM} = true ]]; then
+        if [[ ${AXIOM} == true ]]; then
             mode="recon"
         fi
         start
@@ -2834,8 +2862,8 @@ case $opt_mode in
     fi
     ;;
 's')
-    if [[ -n "$list" ]]; then
-        if [[ ${AXIOM} = true ]]; then
+    if [[ -n $list ]]; then
+        if [[ ${AXIOM} == true ]]; then
             mode="subs_menu"
         fi
         sed -i 's/\r$//' $list
@@ -2847,8 +2875,8 @@ case $opt_mode in
     fi
     ;;
 'p')
-    if [[ -n "$list" ]]; then
-        if [[ ${AXIOM} = true ]]; then
+    if [[ -n $list ]]; then
+        if [[ ${AXIOM} == true ]]; then
             mode="passive"
         fi
         sed -i 's/\r$//' $list
@@ -2861,8 +2889,8 @@ case $opt_mode in
     ;;
 'a')
     export VULNS_GENERAL=true
-    if [[ -n "$list" ]]; then
-        if [[ ${AXIOM} = true ]]; then
+    if [[ -n $list ]]; then
+        if [[ ${AXIOM} == true ]]; then
             mode="all"
         fi
         sed -i 's/\r$//' $list
@@ -2874,7 +2902,7 @@ case $opt_mode in
     fi
     ;;
 'w')
-    if [[ -n "$list" ]]; then
+    if [[ -n $list ]]; then
         start
         if [[ $list == /* ]]; then
             cp $list "${dir}"/webs/webs.txt
@@ -2890,11 +2918,11 @@ case $opt_mode in
     ;;
 'n')
     PRESERVE=true
-    if [[ -n "$multi" ]]; then
+    if [[ -n $multi ]]; then
         multi_osint
         exit
     fi
-    if [[ -n "$list" ]]; then
+    if [[ -n $list ]]; then
         sed -i 's/\r$//' $list
         while IFS= read -r domain; do
             start
@@ -2909,7 +2937,7 @@ case $opt_mode in
     ;;
 'c')
     export DIFF=true
-    dir="$SCRIPTPATH/Recon/$domain"
+    dir="$SCRIPTPATH/Recon/$DOMAIN"
     cd $dir || {
         echo "Failed to cd directory '$dir'"
         exit 1
@@ -2926,7 +2954,7 @@ case $opt_mode in
     # No mode selected.  EXIT!
 *)
     help
-    tools_installed
+    rftw_util_tools -t "${tools}"
     exit 1
     ;;
 esac

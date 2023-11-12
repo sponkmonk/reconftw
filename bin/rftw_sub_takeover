@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-    source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found!"
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
 
@@ -47,7 +49,7 @@ run_subtakeover() {
 		if [[ "$NUMOFLINES" -gt 0 ]]; then
 			notification "${NUMOFLINES} new possible takeovers found" info
 		fi
-		end_func "Results are saved in ${domain}/webs/takeover.txt" ${FUNCNAME[0]}
+		end_func "Results are saved in ${DOMAIN}/webs/takeover.txt" ${FUNCNAME[0]}
 }
 
 # Main

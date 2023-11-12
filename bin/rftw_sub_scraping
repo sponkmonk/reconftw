@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# Load the environment variables from the configuration file
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-    source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found!"
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
 
@@ -60,12 +62,12 @@ sub_scraping() {
 				fi
 			fi
 			sed -i '/^.\{2048\}./d' .tmp/katana.txt
-			[[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | unfurl -u domains 2>>"${LOGFILE}" | grep ".$domain$" | anew -q .tmp/scrap_subs.txt
+			[[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | unfurl -u domains 2>>"${LOGFILE}" | grep ".$DOMAIN$" | anew -q .tmp/scrap_subs.txt
 			[[ -s ".tmp/scrap_subs.txt" ]] && puredns resolve .tmp/scrap_subs.txt -w .tmp/scrap_subs_resolved.txt -r $resolvers --resolvers-trusted $resolvers_trusted -l $PUREDNS_PUBLIC_LIMIT --rate-limit-trusted $PUREDNS_TRUSTED_LIMIT --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT  --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT 2>>"${LOGFILE}" >/dev/null
 			if [[ "${INSCOPE}" = true ]]; then
 				check_inscope .tmp/scrap_subs_resolved.txt 2>>"${LOGFILE}" >/dev/null
 			fi
-			NUMOFLINES=$(cat .tmp/scrap_subs_resolved.txt 2>>"${LOGFILE}" | grep "\.$domain$\|^$domain$" | anew subdomains/subdomains.txt | tee .tmp/diff_scrap.txt | sed '/^$/d' | wc -l)
+			NUMOFLINES=$(cat .tmp/scrap_subs_resolved.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | anew subdomains/subdomains.txt | tee .tmp/diff_scrap.txt | sed '/^$/d' | wc -l)
 			[[ -s ".tmp/diff_scrap.txt" ]] && cat .tmp/diff_scrap.txt | httpx -follow-host-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info3.txt 2>>"${LOGFILE}" >/dev/null
 			[[ -s ".tmp/web_full_info3.txt" ]] && cat .tmp/web_full_info3.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | sed "s/*.//" | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
 			cat .tmp/web_full_info1.txt .tmp/web_full_info2.txt .tmp/web_full_info3.txt 2>>"${LOGFILE}" | jq -s 'try .' | jq 'try unique_by(.input)' | jq 'try .[]' 2>>"${LOGFILE}" > .tmp/web_full_info.txt

@@ -1,38 +1,46 @@
 #!/bin/bash
 
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
 # Help menu
 function help_menu() {
     echo -e "Usage: ./rftw_osint_metadata.sh [OPTIONS]"
     echo -e "Options:"
     echo -e "  -d, --domain DOMAIN       Specify the domain"
-    echo -e "  -o, --output FILE         (Optional) Specify the output file path (prints to stdout if not set)"
+    echo -e "  -o, --output DIR          Specify the output file path (prints to stdout if not set)"
     echo -e "  -h, --help                Display this help menu"
     exit 1
 }
 
 # Main function
 function gather_metadata() {
-    # Validate tools
-
     echo -e "${yellow}Scanning metadata in public files${reset}"
-    metafinder -d "${DOMAIN}" -l "${METAFINDER_LIMIT}" -o osint -go -bi -ba &>> "${LOGFILE}" || { echo "metafinder command failed"; exit 1; }
-    mv "osint/${domain}/"*".txt" "osint/" 2>>"${LOGFILE}"
-    rm -rf "osint/${domain}" 2>>"${LOGFILE}"
-    if [[ -z "${output_file}" ]]; then
-        cat "osint/${domain}/*" 2>/dev/null
-    else
-        cat "osint/${domain}/*" 2>/dev/null > "${output_file}"
+    metafinder -d "${DOMAIN}" -l "${METAFINDER_LIMIT}" -o ${output_file} -go -bi -ba &>/dev/null || { echo "metafinder command failed"; exit 1; }
+     if [[ -d "${output_file}/${DOMAIN}/" ]]; then
+        if [[ -n $(ls -A "${output_file}/${DOMAIN}/") ]]; then
+            mv "${output_file}/${DOMAIN}/*.txt" "${output_file}/"
+            rm -rf "${output_file}/${DOMAIN}"
+        fi
     fi
 }
 
 # Default values
-domain=""
+DOMAIN=""
 output_file=""
 
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -d|--domain) domain="$2"; shift ;;
+        -d|--domain) DOMAIN="$2"; shift ;;
         -o|--output) output_file="$2"; shift ;;
         -h|--help) help_menu ;;
         *) echo -e "${bred}Unknown parameter passed: $1${reset}" >&2; help_menu ;;

@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 # Help menu function
@@ -48,7 +51,7 @@ url_gf() {
 		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q gf/endpoints.txt
 		gf lfi "$url_file" | anew -q gf/lfi.txt
 	fi
-	echo "[+] Results are saved in ${domain}/gf folder"
+	echo "[+] Results are saved in ${DOMAIN}/gf folder"
 }
 
 # Parse command-line arguments

@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 function usage() {
@@ -26,7 +29,7 @@ while getopts ":hd:i:o:" opt; do
 		usage
 		;;
 	d)
-		domain="${OPTARG}"
+		DOMAIN="${OPTARG}"
 		;;
 	i)
 		input_file="${OPTARG}"
@@ -60,7 +63,7 @@ function sub_analytics() {
 	if [[ -s ".tmp/probed_tmp_scrap.txt" ]]; then
 		mkdir -p .tmp/output_analytics/
 		analyticsrelationships -ch <.tmp/probed_tmp_scrap.txt >>.tmp/analytics_subs_tmp.txt 2>>"${LOGFILE}"
-		[[ -s ".tmp/analytics_subs_tmp.txt" ]] && cat .tmp/analytics_subs_tmp.txt | grep "\.$domain$\|^$domain$" | sed "s/|__ //" | anew -q .tmp/analytics_subs_clean.txt
+		[[ -s ".tmp/analytics_subs_tmp.txt" ]] && cat .tmp/analytics_subs_tmp.txt | grep "\.$DOMAIN$\|^$DOMAIN$" | sed "s/|__ //" | anew -q .tmp/analytics_subs_clean.txt
 		if [[ ${AXIOM} != true ]]; then
 			resolvers_update_quick_local
 			[[ -s ".tmp/analytics_subs_clean.txt" ]] && puredns resolve .tmp/analytics_subs_clean.txt -w .tmp/analytics_subs_resolved.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null

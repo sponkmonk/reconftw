@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
 # Help menu
 function help_menu() {
 	echo -e "Usage: ./rftw_osint_ghdorks.sh [OPTIONS]"
@@ -14,15 +25,11 @@ function help_menu() {
 
 # Main function
 function github_dorks() {
-	local output_arg=""
-	if [[ -n ${output} ]]; then
-		output_arg="| tee -a ${output}"
-	fi
 
 	if [[ -s ${github_tokens} ]]; then
 		local dorks_file="${tools}/gitdorks_go/Dorks/smalldorks.txt"
 		[[ ${deep} == true ]] && dorks_file="${tools}/gitdorks_go/Dorks/medium_dorks.txt"
-		eval "gitdorks_go -gd \"${dorks_file}\" -nws 20 -target \"${domain}\" -tf \"${github_tokens}\" -ew 3 ${output_arg}" || {
+		eval "gitdorks_go -gd \"${dorks_file}\" -nws 20 -target \"${DOMAIN}\" -tf \"${github_tokens}\" -ew 3 > ${output}" || {
 			echo "gitdorks_go command failed" >&2
 			exit 1
 		}
@@ -32,7 +39,7 @@ function github_dorks() {
 }
 
 # Default values
-domain=""
+DOMAIN=""
 github_tokens=""
 deep=false
 output=""
@@ -41,7 +48,7 @@ output=""
 while [[ $# -gt 0 ]]; do
 	case $1 in
 	-d | --domain)
-		domain="$2"
+		DOMAIN="$2"
 		shift
 		;;
 	-g | --github-tokens)

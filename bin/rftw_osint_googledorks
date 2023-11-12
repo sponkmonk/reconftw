@@ -1,25 +1,30 @@
 #!/bin/bash
 
-# Description: Script to perform Google dorks
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
 
 # Help menu
 function help_menu() {
 	echo -e "Usage: ./rftw_osint_googledorks.sh [OPTIONS]"
 	echo -e "Options:"
 	echo -e "  -d, --domain DOMAIN       Specify the domain"
-	echo -e "  -o, --output FILE         (Optional) Specify the output directory file"
+	echo -e "  -o, --output FILE         Specify the output directory file"
 	echo -e "  -h, --help                Display this help menu"
 	exit 1
 }
 
 # Main function
 function google_dorks() {
-	output_file_arg=""
-	if [[ -n ${output} ]]; then
-		output_file_arg="-o ${output}"
-	fi
 
-	python3 "${tools}/dorks_hunter/dorks_hunter.py" -d "${DOMAIN}" "${output_file_arg}" || {
+	python3 "${tools}/dorks_hunter/dorks_hunter.py" -d "${DOMAIN}" -o "${output}" || {
 		echo -e "${bred}Error: dorks_hunter.py failed.${reset}" >&2
 		exit 1
 	}

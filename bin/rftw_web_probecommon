@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Load environment variables from reconftw.cfg
-# Load environment variables
-if [[ -f "reconftw.cfg" ]]; then
-	source reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
 else
-	echo "Error: reconftw.cfg not found!"
-	exit 1
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
 fi
 
 help_menu() {
@@ -31,7 +33,7 @@ validate_inputs() {
 }
 
 run_webprobe_simple() {
-	start_subfunc "webprobe_simple" "Running : Http probing${domain}/"
+	start_subfunc "webprobe_simple" "Running : Http probing${DOMAIN}/"
 	if [[ ! ${AXIOM} == true ]]; then
 		cat subdomains/subdomains.txt | httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o .tmp/web_full_info_probe.txt 2>>"${LOGFILE}" >/dev/null
 	else
@@ -54,7 +56,7 @@ run_webprobe_simple() {
 
 # Main
 FORCE_EXECUTION=false
-domain="$1"
+DOMAIN="$1"
 
 shift
 while [[ $# -gt 0 ]]; do
