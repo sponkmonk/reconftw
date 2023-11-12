@@ -57,25 +57,25 @@ anew -q .tmp/webs_all.txt < <(cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/
 if [[ -s ".tmp/webs_all.txt" ]]; then
 	mkdir -p "${dir}"/fuzzing "${dir}"/.tmp/fuzzing
 	if [[ ${AXIOM} != true ]]; then
-		interlace -tL .tmp/webs_all.txt -threads "${INTERLACE_THREADS}" -c "ffuf ${FFUF_FLAGS} -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -w ${fuzz_wordlist} -maxtime ${FFUF_MAXTIME} -u _target_/FUZZ -o _output_/_cleantarget_.json" -o "${dir}"/.tmp/fuzzing 2>>"${LOGFILE}" >/dev/null
+		interlace -tL .tmp/webs_all.txt -threads "${INTERLACE_THREADS}" -c "ffuf ${FFUF_FLAGS} -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -w ${fuzz_wordlist} -maxtime ${FFUF_MAXTIME} -u _target_/FUZZ -o _output_/_cleantarget_.json" -o "${dir}"/.tmp/fuzzing
 		while read -r sub; do
 			sub_out=$(echo "${sub}" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
 			if [[ -s ""${dir}"/.tmp/fuzzing/${sub_out}.json" ]]; then
 				jq -r 'try .results[] | "\(.status) \(.length) \(.url)"' <""${dir}"/.tmp/fuzzing/${sub_out}.json" | sort -k1 | anew -q "${dir}"/fuzzing/${sub_out}.txt
 			fi
 		done <.tmp/webs_all.txt
-		sort -k1 < <(find "${dir}"/fuzzing/ -type f -iname "*.txt" -exec cat {} + 2>>"${LOGFILE}") | anew -q "${dir}"/fuzzing/fuzzing_full.txt
+		sort -k1 < <(find "${dir}"/fuzzing/ -type f -iname "*.txt" -exec cat {} +) | anew -q "${dir}"/fuzzing/fuzzing_full.txt
 	else
 		axiom-exec "mkdir -p /home/op/lists/seclists/Discovery/Web-Content/" &>/dev/null
 		axiom-exec "wget -q -O - ${fuzzing_remote_list} > /home/op/lists/fuzz_wordlist.txt" &>/dev/null
 		axiom-exec "wget -q -O - ${fuzzing_remote_list} > /home/op/lists/seclists/Discovery/Web-Content/big.txt" &>/dev/null
-		axiom-scan .tmp/webs_all.txt -m ffuf_base -H "${HEADER}" $FFUF_FLAGS -s -maxtime $FFUF_MAXTIME -o "${dir}"/.tmp/ffuf-content.json "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+		axiom-scan .tmp/webs_all.txt -m ffuf_base -H "${HEADER}" $FFUF_FLAGS -s -maxtime $FFUF_MAXTIME -o "${dir}"/.tmp/ffuf-content.json "${AXIOM_EXTRA_ARGS}"
 		while read -r sub; do
 			sub_out=$(echo "$sub" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
 			if [[ -s ""${dir}"/.tmp/ffuf-content.json" ]]; then
 				grep "$sub" < <(jq -r 'try .results[] | "\(.status) \(.length) \(.url)"' .tmp/ffuf-content.json) | sort -k1 | anew -q fuzzing/${sub_out}.txt
 			fi
 		done <.tmp/webs_all.txt
-		sort -k1 < <(find "${dir}"/fuzzing/ -type f -iname "*.txt" -exec cat {} + 2>>"${LOGFILE}") | anew -q "${dir}"/fuzzing/fuzzing_full.txt
+		sort -k1 < <(find "${dir}"/fuzzing/ -type f -iname "*.txt" -exec cat {} +) | anew -q "${dir}"/fuzzing/fuzzing_full.txt
 	fi
 fi

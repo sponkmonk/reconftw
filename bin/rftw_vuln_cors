@@ -46,7 +46,7 @@ function cors_scan() {
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 
         # Perform CORS scan
-        [[ -s ".tmp/webs_all.txt" ]] && python3"${tools}"/Corsy/corsy.py -i .tmp/webs_all.txt -o vulns/cors.txt 2>>"${LOGFILE}" >/dev/null
+        [[ -s ".tmp/webs_all.txt" ]] && python3"${tools}"/Corsy/corsy.py -i .tmp/webs_all.txt -o vulns/cors.txt
 
         echo "[+] Results are saved in vulns/cors.txt"
     else

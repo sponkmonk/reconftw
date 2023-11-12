@@ -37,11 +37,11 @@ function validate_logfile() {
 
 # Remove big files function
 function remove_big_files() {
-	rm -rf .tmp/gotator*.txt 2>>"${LOGFILE}"
-	rm -rf .tmp/brute_recursive_wordlist.txt 2>>"${LOGFILE}"
-	rm -rf .tmp/subs_dns_tko.txt 2>>"${LOGFILE}"
-	rm -rf .tmp/subs_no_resolved.txt .tmp/subdomains_dns.txt .tmp/brute_dns_tko.txt .tmp/scrap_subs.txt .tmp/analytics_subs_clean.txt .tmp/gotator1.txt .tmp/gotator2.txt .tmp/passive_recursive.txt .tmp/brute_recursive_wordlist.txt .tmp/gotator1_recursive.txt .tmp/gotator2_recursive.txt 2>>"${LOGFILE}"
-	find .tmp -type f -size +200M -exec rm -f {} + 2>>"${LOGFILE}"
+	rm -rf .tmp/gotator*.txt
+	rm -rf .tmp/brute_recursive_wordlist.txt
+	rm -rf .tmp/subs_dns_tko.txt
+	rm -rf .tmp/subs_no_resolved.txt .tmp/subdomains_dns.txt .tmp/brute_dns_tko.txt .tmp/scrap_subs.txt .tmp/analytics_subs_clean.txt .tmp/gotator1.txt .tmp/gotator2.txt .tmp/passive_recursive.txt .tmp/brute_recursive_wordlist.txt .tmp/gotator1_recursive.txt .tmp/gotator2_recursive.txt
+	find .tmp -type f -size +200M -exec rm -f {} +
 	echo -e "${green}Specified files and large files in .tmp directory removed successfully.${reset}"
 }
 

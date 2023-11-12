@@ -60,19 +60,19 @@ sub_brute() {
 	if [[ ${AXIOM} != true ]]; then
 		resolvers_update_quick_local
 		if [[ ${DEEP} == true ]]; then
-			puredns bruteforce "${subs_wordlist_big}" "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
+			puredns bruteforce "${subs_wordlist_big}" "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 		else
-			puredns bruteforce "${subs_wordlist}" "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
+			puredns bruteforce "${subs_wordlist}" "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 		fi
-		[[ -s ".tmp/subs_brute.txt" ]] && puredns resolve .tmp/subs_brute.txt -w .tmp/subs_brute_valid.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
+		[[ -s ".tmp/subs_brute.txt" ]] && puredns resolve .tmp/subs_brute.txt -w .tmp/subs_brute_valid.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 	else
 		resolvers_update_quick_axiom
 		if [[ ${DEEP} == true ]]; then
-			axiom-scan "${subs_wordlist_big}" -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+			axiom-scan "${subs_wordlist_big}" -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}"
 		else
-			axiom-scan "${subs_wordlist}" -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+			axiom-scan "${subs_wordlist}" -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}"
 		fi
-		[[ -s ".tmp/subs_brute.txt" ]] && axiom-scan .tmp/subs_brute.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute_valid.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+		[[ -s ".tmp/subs_brute.txt" ]] && axiom-scan .tmp/subs_brute.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute_valid.txt "${AXIOM_EXTRA_ARGS}"
 	fi
 }
 

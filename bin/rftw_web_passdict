@@ -57,7 +57,7 @@ password_dict() {
 	start_func ${FUNCNAME[0]} "Password dictionary generation"
 
 	local word=${DOMAIN%%.*}
-	python3"${tools}"/pydictor/pydictor.py -extend $word --leet 0 1 2 11 21 --len ${PASSWORD_MIN_LENGTH} ${PASSWORD_MAX_LENGTH} -o webs/password_dict.txt 2>>"${LOGFILE}" >/dev/null
+	python3"${tools}"/pydictor/pydictor.py -extend $word --leet 0 1 2 11 21 --len ${PASSWORD_MIN_LENGTH} ${PASSWORD_MAX_LENGTH} -o webs/password_dict.txt
 
 }
 

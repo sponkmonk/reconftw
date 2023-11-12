@@ -41,10 +41,10 @@ function sqli_checks() {
 	cat gf/sqli.txt | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/tmp_sqli.txt
 	if [[ $deep_flag == true ]] || [[ $(cat .tmp/tmp_sqli.txt | wc -l) -le $DEEP_LIMIT ]]; then
 		if [[ ${SQLMAP} == true ]]; then
-			python3"${tools}"/sqlmap/sqlmap.py -m .tmp/tmp_sqli.txt -b -o --smart --batch --disable-coloring --random-agent --output-dir=vulns/sqlmap 2>>"${LOGFILE}" >/dev/null
+			python3"${tools}"/sqlmap/sqlmap.py -m .tmp/tmp_sqli.txt -b -o --smart --batch --disable-coloring --random-agent --output-dir=vulns/sqlmap
 		fi
 		if [[ ${GHAURI} == true ]]; then
-			interlace -tL .tmp/tmp_sqli.txt -threads "${INTERLACE_THREADS}" -c "ghauri -u _target_ --batch -H \"${HEADER}\" --force-ssl >> vulns/ghauri_log.txt" 2>>"${LOGFILE}" >/dev/null
+			interlace -tL .tmp/tmp_sqli.txt -threads "${INTERLACE_THREADS}" -c "ghauri -u _target_ --batch -H \"${HEADER}\" --force-ssl >> vulns/ghauri_log.txt"
 		fi
 		echo "[+] Results are saved in vulns/sqlmap folder"
 	else

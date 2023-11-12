@@ -41,21 +41,21 @@ run_s3buckets() {
     start_func "s3buckets" "AWS S3 buckets search"
     # S3Scanner
     if [[ ! ${AXIOM} = true ]]; then
-        [[ -s "subdomains/subdomains.txt" ]] && s3scanner scan -f subdomains/subdomains.txt 2>>"${LOGFILE}" | anew -q .tmp/s3buckets.txt
+        [[ -s "subdomains/subdomains.txt" ]] && s3scanner scan -f subdomains/subdomains.txt | anew -q .tmp/s3buckets.txt
     else
-        axiom-scan subdomains/subdomains.txt -m s3scanner -o .tmp/s3buckets_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        [[ -s ".tmp/s3buckets_tmp.txt" ]] && cat .tmp/s3buckets_tmp.txt .tmp/s3buckets_tmp2.txt 2>>"${LOGFILE}" | anew -q .tmp/s3buckets.txt && sed -i '/^$/d' .tmp/s3buckets.txt
+        axiom-scan subdomains/subdomains.txt -m s3scanner -o .tmp/s3buckets_tmp.txt "${AXIOM_EXTRA_ARGS}"
+        [[ -s ".tmp/s3buckets_tmp.txt" ]] && cat .tmp/s3buckets_tmp.txt .tmp/s3buckets_tmp2.txt | anew -q .tmp/s3buckets.txt && sed -i '/^$/d' .tmp/s3buckets.txt
     fi
     # Cloudenum
     keyword=${DOMAIN%%.*}
-    python3 ~/Tools/cloud_enum/cloud_enum.py -k $keyword -qs -l .tmp/output_cloud.txt 2>>"${LOGFILE}" >/dev/null
+    python3 ~/Tools/cloud_enum/cloud_enum.py -k $keyword -qs -l .tmp/output_cloud.txt
 
-    NUMOFLINES1=$(cat .tmp/output_cloud.txt 2>>"${LOGFILE}" | sed '/^#/d' | sed '/^$/d' | anew subdomains/cloud_assets.txt | wc -l)
+    NUMOFLINES1=$(cat .tmp/output_cloud.txt | sed '/^#/d' | sed '/^$/d' | anew subdomains/cloud_assets.txt | wc -l)
     if [[ "$NUMOFLINES1" -gt 0 ]]; then
         notification "${NUMOFLINES1} new cloud assets found" info
     fi
 
-    NUMOFLINES2=$(cat .tmp/s3buckets.txt 2>>"${LOGFILE}" | grep -aiv "not_exist" | grep -aiv "Warning:" | grep -aiv "invalid_name" | grep -aiv "^http" | awk 'NF' | anew subdomains/s3buckets.txt | sed '/^$/d' | wc -l)
+    NUMOFLINES2=$(cat .tmp/s3buckets.txt | grep -aiv "not_exist" | grep -aiv "Warning:" | grep -aiv "invalid_name" | grep -aiv "^http" | awk 'NF' | anew subdomains/s3buckets.txt | sed '/^$/d' | wc -l)
     if [[ "$NUMOFLINES2" -gt 0 ]]; then
         notification "${NUMOFLINES2} new S3 buckets found" info
     fi

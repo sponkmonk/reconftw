@@ -48,15 +48,15 @@ broken_links_check() {
 		[[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 		if [[ ! ${AXIOM} == true ]]; then
 			depth_level=$([[ "$deep_mode" = true ]] && echo 3 || echo 2)
-			[[ -s ".tmp/webs_all.txt" ]] && katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d $depth_level -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
+			[[ -s ".tmp/webs_all.txt" ]] && katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d $depth_level -o .tmp/katana.txt
 			[[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
 		else
 			depth_level=$([[ "$deep_mode" = true ]] && echo 3 || echo 2)
-			[[ -s ".tmp/webs_all.txt" ]] && axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d $depth_level -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+			[[ -s ".tmp/webs_all.txt" ]] && axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d $depth_level -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}"
 			[[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
 		fi
 		[[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | sort -u | httpx -follow-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -no-color | grep "\[4" | cut -d ' ' -f1 | anew -q .tmp/brokenLinks_total.txt
-		NUMOFLINES=$(cat .tmp/brokenLinks_total.txt 2>>"${LOGFILE}" | anew vulns/brokenLinks.txt | sed '/^$/d' | wc -l)
+		NUMOFLINES=$(cat .tmp/brokenLinks_total.txt | anew vulns/brokenLinks.txt | sed '/^$/d' | wc -l)
 		notification "${NUMOFLINES} new broken links found" info
 
 }

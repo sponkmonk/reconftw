@@ -36,7 +36,7 @@ function validate_requirements() {
 # SSL test function
 function ssl_test() {
 	echo "[*] Starting SSL Test"
-	"${tools}"/testssl.sh/testssl.sh --quiet --color 0 -U -iL hosts/ips.txt 2>>"${LOGFILE}" >vulns/testssl.txt
+	"${tools}"/testssl.sh/testssl.sh --quiet --color 0 -U -iL hosts/ips.txt >vulns/testssl.txt
 	echo "[+] Results are saved in vulns/testssl.txt"
 }
 

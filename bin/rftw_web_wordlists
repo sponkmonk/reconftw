@@ -55,16 +55,16 @@ wordlist_gen() {
 	local DOMAIN=$1
 	start_func ${FUNCNAME[0]} "Wordlist generation"
 	if [[ -s ".tmp/url_extract_tmp.txt" ]]; then
-		cat .tmp/url_extract_tmp.txt | unfurl -u keys 2>>"${LOGFILE}" | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_params.txt
-		cat .tmp/url_extract_tmp.txt | unfurl -u values 2>>"${LOGFILE}" | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_values.txt
+		cat .tmp/url_extract_tmp.txt | unfurl -u keys | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_params.txt
+		cat .tmp/url_extract_tmp.txt | unfurl -u values | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_values.txt
 		cat .tmp/url_extract_tmp.txt | tr "[:punct:]" "\n" | anew -q webs/dict_words.txt
 	fi
-	[[ -s ".tmp/js_endpoints.txt" ]] && cat .tmp/js_endpoints.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
-	[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
+	[[ -s ".tmp/js_endpoints.txt" ]] && cat .tmp/js_endpoints.txt | unfurl -u format %s://%d%p | anew -q webs/all_paths.txt
+	[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p | anew -q webs/all_paths.txt
 	end_func "Results are saved in ${DOMAIN}/webs/dict_[words|paths].txt" ${FUNCNAME[0]}
 	if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/all_paths.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
 		notification "Sending urls to proxy" info
-		ffuf -mc all -w webs/all_paths.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
+		ffuf -mc all -w webs/all_paths.txt -u FUZZ -replay-proxy $proxy_url
 	fi
 }
 

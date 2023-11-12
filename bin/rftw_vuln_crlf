@@ -42,7 +42,7 @@ function crlf_checks() {
         fi
         
         if [[ "$deep_flag" = true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            crlfuzz -l .tmp/webs_all.txt -o vulns/crlf.txt 2>>"${LOGFILE}" >/dev/null
+            crlfuzz -l .tmp/webs_all.txt -o vulns/crlf.txt
             echo "[+] Results are saved in vulns/crlf.txt"
         else
             echo "[!] Skipping CRLF: Too many URLs to test, try with --deep flag"

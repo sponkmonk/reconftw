@@ -180,6 +180,7 @@ function domain_info() {
 function ip_info() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $IP_INFO == true ]] && [[ $OSINT == true ]] && [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "Searching ip info"
+        spinny::start
         if [[ -n $WHOISXML_API ]]; then
             curl "https://reverse-ip.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ip=${DOMAIN}" 2>/dev/null | jq -r '.result[].name' 2>>"${LOGFILE}" | sed -e "s/$/ ${DOMAIN}/" | anew -q osint/ip_${DOMAIN}_relations.txt
             curl "https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOISXML_API}&domainName=${DOMAIN}&outputFormat=json&da=2&registryRawText=1&registrarRawText=1&ignoreRawTexts=1" 2>/dev/null | jq 2>>"${LOGFILE}" | anew -q osint/ip_${DOMAIN}_whois.txt
@@ -188,6 +189,7 @@ function ip_info() {
         else
             printf "\n${yellow} No WHOISXML_API var defined, skipping function ${reset}\n"
         fi
+        spinny::stop
     else
         if [[ $IP_INFO == false ]] || [[ $OSINT == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
@@ -208,17 +210,64 @@ function ip_info() {
 ###############################################################################################################
 
 function subdomains_full() {
-    rftw_sub_full -d "${DOMAIN}" || {
-        echo "Error: rftw_sub_full failed for${DOMAIN}/"
-        exit 1
-    }
+	NUMOFLINES_subs="0"
+	NUMOFLINES_probed="0"
+	printf "${bgreen}#######################################################################\n\n"
+	! [[ $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Subdomain Enumeration $DOMAIN\n\n"
+	[[ $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && printf "${bblue} Scanning IP $DOMAIN\n\n"
+	[ -s "subdomains/subdomains.txt" ] && cp subdomains/subdomains.txt .tmp/subdomains_old.txt
+	[ -s "webs/webs.txt" ] && cp webs/webs.txt .tmp/probed_old.txt
+
+	if ([[ ! -f "$called_fn_dir/.sub_active" ]] || [[ ! -f "$called_fn_dir/.sub_brute" ]] || [[ ! -f "$called_fn_dir/.sub_permut" ]] || [[ ! -f "$called_fn_dir/.sub_recursive_brute" ]]) || [[ $DIFF == true ]]; then
+		rftw_util_resolver
+	fi
+
+	[ -s "${inScope_file}" ] && cat ${inScope_file} | anew -q subdomains/subdomains.txt
+
+	if ! [[ $DOMAIN =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]] && [[ $SUBDOMAINS_GENERAL == true ]]; then
+		sub_passive
+		sub_crt
+		sub_active
+		sub_noerror
+		sub_brute
+		sub_permut
+		sub_regex_permut
+		sub_recursive_passive
+		sub_recursive_brute
+		sub_dns
+		sub_scraping
+		sub_analytics
+	else
+		rftw_util_notification "IP/CIDR detected, subdomains search skipped" info
+		echo $DOMAIN | anew -q subdomains/subdomains.txt
+	fi
+
+	rftw_web_screenshot
+	if [[ -s "subdomains/subdomains.txt" ]]; then
+		[ -s "$outOfScope_file" ] && rftw_util_deleteoos $outOfScope_file subdomains/subdomains.txt
+		NUMOFLINES_subs=$(cat subdomains/subdomains.txt 2>>"$LOGFILE" | anew .tmp/subdomains_old.txt | sed '/^$/d' | wc -l)
+	fi
+	if [[ -s "webs/webs.txt" ]]; then
+		[ -s "$outOfScope_file" ] && rftw_util_deleteoos $outOfScope_file webs/webs.txt
+		NUMOFLINES_probed=$(cat webs/webs.txt 2>>"$LOGFILE" | anew .tmp/probed_old.txt | sed '/^$/d' | wc -l)
+	fi
+	printf "${bblue}\n Total subdomains: ${reset}\n\n"
+	rftw_util_notification "- ${NUMOFLINES_subs} alive" good
+	[ -s "subdomains/subdomains.txt" ] && cat subdomains/subdomains.txt | sort
+	rftw_util_notification "- ${NUMOFLINES_probed} new web probed" good
+	[ -s "webs/webs.txt" ] && cat webs/webs.txt | sort
+	rftw_util_notification "Subdomain Enumeration Finished" good
+	printf "${bblue} Results are saved in $DOMAIN/subdomains/subdomains.txt and webs/webs.txt${reset}\n"
+	printf "${bgreen}#######################################################################\n\n"
 }
 
 function sub_passive() {
     if [[ ! -f "${called_fn_dir}/.sub_passive" ]] || [[ $DIFF == true ]] && [[ $SUBPASSIVE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Passive Subdomain Enumeration"
-        rftw_sub_passive -d "${DOMAIN}" -o "path_to_output_file"
-        NUMOFLINES=$(find .tmp -type f -iname "*_psub.txt" -exec cat {} + | sed "s/*.//" | anew .tmp/passive_subs.txt | sed '/^$/d' | wc -l)
+        spinny::start
+        rftw_sub_passive -d "${DOMAIN}" -a -s -g -l -o "${dir}/.tmp/subs_psub.txt" 2>>"${LOGFILE}"
+        NUMOFLINES=$(find ${dir}/.tmp/ -type f -iname "*_psub.txt" -exec cat {} + | sed "s/*.//" | anew .tmp/passive_subs.txt | sed '/^$/d' | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (passive)" ${FUNCNAME[0]}
     else
         if [[ $SUBPASSIVE == false ]]; then
@@ -232,8 +281,10 @@ function sub_passive() {
 function sub_crt() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBCRT == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Crtsh Subdomain Enumeration"
-        rftw_sub_crt -d "${DOMAIN}" -o "path_to_output_file"
+        spinny::start
+        rftw_sub_crt -d "${DOMAIN}" -o "${dir}/.tmp/crtsh_subs_tmp.txt" 2>>"${LOGFILE}"
         NUMOFLINES=$(cat .tmp/crtsh_subs_tmp.txt 2>>"${LOGFILE}" | sed 's/\*.//g' | anew .tmp/crtsh_subs.txt | sed '/^$/d' | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (cert transparency)" ${FUNCNAME[0]}
     else
         if [[ $SUBCRT == false ]]; then
@@ -247,10 +298,12 @@ function sub_crt() {
 function sub_active() {
     if [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Active Subdomain Enumeration"
+        spinny::start
         find .tmp -type f -iname "*_subs.txt" -exec cat {} + | anew -q .tmp/subs_no_resolved.txt
-        [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/subs_no_resolved.txt
-        rftw_sub_active -d "${DOMAIN}" -f .tmp/subs_no_resolved.txt -o .tmp/subdomains_active_tmp.txt
+        [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/subs_no_resolved.txt
+        rftw_sub_active -d "${DOMAIN}" -f .tmp/subs_no_resolved.txt -o "${dir}/.tmp/subdomains_active_tmp.txt"
         NUMOFLINES=$(cat .tmp/subdomains_active_tmp.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} subs DNS resolved from passive" ${FUNCNAME[0]}
     else
         printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -260,9 +313,11 @@ function sub_active() {
 function sub_noerror() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBNOERROR == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Checking NOERROR DNS response"
+        spinny::start
         resolvers_update_quick_local
         rftw_sub_noerror -d "${DOMAIN}" -o .tmp/subs_noerror_ok.txt
         NUMOFLINES=$(cat .tmp/subs_noerror_ok.txt 2>>"${LOGFILE}" | sed "s/*.//" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (DNS noerror)" ${FUNCNAME[0]}
     else
         if [[ $SUBBRUTE == false ]]; then
@@ -276,9 +331,11 @@ function sub_noerror() {
 function sub_dns() {
     if [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : DNS Subdomain Enumeration and PTR search"
+        spinny::start
         rftw_sub_dns -f subdomains/subdomains.txt -o .tmp/subdomains_dns_okresolved.txt
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/subdomains_dns_okresolved.txt 2>>"${LOGFILE}" >/dev/null
         NUMOFLINES=$(cat .tmp/subdomains_dns_okresolved.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (dns resolution)" ${FUNCNAME[0]}
     else
         printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
@@ -288,6 +345,7 @@ function sub_dns() {
 function sub_brute() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBBRUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Bruteforce Subdomain Enumeration"
+        spinny::start
         if [[ ! ${AXIOM} == true ]]; then
             resolvers_update_quick_local
             if [[ $DEEP == true ]]; then
@@ -307,6 +365,7 @@ function sub_brute() {
         fi
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/subs_brute_valid.txt 2>>"${LOGFILE}" >/dev/null
         NUMOFLINES=$(cat .tmp/subs_brute_valid.txt 2>>"${LOGFILE}" | sed "s/*.//" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (bruteforce)" ${FUNCNAME[0]}
     else
         if [[ $SUBBRUTE == false ]]; then
@@ -442,7 +501,7 @@ function sub_permut() {
         cat .tmp/permute1.txt .tmp/permute2.txt 2>>"${LOGFILE}" | anew -q .tmp/permute_subs.txt
 
         if [[ -s ".tmp/permute_subs.txt" ]]; then
-            [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/permute_subs.txt
+            [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/permute_subs.txt
             [[ ${INSCOPE} == true ]] && check_inscope .tmp/permute_subs.txt 2>>"${LOGFILE}" >/dev/null
             NUMOFLINES=$(cat .tmp/permute_subs.txt 2>>"${LOGFILE}" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         else
@@ -480,7 +539,7 @@ function sub_regex_permut() {
         fi
 
         if [[ -s ".tmp/regulator.txt" ]]; then
-            [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/regulator.txt
+            [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/regulator.txt
             [[ ${INSCOPE} == true ]] && check_inscope .tmp/regulator.txt 2>>"${LOGFILE}" >/dev/null
             NUMOFLINES=$(cat .tmp/regulator.txt 2>>"${LOGFILE}" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         else
@@ -610,7 +669,7 @@ function subtakeover() {
 
         NUMOFLINES=$(cat .tmp/tko.txt 2>>"${LOGFILE}" | anew webs/takeover.txt | sed '/^$/d' | wc -l)
         if [[ $NUMOFLINES -gt 0 ]]; then
-            notification "${NUMOFLINES} new possible takeovers found" info
+            rftw_util_notification "${NUMOFLINES} new possible takeovers found" info
         fi
         end_func "Results are saved in ${DOMAIN}/webs/takeover.txt" ${FUNCNAME[0]}
     else
@@ -627,7 +686,7 @@ function zonetransfer() {
         start_func ${FUNCNAME[0]} "Zone transfer check"
         for ns in $(dig +short ns "${DOMAIN}"); do dig axfr "${DOMAIN}" @"$ns" >>subdomains/zonetransfer.txt; done
         if [[ -s "subdomains/zonetransfer.txt" ]]; then
-            if ! grep -q "Transfer failed" subdomains/zonetransfer.txt; then notification "Zone transfer found on ${DOMAIN}!" info; fi
+            if ! grep -q "Transfer failed" subdomains/zonetransfer.txt; then rftw_util_notification "Zone transfer found on ${DOMAIN}!" info; fi
         fi
         end_func "Results are saved in${DOMAIN}/subdomains/zonetransfer.txt" ${FUNCNAME[0]}
     else
@@ -661,11 +720,11 @@ function s3buckets() {
 
         NUMOFLINES1=$(cat .tmp/output_cloud.txt 2>>"${LOGFILE}" | sed '/^#/d' | sed '/^$/d' | anew subdomains/cloud_assets.txt | wc -l)
         if [[ $NUMOFLINES1 -gt 0 ]]; then
-            notification "${NUMOFLINES1} new cloud assets found" info
+            rftw_util_notification "${NUMOFLINES1} new cloud assets found" info
         fi
         NUMOFLINES2=$(cat .tmp/s3buckets.txt 2>>"${LOGFILE}" | grep -aiv "not_exist" | grep -aiv "Warning:" | grep -aiv "invalid_name" | grep -aiv "^http" | awk 'NF' | anew subdomains/s3buckets.txt | sed '/^$/d' | wc -l)
         if [[ $NUMOFLINES2 -gt 0 ]]; then
-            notification "${NUMOFLINES2} new S3 buckets found" info
+            rftw_util_notification "${NUMOFLINES2} new S3 buckets found" info
         fi
 
         end_func "Results are saved in subdomains/s3buckets.txt and subdomains/cloud_assets.txt" ${FUNCNAME[0]}
@@ -699,12 +758,12 @@ function webprobe_simple() {
         cat .tmp/web_full_info.txt .tmp/web_full_info_probe.txt webs/web_full_info.txt 2>>"${LOGFILE}" | jq -s 'try .' | jq 'try unique_by(.input)' | jq 'try .[]' 2>>"${LOGFILE}" >webs/web_full_info.txt
         [[ -s "webs/web_full_info.txt" ]] && cat webs/web_full_info.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew -q .tmp/probed_tmp.txt
         [[ -s "webs/web_full_info.txt" ]] && cat webs/web_full_info.txt | jq -r 'try . |"\(.url) [\(.status_code)] [\(.title)] [\(.webserver)] \(.tech)"' | grep "${DOMAIN}" | anew -q webs/web_full_info_plain.txt
-        [[ -s $outOfScope_file ]] && deleteOutScoped $outOfScope_file .tmp/probed_tmp.txt
+        [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/probed_tmp.txt
         NUMOFLINES=$(cat .tmp/probed_tmp.txt 2>>"${LOGFILE}" | anew webs/webs.txt | sed '/^$/d' | wc -l)
         cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         end_subfunc "${NUMOFLINES} new websites resolved" ${FUNCNAME[0]}
         if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/webs.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
-            notification "Sending websites to proxy" info
+            rftw_util_notification "Sending websites to proxy" info
             ffuf -mc all -w webs/webs.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
         fi
     else
@@ -740,12 +799,12 @@ function webprobe_full() {
             fi
         fi
         NUMOFLINES=$(cat .tmp/probed_uncommon_ports_tmp.txt 2>>"${LOGFILE}" | anew webs/webs_uncommon_ports.txt | sed '/^$/d' | wc -l)
-        notification "Uncommon web ports: ${NUMOFLINES} new websites" good
+        rftw_util_notification "Uncommon web ports: ${NUMOFLINES} new websites" good
         [[ -s "webs/webs_uncommon_ports.txt" ]] && cat webs/webs_uncommon_ports.txt
         cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         end_func "Results are saved in ${DOMAIN}/webs/webs_uncommon_ports.txt" ${FUNCNAME[0]}
         if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/webs_uncommon_ports.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
-            notification "Sending websites with uncommon ports to proxy" info
+            rftw_util_notification "Sending websites with uncommon ports to proxy" info
             ffuf -mc all -w webs/webs_uncommon_ports.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
         fi
     else
@@ -901,7 +960,7 @@ function waf_checks() {
             if [[ -s ".tmp/wafs.txt" ]]; then
                 cat .tmp/wafs.txt | sed -e 's/^[ \t]*//' -e 's/ \+ /\t/g' -e '/(None)/d' | tr -s "\t" ";" >webs/webs_wafs.txt
                 NUMOFLINES=$(cat webs/webs_wafs.txt 2>>"${LOGFILE}" | sed '/^$/d' | wc -l)
-                notification "${NUMOFLINES} websites protected by waf" info
+                rftw_util_notification "${NUMOFLINES} websites protected by waf" info
                 end_func "Results are saved in ${DOMAIN}/webs/webs_wafs.txt" ${FUNCNAME[0]}
             else
                 end_func "No results found" ${FUNCNAME[0]}
@@ -1092,10 +1151,10 @@ function urlchecks() {
             [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | grep "=" | qsreplace -a 2>>"${LOGFILE}" | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | anew -q .tmp/url_extract_tmp2.txt
             [[ -s ".tmp/url_extract_tmp2.txt" ]] && cat .tmp/url_extract_tmp2.txt | python3"${tools}"/urless/urless/urless.py | anew -q .tmp/url_extract_uddup.txt 2>>"${LOGFILE}" >/dev/null
             NUMOFLINES=$(cat .tmp/url_extract_uddup.txt 2>>"${LOGFILE}" | anew webs/url_extract.txt | sed '/^$/d' | wc -l)
-            notification "${NUMOFLINES} new urls with params" info
+            rftw_util_notification "${NUMOFLINES} new urls with params" info
             end_func "Results are saved in ${DOMAIN}/webs/url_extract.txt" ${FUNCNAME[0]}
             if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
-                notification "Sending urls to proxy" info
+                rftw_util_notification "Sending urls to proxy" info
                 ffuf -mc all -w webs/url_extract.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
             fi
         fi
@@ -1219,7 +1278,7 @@ function wordlist_gen() {
         [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
         end_func "Results are saved in ${DOMAIN}/webs/dict_[words|paths].txt" ${FUNCNAME[0]}
         if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/all_paths.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
-            notification "Sending urls to proxy" info
+            rftw_util_notification "Sending urls to proxy" info
             ffuf -mc all -w webs/all_paths.txt -u FUZZ -replay-proxy $proxy_url 2>>"${LOGFILE}" >/dev/null
         fi
     else
@@ -1292,7 +1351,7 @@ function brokenLinks() {
         fi
         [[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | sort -u | httpx -follow-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -no-color | grep "\[4" | cut -d ' ' -f1 | anew -q .tmp/brokenLinks_total.txt
         NUMOFLINES=$(cat .tmp/brokenLinks_total.txt 2>>"${LOGFILE}" | anew vulns/brokenLinks.txt | sed '/^$/d' | wc -l)
-        notification "${NUMOFLINES} new broken links found" info
+        rftw_util_notification "${NUMOFLINES} new broken links found" info
         end_func "Results are saved in vulns/brokenLinks.txt" ${FUNCNAME[0]}
     else
         if [[ $BROKENLINKS == false ]]; then
@@ -1419,7 +1478,7 @@ function ssrf_checks() {
             ffuf -v -w .tmp/tmp_ssrf.txt:W1,$tools/headers_inject.txt:W2 -H "${HEADER}" -H "W2: ${COLLAB_SERVER_URL}" -t $FFUF_THREADS -rate $FFUF_RATELIMIT -u W1 2>/dev/null | anew -q vulns/ssrf_requested_headers.txt
             sleep 5
             [[ -s ".tmp/ssrf_callback.txt" ]] && cat .tmp/ssrf_callback.txt | tail -n+11 | anew -q vulns/ssrf_callback.txt && NUMOFLINES=$(cat .tmp/ssrf_callback.txt | tail -n+12 | sed '/^$/d' | wc -l)
-            [[ $INTERACT == true ]] && notification "SSRF: ${NUMOFLINES} callbacks received" info
+            [[ $INTERACT == true ]] && rftw_util_notification "SSRF: ${NUMOFLINES} callbacks received" info
             end_func "Results are saved in vulns/ssrf_*" ${FUNCNAME[0]}
         else
             end_func "Skipping SSRF: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
@@ -1602,7 +1661,7 @@ function 4xxbypass() {
             [[ -s ".tmp/byp4xx.txt" ]] && cat .tmp/byp4xx.txt | anew -q vulns/byp4xx.txt
             end_func "Results are saved in vulns/byp4xx.txt" ${FUNCNAME[0]}
         else
-            notification "Too many urls to bypass, skipping" warn
+            rftw_util_notification "Too many urls to bypass, skipping" warn
         fi
     else
         if [[ $BYPASSER4XX == false ]]; then
@@ -1718,7 +1777,7 @@ function fuzzparams() {
 ########################################## OPTIONS & MGMT #####################################################
 ###############################################################################################################
 
-function deleteOutScoped() {
+function rftw_util_deleteoos() {
     if [[ -s $1 ]]; then
         cat $1 | while read outscoped; do
             if grep -q "^[*]" <<<$outscoped; then
@@ -1754,7 +1813,7 @@ function zipSnedOutputFolder {
         sendToNotify ""${dir}"/$zip_name"
         rm -f "${dir}/$zip_name"
     else
-        notification "No Zip file to send" warn
+        rftw_util_notification "No Zip file to send" warn
     fi
 }
 
@@ -1781,7 +1840,7 @@ function remove_big_files() {
     eval find .tmp -type f -size +200M -exec rm -f {} + 2>>"${LOGFILE}"
 }
 
-function notification() {
+function rftw_util_notification() {
     if [[ -n $1 ]] && [[ -n $2 ]]; then
         case $2 in
         info)
@@ -1841,18 +1900,18 @@ function sendToNotify {
             return 0
         fi
         if grep -q '^ telegram\|^telegram\|^    telegram' ${NOTIFY_CONFIG}; then
-            notification "Sending ${DOMAIN} data over Telegram" info
+            rftw_util_notification "Sending ${DOMAIN} data over Telegram" info
             telegram_chat_id=$(cat ${NOTIFY_CONFIG} | grep '^    telegram_chat_id\|^telegram_chat_id\|^    telegram_chat_id' | xargs | cut -d' ' -f2)
             telegram_key=$(cat ${NOTIFY_CONFIG} | grep '^    telegram_api_key\|^telegram_api_key\|^    telegram_apikey' | xargs | cut -d' ' -f2)
             curl -F document=@${1} "https://api.telegram.org/bot${telegram_key}/sendDocument?chat_id=${telegram_chat_id}" 2>>"${LOGFILE}" >/dev/null
         fi
         if grep -q '^ discord\|^discord\|^    discord' ${NOTIFY_CONFIG}; then
-            notification "Sending ${DOMAIN} data over Discord" info
+            rftw_util_notification "Sending ${DOMAIN} data over Discord" info
             discord_url=$(cat ${NOTIFY_CONFIG} | grep '^ discord_webhook_url\|^discord_webhook_url\|^    discord_webhook_url' | xargs | cut -d' ' -f2)
             curl -v -i -H "Accept: application/json" -H "Content-Type: multipart/form-data" -X POST -F file1=@${1} $discord_url 2>>"${LOGFILE}" >/dev/null
         fi
         if [[ -n $slack_channel ]] && [[ -n $slack_auth ]]; then
-            notification "Sending ${DOMAIN} data over Slack" info
+            rftw_util_notification "Sending ${DOMAIN} data over Slack" info
             curl -F file=@${1} -F "initial_comment=reconftw zip file" -F channels=${slack_channel} -H "Authorization: Bearer ${slack_auth}" https://slack.com/api/files.upload 2>>"${LOGFILE}" >/dev/null
         fi
     fi
@@ -1860,7 +1919,7 @@ function sendToNotify {
 
 function start_func() {
     printf "${bgreen}#######################################################################"
-    notification "${2}" info
+    rftw_util_notification "${2}" info
     echo "[ $(date +"%F %T") ]] Start function : ${1} " >>"${LOGFILE}"
     start=$(date +%s)
 }
@@ -1869,14 +1928,14 @@ function end_func() {
     touch $called_fn_dir/.${2}
     end=$(date +%s)
     getElapsedTime $start $end
-    notification "${2} Finished in ${runtime}" info
+    rftw_util_notification "${2} Finished in ${runtime}" info
     echo "[ $(date +"%F %T") ]] End function : ${2} " >>"${LOGFILE}"
     printf "${bblue} ${1} ${reset}\n"
     printf "${bgreen}#######################################################################${reset}\n"
 }
 
 function start_subfunc() {
-    notification "${2}" warn
+    rftw_util_notification "${2}" warn
     echo "[ $(date +"%F %T") ]] Start subfunction : ${1} " >>"${LOGFILE}"
     start_sub=$(date +%s)
 }
@@ -1885,7 +1944,7 @@ function end_subfunc() {
     touch $called_fn_dir/.${2}
     end_sub=$(date +%s)
     getElapsedTime $start_sub $end_sub
-    notification "${1} in ${runtime}" good
+    rftw_util_notification "${1} in ${runtime}" good
     echo "[ $(date +"%F %T") ]] End subfunction : ${1} " >>"${LOGFILE}"
 }
 
@@ -1897,7 +1956,7 @@ function resolvers_update() {
     if [[ $generate_resolvers == true ]]; then
         if [[ ! ${AXIOM} == true ]]; then
             if [[ ! -s $resolvers ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
-                notification "Resolvers seem older than 1 day\n Generating custom resolvers..." warn
+                rftw_util_notification "Resolvers seem older than 1 day\n Generating custom resolvers..." warn
                 eval rm -f $resolvers 2>>"${LOGFILE}"
                 dnsvalidator -tL https://public-dns.info/nameservers.txt -threads $DNSVALIDATOR_THREADS -o $resolvers 2>>"${LOGFILE}" >/dev/null
                 dnsvalidator -tL https://raw.githubusercontent.com/blechschmidt/massdns/master/lists/resolvers.txt -threads $DNSVALIDATOR_THREADS -o tmp_resolvers 2>>"${LOGFILE}" >/dev/null
@@ -1905,24 +1964,24 @@ function resolvers_update() {
                 [[ -s "tmp_resolvers" ]] && rm -f tmp_resolvers 2>>"${LOGFILE}" >/dev/null
                 [[ ! -s $resolvers ]] && wget -q -O - ${resolvers_url} >$resolvers
                 [[ ! -s $resolvers_trusted ]] && wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
-                notification "Updated\n" good
+                rftw_util_notification "Updated\n" good
             fi
         else
-            notification "Checking resolvers lists...\n Accurate resolvers are the key to great results\n This may take around 10 minutes if it's not updated" warn
+            rftw_util_notification "Checking resolvers lists...\n Accurate resolvers are the key to great results\n This may take around 10 minutes if it's not updated" warn
             # shellcheck disable=SC2016
             axiom-exec 'if [[ $(find "/home/op/lists/resolvers.txt" -mtime +1 -print) ]] || [[ $(cat /home/op/lists/resolvers.txt | wc -l) -le 40 ]] ; then dnsvalidator -tL https://public-dns.info/nameservers.txt -threads 200 -o /home/op/lists/resolvers.txt ; fi' &>/dev/null
             axiom-exec "wget -q -O - ${resolvers_url} > /home/op/lists/resolvers.txt" 2>>"${LOGFILE}" >/dev/null
             axiom-exec "wget -q -O - ${resolvers_trusted_url} > /home/op/lists/resolvers_trusted.txt" 2>>"${LOGFILE}" >/dev/null
-            notification "Updated\n" good
+            rftw_util_notification "Updated\n" good
         fi
         generate_resolvers=false
     else
 
         if [[ ! -s $resolvers ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
-            notification "Resolvers seem older than 1 day\n Downloading new resolvers..." warn
+            rftw_util_notification "Resolvers seem older than 1 day\n Downloading new resolvers..." warn
             wget -q -O - ${resolvers_url} >$resolvers
             wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
-            notification "Resolvers updated\n" good
+            rftw_util_notification "Resolvers updated\n" good
         fi
     fi
 }
@@ -1997,24 +2056,24 @@ function axiom_shutdown() {
     if [[ ${AXIOM_FLEET_LAUNCH} == true ]] && [[ ${AXIOM_FLEET_SHUTDOWN} == true ]] && [[ -n ${AXIOM_FLEET_NAME} ]]; then
         #if [[ "$mode" == "subs_menu" ]] || [[ "$mode" == "list_recon" ]] || [[ "$mode" == "passive" ]] || [[ "$mode" == "all" ]]; then
         if [[ $mode == "subs_menu" ]] || [[ $mode == "passive" ]] || [[ $mode == "all" ]]; then
-            notification "Automatic Axiom fleet shutdown is not enabled in this mode" info
+            rftw_util_notification "Automatic Axiom fleet shutdown is not enabled in this mode" info
             return
         fi
         eval axiom-rm -f "${AXIOM}_FLEET_NAME*"
         echo "Axiom fleet ${AXIOM}_FLEET_NAME shutdown" | ${NOTIFY}
-        notification "Axiom fleet ${AXIOM}_FLEET_NAME shutdown" info
+        rftw_util_notification "Axiom fleet ${AXIOM}_FLEET_NAME shutdown" info
     fi
 }
 
 function axiom_selected() {
 
     if [[ ! $(axiom-ls | tail -n +2 | sed '$ d' | wc -l) -gt 0 ]]; then
-        notification "\n\n${bred} No axiom instances running ${reset}\n\n" error
+        rftw_util_notification "\n\n${bred} No axiom instances running ${reset}\n\n" error
         exit
     fi
 
     if [[ ! $(cat ~/.axiom/selected.conf | sed '/^\s*$/d' | wc -l) -gt 0 ]]; then
-        notification "\n\n${bred} No axiom instances selected ${reset}\n\n" error
+        rftw_util_notification "\n\n${bred} No axiom instances selected ${reset}\n\n" error
         exit
     fi
 }
@@ -2030,7 +2089,7 @@ function start() {
     fi
 
     printf "\n${bgreen}#######################################################################${reset}"
-    notification "Recon succesfully started on ${DOMAIN}" good
+    rftw_util_notification "Recon succesfully started on ${DOMAIN}" good
     [[ $SOFT_NOTIFICATION == true ]] && echo "Recon succesfully started on ${DOMAIN}" | notify -silent
     printf "${bgreen}#######################################################################${reset}\n"
     if [[ $upgrade_before_running == true ]]; then
@@ -2057,7 +2116,7 @@ function start() {
     fi
 
     if [[ -z ${DOMAIN} ]]; then
-        notification "\n\n${bred} No domain or list provided ${reset}\n\n" error
+        rftw_util_notification "\n\n${bred} No domain or list provided ${reset}\n\n" error
         exit
     fi
 
@@ -2121,7 +2180,7 @@ function end() {
     global_end=$(date +%s)
     getElapsedTime $global_start $global_end
     printf "${bgreen}#######################################################################${reset}\n"
-    notification "Finished Recon on: ${DOMAIN} under ${finaldir} in: ${runtime}" good
+    rftw_util_notification "Finished Recon on: ${DOMAIN} under ${finaldir} in: ${runtime}" good
     [[ $SOFT_NOTIFICATION == true ]] && echo "Finished Recon on: ${DOMAIN} under ${finaldir} in: ${runtime}" | notify -silent
     printf "${bgreen}#######################################################################${reset}\n"
     #Seperator for more clear messges in telegram_Bot
@@ -2227,7 +2286,7 @@ function multi_osint() {
         sed -i 's/\r$//' $list
         targets=$(cat $list)
     else
-        notification "Target list not provided" error
+        rftw_util_notification "Target list not provided" error
         exit
     fi
 
@@ -2342,7 +2401,7 @@ function multi_recon() {
         sed -i 's/\r$//' $list
         targets=$(cat $list)
     else
-        notification "Target list not provided" error
+        rftw_util_notification "Target list not provided" error
         exit
     fi
 
@@ -2445,7 +2504,7 @@ function multi_recon() {
         exit 1
     }
 
-    notification "############################# Total data ############################" info
+    rftw_util_notification "############################# Total data ############################" info
     NUMOFLINES_users_total=$(find . -type f -name 'users.txt' -exec cat {} + | anew osint/users.txt | sed '/^$/d' | wc -l)
     NUMOFLINES_pwndb_total=$(find . -type f -name 'passwords.txt' -exec cat {} + | anew osint/passwords.txt | sed '/^$/d' | wc -l)
     NUMOFLINES_software_total=$(find . -type f -name 'software.txt' -exec cat {} + | anew osint/software.txt | sed '/^$/d' | wc -l)
@@ -2460,15 +2519,15 @@ function multi_recon() {
     find . -type f -name 'portscan_active.gnmap' -exec cat {} + | tee hosts/portscan_active.gnmap 2>>"${LOGFILE}" >/dev/null
     find . -type f -name 'portscan_passive.txt' -exec cat {} + | tee hosts/portscan_passive.txt 2>&1 >>"${LOGFILE}" >/dev/null
 
-    notification "- ${NUMOFLINES_users_total} total users found" good
-    notification "- ${NUMOFLINES_pwndb_total} total creds leaked" good
-    notification "- ${NUMOFLINES_software_total} total software found" good
-    notification "- ${NUMOFLINES_authors_total} total authors found" good
-    notification "- ${NUMOFLINES_subs_total} total subdomains" good
-    notification "- ${NUMOFLINES_subtko_total} total probably subdomain takeovers" good
-    notification "- ${NUMOFLINES_webs_total} total websites" good
-    notification "- ${NUMOFLINES_ips_total} total ips" good
-    notification "- ${NUMOFLINES_cloudsprov_total} total IPs belongs to cloud" good
+    rftw_util_notification "- ${NUMOFLINES_users_total} total users found" good
+    rftw_util_notification "- ${NUMOFLINES_pwndb_total} total creds leaked" good
+    rftw_util_notification "- ${NUMOFLINES_software_total} total software found" good
+    rftw_util_notification "- ${NUMOFLINES_authors_total} total authors found" good
+    rftw_util_notification "- ${NUMOFLINES_subs_total} total subdomains" good
+    rftw_util_notification "- ${NUMOFLINES_subtko_total} total probably subdomain takeovers" good
+    rftw_util_notification "- ${NUMOFLINES_webs_total} total websites" good
+    rftw_util_notification "- ${NUMOFLINES_ips_total} total ips" good
+    rftw_util_notification "- ${NUMOFLINES_cloudsprov_total} total IPs belongs to cloud" good
     s3buckets
     waf_checks
     nuclei_check

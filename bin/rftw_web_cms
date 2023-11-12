@@ -56,14 +56,14 @@ mkdir -p "${dir}"/cms && rm -rf "${dir}"/cms/*
 anew -q .tmp/webs_all.txt < <(cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null)
 if [[ -s ".tmp/webs_all.txt" ]]; then
 	tr '\n' ',' <.tmp/webs_all.txt >.tmp/cms.txt
-	timeout -k 1m ${CMSSCAN_TIMEOUT}s python3"${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r 2>>"${LOGFILE}" >/dev/null
+	timeout -k 1m ${CMSSCAN_TIMEOUT}s python3"${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r
 	exit_status=$?
 	if [[ $exit_status -eq 125 ]]; then
-		echo "TIMEOUT cmseek.py - investigate manually for $dir" >>"${LOGFILE}"
+		echo "TIMEOUT cmseek.py - investigate manually for $dir"
 		end_func "TIMEOUT cmseek.py - investigate manually for $dir" "cms_scanner"
 		exit 1
 	elif [[ $exit_status -ne 0 ]]; then
-		echo "ERROR cmseek.py - investigate manually for $dir" >>"${LOGFILE}"
+		echo "ERROR cmseek.py - investigate manually for $dir"
 		end_func "ERROR cmseek.py - investigate manually for $dir" "cms_scanner"
 		exit 1
 	fi
@@ -73,7 +73,7 @@ if [[ -s ".tmp/webs_all.txt" ]]; then
 		if [[ -z $cms_id ]]; then
 			rm -rf "${tools}/CMSeeK/Result/${sub_out}"
 		else
-			mv -f "${tools}/CMSeeK/Result/${sub_out}" "${dir}"/cms/ 2>>"${LOGFILE}"
+			mv -f "${tools}/CMSeeK/Result/${sub_out}" "${dir}"/cms/
 		fi
 	done <.tmp/webs_all.txt
 fi

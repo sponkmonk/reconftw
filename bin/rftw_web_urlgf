@@ -48,7 +48,7 @@ url_gf() {
 		[[ -s "gf/ssrf.txt" ]] && cat gf/ssrf.txt | anew -q gf/redirect.txt
 		gf rce "$url_file" | anew -q gf/rce.txt
 		gf potential "$url_file" | cut -d ':' -f3-5 | anew -q gf/potential.txt
-		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q gf/endpoints.txt
+		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p | anew -q gf/endpoints.txt
 		gf lfi "$url_file" | anew -q gf/lfi.txt
 	fi
 	echo "[+] Results are saved in ${DOMAIN}/gf folder"

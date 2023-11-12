@@ -4,11 +4,11 @@
 CONFIG_PATH="${RECONFTW_CFG}"
 
 # Check if the config file exists
-if [[ -f "${CONFIG_PATH}" ]]; then
-    source "${CONFIG_PATH}"
+if [[ -f ${CONFIG_PATH} ]]; then
+	source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
-    exit 1
+	echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+	exit 1
 fi
 
 # Help menu
@@ -16,7 +16,6 @@ display_help() {
 	echo "$(basename "$0") [Options]"
 	echo
 	echo "  -d, --domain       Domain to check"
-	echo "  -i, --inscope      Check inscope."
 	echo "  -o, --output-file  File to save results"
 	echo "  -h, --help         Display this help and exit"
 	echo
@@ -31,7 +30,6 @@ while [[ $# -gt 0 ]]; do
 		DOMAIN="$2"
 		shift
 		;;
-	-i | --inscope) INSCOPE=true ;;
 	-o | --output)
 		OUTPUTFILE="$2"
 		shift
@@ -63,19 +61,15 @@ fi
 rftw_util_validatedomain "${DOMAIN}" || exit 1
 
 mkdir -p .tmp 2>/dev/null
-if [[ $(echo "${RANDOM}thistotallynotexist${RANDOM}.${DOMAIN}" | dnsx -r $resolvers -rcode noerror,nxdomain -retry 3 -silent | cut -d' ' -f2) == "[NXDOMAIN]" ]]; then
+if [[ $(echo "${RANDOM}thistotallynotexist${RANDOM}.${DOMAIN}" | dnsx -r "${resolvers}" -rcode noerror,nxdomain -retry 3 -silent | cut -d' ' -f2) == "[NXDOMAIN]" ]]; then
 	if [[ $DEEP == true ]]; then
-		dnsx -d "${DOMAIN}" -r $resolvers -silent -rcode noerror -w $subs_wordlist_big | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>>"${LOGFILE}" >/dev/null
+		dnsx -d "${DOMAIN}" -r $resolvers -silent -rcode noerror -w "${subs_wordlist_big}" | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>/dev/null
 	else
-		dnsx -d "${DOMAIN}" -r $resolvers -silent -rcode noerror -w $subs_wordlist | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>>"${LOGFILE}" >/dev/null
+		dnsx -d "${DOMAIN}" -r $resolvers -silent -rcode noerror -w "${subs_wordlist}" | cut -d' ' -f1 | anew -q .tmp/subs_noerror.txt 2>/dev/null
 	fi
-	# Output handling
-	if [[ -n ${OUTPUTFILE} ]]; then
-		cat .tmp/subs_noerror.txt >"${OUTPUTFILE}"
-	else
-		cat .tmp/subs_noerror.txt
-	fi
-	[[ ${INSCOPE} == true ]] && check_inscope .tmp/subs_noerror.txt 2>>"${LOGFILE}" >/dev/null
+
+	cat .tmp/subs_noerror.txt >"${OUTPUTFILE}"
+
 else
 	printf "\n${yellow} Detected DNSSEC black lies, skipping this technique ${reset}\n"
 fi

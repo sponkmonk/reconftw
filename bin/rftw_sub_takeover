@@ -32,20 +32,20 @@ run_subtakeover() {
 		touch .tmp/tko.txt
 		[[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 		if [[ ! ${AXIOM} = true ]]; then
-			nuclei -update 2>>"${LOGFILE}" >/dev/null
+			nuclei -update
 			cat subdomains/subdomains.txt .tmp/webs_all.txt 2>/dev/null | nuclei -silent -nh -tags takeover -severity info,low,medium,high,critical -retries 3 -rl $NUCLEI_RATELIMIT -t ${NUCLEI_TEMPLATES_PATH} -o .tmp/tko.txt
 		else
-			cat subdomains/subdomains.txt .tmp/webs_all.txt 2>>"${LOGFILE}" | sed '/^$/d' | anew -q .tmp/webs_subs.txt
-			[[ -s ".tmp/webs_subs.txt" ]] && axiom-scan .tmp/webs_subs.txt -m nuclei --nuclei-templates ${NUCLEI_TEMPLATES_PATH} -tags takeover -nh -severity info,low,medium,high,critical -retries 3 -rl $NUCLEI_RATELIMIT -t ${NUCLEI_TEMPLATES_PATH} -o .tmp/tko.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+			cat subdomains/subdomains.txt .tmp/webs_all.txt | sed '/^$/d' | anew -q .tmp/webs_subs.txt
+			[[ -s ".tmp/webs_subs.txt" ]] && axiom-scan .tmp/webs_subs.txt -m nuclei --nuclei-templates ${NUCLEI_TEMPLATES_PATH} -tags takeover -nh -severity info,low,medium,high,critical -retries 3 -rl $NUCLEI_RATELIMIT -t ${NUCLEI_TEMPLATES_PATH} -o .tmp/tko.txt "${AXIOM_EXTRA_ARGS}"
 		fi
 
 		# DNS_TAKEOVER
 		cat .tmp/subs_no_resolved.txt .tmp/subdomains_dns.txt .tmp/scrap_subs.txt .tmp/analytics_subs_clean.txt .tmp/passive_recursive.txt 2>/dev/null | anew -q .tmp/subs_dns_tko.txt
-		cat .tmp/subs_dns_tko.txt 2>/dev/null | dnstake -c $DNSTAKE_THREADS -s 2>>"${LOGFILE}" | sed '/^$/d' | anew -q .tmp/tko.txt
+		cat .tmp/subs_dns_tko.txt 2>/dev/null | dnstake -c $DNSTAKE_THREADS -s | sed '/^$/d' | anew -q .tmp/tko.txt
 
 		sed -i '/^$/d' .tmp/tko.txt
 
-		NUMOFLINES=$(cat .tmp/tko.txt 2>>"${LOGFILE}" | anew webs/takeover.txt | sed '/^$/d' | wc -l)
+		NUMOFLINES=$(cat .tmp/tko.txt | anew webs/takeover.txt | sed '/^$/d' | wc -l)
 		if [[ "$NUMOFLINES" -gt 0 ]]; then
 			notification "${NUMOFLINES} new possible takeovers found" info
 		fi

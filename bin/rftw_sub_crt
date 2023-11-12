@@ -4,11 +4,11 @@
 CONFIG_PATH="${RECONFTW_CFG}"
 
 # Check if the config file exists
-if [[ -f "${CONFIG_PATH}" ]]; then
-    source "${CONFIG_PATH}"
+if [[ -f ${CONFIG_PATH} ]]; then
+	source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
-    exit 1
+	echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+	exit 1
 fi
 
 # Help Menu
@@ -16,7 +16,7 @@ function display_help() {
 	echo "$(basename "$0") [OPTIONS]"
 	echo "Options:"
 	echo "  -d, --domain          Set the target domain. (Required)"
-	echo "  -l, --limit           Set the crt limit (default 100)."
+	echo "  -l, --limit           Set the crt limit (default 999999)."
 	echo "  -o, --output          Specify the output file. (Optional)"
 	echo "  -h, --help            Display this help menu."
 }
@@ -72,11 +72,9 @@ fi
 # Call the domain validation script
 rftw_util_validatedomain "${DOMAIN}" || exit 1
 
+mkdir -p .tmp 2>/dev/null
 # Main Functionality
-crt -s -json -l "${CTR_LIMIT_LOCAL}" "${DOMAIN}" 2>>"${LOGFILE}" | jq -r '.[].subdomain' 2>>"${LOGFILE}" | sed -e 's/^\*\.//' | anew -q .tmp/crtsh_subs_tmp.txt 2>>"${LOGFILE}" >/dev/null
-
-# Check inscope
-rftw_util_inscope .tmp/crtsh_subs_tmp.txt
+crt -s -json -l "${CTR_LIMIT_LOCAL}" "${DOMAIN}" 2>/dev/null | jq -r '.[].subdomain' 2>/dev/null | sed -e 's/^\*\.//' | anew -q .tmp/crtsh_subs_tmp.txt &>/dev/null
 
 # Save results to the specified output file if provided
 if [[ -n ${output_file} ]]; then

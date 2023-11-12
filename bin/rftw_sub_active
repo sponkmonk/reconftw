@@ -70,18 +70,18 @@ sub_active() {
 	mkdir -p .tmp 2>/dev/null
 	if [[ ${AXIOM} != true ]]; then
 		resolvers_update_quick_local
-		[[ -s ${DOMAIN_file} ]] && puredns resolve "${DOMAIN_file}" -w .tmp/subdomains_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
+		[[ -s ${DOMAIN_file} ]] && puredns resolve "${DOMAIN_file}" -w .tmp/subdomains_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 	else
 		resolvers_update_quick_axiom
-		[[ -s ${DOMAIN_file} ]] && axiom-scan ${DOMAIN_file} -m puredns-resolve -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+		[[ -s ${DOMAIN_file} ]] && axiom-scan ${DOMAIN_file} -m puredns-resolve -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_tmp.txt "${AXIOM_EXTRA_ARGS}"
 	fi
-	echo "${DOMAIN}" | dnsx -retry 3 -silent -r $resolvers_trusted 2>>"${LOGFILE}" | anew -q .tmp/subdomains_tmp.txt
+	echo "${DOMAIN}" | dnsx -retry 3 -silent -r $resolvers_trusted | anew -q .tmp/subdomains_tmp.txt
 	if [[ $DEEP == true ]]; then
 		cat .tmp/subdomains_tmp.txt | tlsx -san -cn -silent -ro -c $TLSX_THREADS -p $TLS_PORTS | anew -q .tmp/subdomains_tmp.txt
 	else
 		cat .tmp/subdomains_tmp.txt | tlsx -san -cn -silent -ro -c $TLSX_THREADS | anew -q .tmp/subdomains_tmp.txt
 	fi
-	[[ ${INSCOPE} == true ]] && rftw_util_inscope .tmp/subdomains_tmp.txt 2>>"${LOGFILE}" >/dev/null
+	[[ ${INSCOPE} == true ]] && rftw_util_inscope .tmp/subdomains_tmp.txt
 	[[ -s ${output_file} ]] && cat .tmp/subdomains_tmp.txt >>"${output_file}"
 }
 

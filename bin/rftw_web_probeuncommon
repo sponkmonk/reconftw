@@ -36,9 +36,9 @@ run_webprobe_full() {
 	start_func "webprobe_full" "Http probing non-standard ports"
 	if [[ -s "subdomains/subdomains.txt" ]]; then
 		if [[ ! ${AXIOM} == true ]]; then
-			cat subdomains/subdomains.txt | httpx -follow-host-redirects -random-agent -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt 2>>"${LOGFILE}" >/dev/null
+			cat subdomains/subdomains.txt | httpx -follow-host-redirects -random-agent -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt
 		else
-			axiom-scan subdomains/subdomains.txt -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+			axiom-scan subdomains/subdomains.txt -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt "${AXIOM_EXTRA_ARGS}"
 		fi
 	fi
 
@@ -47,9 +47,9 @@ run_webprobe_full() {
 		cat .tmp/web_full_info_uncommon.txt | jq -r 'try . |"\(.url) [\(.status_code)] [\(.title)] [\(.webserver)] \(.tech)"' | anew -q webs/web_full_info_uncommon_plain.txt
 
 		if [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
-			cat .tmp/web_full_info_uncommon.txt 2>>"${LOGFILE}" | anew -q webs/web_full_info_uncommon.txt
+			cat .tmp/web_full_info_uncommon.txt | anew -q webs/web_full_info_uncommon.txt
 		else
-			cat .tmp/web_full_info_uncommon.txt 2>>"${LOGFILE}" | grep "${DOMAIN}" | anew -q webs/web_full_info_uncommon.txt
+			cat .tmp/web_full_info_uncommon.txt | grep "${DOMAIN}" | anew -q webs/web_full_info_uncommon.txt
 		fi
 	fi
 

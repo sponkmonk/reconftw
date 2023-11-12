@@ -47,11 +47,11 @@ ip_info_func() {
 	local ip="$1"
 	if [[ -n ${WHOISXML_API} ]]; then
 		# IP Relations
-		curl "https://reverse-ip.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ip=${ip}" 2>/dev/null | jq -r '.result[].name' 2>>"${LOGFILE}" >>"${output_file}"
+		curl "https://reverse-ip.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ip=${ip}" 2>/dev/null | jq -r '.result[].name'
 		# IP Whois
-		curl "https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOISXML_API}&domainName=${ip}&outputFormat=json&da=2&registryRawText=1&registrarRawText=1&ignoreRawTexts=1" 2>/dev/null | jq 2>>"${LOGFILE}" >>"${output_file}"
+		curl "https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOISXML_API}&domainName=${ip}&outputFormat=json&da=2&registryRawText=1&registrarRawText=1&ignoreRawTexts=1" 2>/dev/null | jq
 		# IP Location
-		curl "https://ip-geolocation.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ipAddress=${ip}" 2>/dev/null | jq -r '.ip,.location' 2>>"${LOGFILE}" >>"${output_file}"
+		curl "https://ip-geolocation.whoisxmlapi.com/api/v1?apiKey=${WHOISXML_API}&ipAddress=${ip}" 2>/dev/null | jq -r '.ip,.location'
 	else
 		echo "${yellow} No WHOISXML_API var defined, skipping function ${reset}"
 	fi

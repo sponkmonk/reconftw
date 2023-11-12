@@ -40,16 +40,16 @@ sub_regex_permut() {
 
 		if [[ ! ${AXIOM} = true ]]; then
 			resolvers_update_quick_local
-			[[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w .tmp/regulator.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
+			[[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w .tmp/regulator.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 		else
 			resolvers_update_quick_axiom
-			[[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/regulator.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+			[[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/regulator.txt "${AXIOM_EXTRA_ARGS}"
 		fi
 		
 		if [[ -s ".tmp/regulator.txt" ]]; then
 			[[ -s "$outOfScope_file" ]] && deleteOutScoped $outOfScope_file .tmp/regulator.txt
-			[[ "${INSCOPE}" = true ]] && check_inscope .tmp/regulator.txt 2>>"${LOGFILE}" >/dev/null
-			NUMOFLINES=$(cat .tmp/regulator.txt 2>>"${LOGFILE}" | grep ".$DOMAIN$" | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+			[[ "${INSCOPE}" = true ]] && check_inscope .tmp/regulator.txt
+			NUMOFLINES=$(cat .tmp/regulator.txt | grep ".$DOMAIN$" | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
 		else
 			NUMOFLINES=0
 		fi

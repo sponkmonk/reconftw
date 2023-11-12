@@ -40,7 +40,7 @@ function spraying_test() {
 		echo "Failed to cd directory in spraying_test @ line ${LINENO}"
 		exit 1
 	}
-	python3 brutespray.py --file "${dir}"/hosts/portscan_active.gnmap --threads "${BRUTESPRAY_THREADS}" --hosts "${BRUTESPRAY_CONCURRENCE}" -o "${dir}"/vulns/brutespray 2>>"${LOGFILE}" >/dev/null
+	python3 brutespray.py --file "${dir}"/hosts/portscan_active.gnmap --threads "${BRUTESPRAY_THREADS}" --hosts "${BRUTESPRAY_CONCURRENCE}" -o "${dir}"/vulns/brutespray
 	cd "${dir}" || {
 		echo "Failed to cd directory in spraying_test @ line ${LINENO}"
 		exit 1

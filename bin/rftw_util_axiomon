@@ -29,7 +29,7 @@ function axiom_launch() {
 		# start_func ${FUNCNAME[0]} "Launching our Axiom fleet"
 
 		# Ensure the linode-cli tool is up-to-date
-		python3 -m pip install --upgrade linode-cli 2>>"${LOGFILE}" >/dev/null
+		python3 -m pip install --upgrade linode-cli
 
 		# Check the current number of nodes
 		NUMOFNODES=$(timeout 30 axiom-ls | grep -c "${AXIOM_FLEET_NAME}")
@@ -47,7 +47,7 @@ function axiom_launch() {
 
 			axiom-select "${AXIOM}_FLEET_NAME*"
 
-			[[ -n "${AXIOM_POST_START}" ]] && eval "${AXIOM_POST_START}" 2>>"${LOGFILE}" >/dev/null
+			[[ -n "${AXIOM_POST_START}" ]] && eval "${AXIOM_POST_START}"
 
 			NUMOFNODES=$(timeout 30 axiom-ls | grep -c "${AXIOM_FLEET_NAME}")
 			# Notification/logging example:
