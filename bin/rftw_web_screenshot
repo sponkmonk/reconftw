@@ -10,59 +10,30 @@ else
     echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
-help_menu() {
-	echo "$(basename "$0") [DOMAIN] [OPTIONS]"
-	echo "Web Screenshots tool for the specified domain."
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
 	echo
-	echo "Options:"
-	echo "  -h, --help   Display this help menu and exit"
-	echo "  -f, --force  Force the execution even if it was already processed"
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output            Output file location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-validate_inputs() {
-	if [[ -z ${DOMAIN} ]]; then
-		echo -e "${yellow} No domain provided! ${reset}"
-		exit 1
-	fi
-
-	if [[ $WEBSCREENSHOT != true ]] && [[ $FORCE_EXECUTION != true ]]; then
-		echo -e "${yellow} screenshot skipped in this mode or defined in reconftw.cfg ${reset}"
-		exit 0
-	fi
-}
-
-run_screenshot() {
-	start_func "screenshot" "Web Screenshots"
-
-	[[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-
-	num_lines=$(wc -l <.tmp/webs_all.txt)
-	dynamic_gowitness_timeout=$(expr $num_lines \* $GOWITNESS_TIMEOUT_PER_SITE)
-
-	if [[ ! ${AXIOM} == true ]]; then
-		[[ -s ".tmp/webs_all.txt" ]] && timeout -k 1m ${dynamic_gowitness_timeout}s gowitness file -f .tmp/webs_all.txt -t $GOWITNESS_THREADS $GOWITNESS_FLAGS
-	else
-		timeout -k 1m ${dynamic_gowitness_timeout}s axiom-scan .tmp/webs_all.txt -m gowitness -t $GOWITNESS_THREADS $GOWITNESS_FLAGS -o screenshots "${AXIOM_EXTRA_ARGS}"
-	fi
-
-	end_func "Results are saved in ${DOMAIN}/screenshots folder" "screenshot"
-}
-
-# Main
-FORCE_EXECUTION=false
-DOMAIN="$1"
-
-shift
+# Parse input arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	-h | --help)
-		help_menu
-		exit 0
-		;;
-	-f | --force)
-		FORCE_EXECUTION=true
+	-f | --file)
+		input_file="$2"
 		shift
 		;;
+	-o | --output)
+		output_dir="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
 	*)
 		echo "Unknown parameter passed: $1"
 		exit 1
@@ -71,5 +42,27 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-validate_inputs
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+
+run_screenshot() {
+	num_lines=$(wc -l <${input_file})
+	dynamic_gowitness_timeout=$(expr $num_lines \* $GOWITNESS_TIMEOUT_PER_SITE)
+
+	if [[ ! ${AXIOM} == true ]]; then
+		[[ -s "${input_file}" ]] && timeout -k 1m ${dynamic_gowitness_timeout}s gowitness file -f ${input_file} -t $GOWITNESS_THREADS -P ${output_dir} $GOWITNESS_FLAGS
+	else
+		timeout -k 1m ${dynamic_gowitness_timeout}s axiom-scan ${input_file} -m gowitness -t $GOWITNESS_THREADS $GOWITNESS_FLAGS -o ${output_dir} "${AXIOM_EXTRA_ARGS}"
+	fi
+}
+
 run_screenshot

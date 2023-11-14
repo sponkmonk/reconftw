@@ -10,12 +10,11 @@ else
     echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
-
 # Help menu
 display_help() {
 	echo "$(basename "$0") [Options]"
 	echo
-	echo "  -f, --file              File containing domains for web probing"
+	echo "  -f, --file              File containing domains for fuzzing vhosts"
 	echo "  -o, --output            Output file location"
 	echo "  -h, --help              Display this help and exit"
 	echo
@@ -31,7 +30,7 @@ while [[ $# -gt 0 ]]; do
 		shift
 		;;
 	-o | --output)
-		output_file="$2"
+		output_dir="$2"
 		shift
 		;;
 	-h | --help) display_help ;;
@@ -55,15 +54,14 @@ if [[ ! -f ${DOMAIN_FILE} ]]; then
 	exit 1
 fi
 
-
-run_webprobe_full() {
-	mkdir -p .tmp 2>/dev/null
-	if [[ ! ${AXIOM} == true ]]; then
-		cat ${input_file} | httpx -follow-host-redirects -random-agent -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt
-	else
-		rftw_util_resolver_quick_axiom
-		axiom-scan ${input_file} -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt "${AXIOM_EXTRA_ARGS}"
-	fi
+run_vhosts() {
+	mkdir -p "${output_dir}" .tmp/virtualhosts
+    interlace -tL ${input_file} -threads "${INTERLACE_THREADS}" -c "ffuf -ac -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -H \"Host: FUZZ._cleantarget_\" -w ${fuzz_wordlist} -maxtime ${FFUF_MAXTIME} -u  _target_ -of json -o _output_/_cleantarget_.json" -o .tmp/virtualhosts 2>>"${LOGFILE}" >/dev/null
+    for sub in $(cat ${input_file}); do
+        sub_out=$(echo $sub | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+        [[ -s ".tmp/virtualhosts/${sub_out}.json" ]] && cat .tmp/virtualhosts/${sub_out}.json | jq -r 'try .results[] | "\(.status) \(.length) \(.url)"' | sort | anew -q ${output_dir}/${sub_out}.txt
+    done
+    find ${output_dir} -type f -iname "*.txt" -exec cat {} + 2>>"${LOGFILE}" | anew -q ${output_dir}/virtualhosts_full.txt
 }
 
-run_webprobe_full
+run_vhosts

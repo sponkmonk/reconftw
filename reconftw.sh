@@ -507,6 +507,7 @@ function sub_recursive_brute() {
 function subtakeover() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBTAKEOVER == true ]]; then
         start_func ${FUNCNAME[0]} "Looking for possible subdomain and DNS takeover"
+        spinny::start
         touch .tmp/tko.txt
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         cat subdomains/subdomains.txt .tmp/webs_all.txt 2>/dev/null | anew -q .tmp/input_takeover.txt
@@ -517,6 +518,7 @@ function subtakeover() {
         if [[ $NUMOFLINES -gt 0 ]]; then
             rftw_util_notification "${NUMOFLINES} new possible takeovers found" info
         fi
+        spinny::stop
         end_func "Results are saved in ${DOMAIN}/webs/takeover.txt" ${FUNCNAME[0]}
     else
         if [[ $SUBTAKEOVER == false ]]; then
@@ -530,10 +532,12 @@ function subtakeover() {
 function zonetransfer() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $ZONETRANSFER == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "Zone transfer check"
+        spinny::start
         for ns in $(dig +short ns "${DOMAIN}"); do dig axfr "${DOMAIN}" @"$ns" >>subdomains/zonetransfer.txt; done
         if [[ -s "subdomains/zonetransfer.txt" ]]; then
             if ! grep -q "Transfer failed" subdomains/zonetransfer.txt; then rftw_util_notification "Zone transfer found on ${DOMAIN}!" info; fi
         fi
+        spinny::stop
         end_func "Results are saved in${DOMAIN}/subdomains/zonetransfer.txt" ${FUNCNAME[0]}
     else
         if [[ $ZONETRANSFER == false ]]; then
@@ -553,6 +557,7 @@ function zonetransfer() {
 function s3buckets() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $S3BUCKETS == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "AWS S3 buckets search"
+        spinny::start
         # S3Scanner
         rftw_sub_s3buckets -d ${DOMAIN} -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp
 
@@ -564,7 +569,7 @@ function s3buckets() {
         if [[ $NUMOFLINES2 -gt 0 ]]; then
             rftw_util_notification "${NUMOFLINES2} new S3 buckets found" info
         fi
-
+        spinny::stop
         end_func "Results are saved in subdomains/s3buckets.txt and subdomains/cloud_assets.txt" ${FUNCNAME[0]}
     else
         if [[ $S3BUCKETS == false ]]; then
@@ -588,17 +593,15 @@ function s3buckets() {
 function webprobe_simple() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBPROBESIMPLE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Http probing${DOMAIN}/"
-        if [[ ! ${AXIOM} == true ]]; then
-            cat subdomains/subdomains.txt | httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o .tmp/web_full_info_probe.txt 2>>"${LOGFILE}" >/dev/null
-        else
-            axiom-scan subdomains/subdomains.txt -m httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o .tmp/web_full_info_probe.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
+        spinny::start
+        rftw_web_probecommon -f ${DOMAIN_FILE} -o .tmp/web_full_info1.txt
         cat .tmp/web_full_info.txt .tmp/web_full_info_probe.txt webs/web_full_info.txt 2>>"${LOGFILE}" | jq -s 'try .' | jq 'try unique_by(.input)' | jq 'try .[]' 2>>"${LOGFILE}" >webs/web_full_info.txt
         [[ -s "webs/web_full_info.txt" ]] && cat webs/web_full_info.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew -q .tmp/probed_tmp.txt
         [[ -s "webs/web_full_info.txt" ]] && cat webs/web_full_info.txt | jq -r 'try . |"\(.url) [\(.status_code)] [\(.title)] [\(.webserver)] \(.tech)"' | grep "${DOMAIN}" | anew -q webs/web_full_info_plain.txt
         [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/probed_tmp.txt
         NUMOFLINES=$(cat .tmp/probed_tmp.txt 2>>"${LOGFILE}" | anew webs/webs.txt | sed '/^$/d' | wc -l)
         cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
+        spinny::stop
         end_subfunc "${NUMOFLINES} new websites resolved" ${FUNCNAME[0]}
         if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/webs.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
             rftw_util_notification "Sending websites to proxy" info
@@ -616,17 +619,8 @@ function webprobe_simple() {
 function webprobe_full() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBPROBEFULL == true ]]; then
         start_func ${FUNCNAME[0]} "Http probing non standard ports"
-        if [[ -s "subdomains/subdomains.txt" ]]; then
-            if [[ ! ${AXIOM} == true ]]; then
-                if [[ -s "subdomains/subdomains.txt" ]]; then
-                    cat subdomains/subdomains.txt | httpx -follow-host-redirects -random-agent -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt 2>>"${LOGFILE}" >/dev/null
-                fi
-            else
-                if [[ -s "subdomains/subdomains.txt" ]]; then
-                    axiom-scan subdomains/subdomains.txt -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -p $UNCOMMON_PORTS_WEB -threads $HTTPX_UNCOMMONPORTS_THREADS -timeout $HTTPX_UNCOMMONPORTS_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info_uncommon.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                fi
-            fi
-        fi
+        spinny::start
+        rftw_web_probecommon -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/web_full_info_uncommon.txt
         [[ -s ".tmp/web_full_info_uncommon.txt" ]] && cat .tmp/web_full_info_uncommon.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew -q .tmp/probed_uncommon_ports_tmp.txt
         [[ -s ".tmp/web_full_info_uncommon.txt" ]] && cat .tmp/web_full_info_uncommon.txt | jq -r 'try . |"\(.url) [\(.status_code)] [\(.title)] [\(.webserver)] \(.tech)"' | anew -q webs/web_full_info_uncommon_plain.txt
         if [[ -s ".tmp/web_full_info_uncommon.txt" ]]; then
@@ -640,6 +634,7 @@ function webprobe_full() {
         rftw_util_notification "Uncommon web ports: ${NUMOFLINES} new websites" good
         [[ -s "webs/webs_uncommon_ports.txt" ]] && cat webs/webs_uncommon_ports.txt
         cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
+        spinny::stop
         end_func "Results are saved in ${DOMAIN}/webs/webs_uncommon_ports.txt" ${FUNCNAME[0]}
         if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/webs_uncommon_ports.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
             rftw_util_notification "Sending websites with uncommon ports to proxy" info
@@ -657,16 +652,11 @@ function webprobe_full() {
 function screenshot() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBSCREENSHOT == true ]]; then
         start_func ${FUNCNAME[0]} "Web Screenshots"
+        spinny::start
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 
-        num_lines=$(wc -l <.tmp/webs_all.txt)
-        dynamic_gowitness_timeout=$(expr $num_lines \* $GOWITNESS_TIMEOUT_PER_SITE)
-
-        if [[ ! ${AXIOM} == true ]]; then
-            [[ -s ".tmp/webs_all.txt" ]] && timeout -k 1m ${dynamic_gowitness_timeout}s gowitness file -f .tmp/webs_all.txt -t $GOWITNESS_THREADS $GOWITNESS_FLAGS 2>>"${LOGFILE}"
-        else
-            timeout -k 1m ${dynamic_gowitness_timeout}s axiom-scan .tmp/webs_all.txt -m gowitness -t $GOWITNESS_THREADS $GOWITNESS_FLAGS -o screenshots "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
+        rftw_web_probecommon -f ${dir}/.tmp/webs_all.txt -o ${dir}/webs/screenshots
+        spinny::stop
         end_func "Results are saved in ${DOMAIN}/screenshots folder" ${FUNCNAME[0]}
     else
         if [[ $WEBSCREENSHOT == false ]]; then
@@ -680,19 +670,15 @@ function screenshot() {
 function virtualhosts() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $VIRTUALHOSTS == true ]]; then
         start_func ${FUNCNAME[0]} "Virtual Hosts dicovery"
+        spinny::start
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ -s ".tmp/webs_all.txt" ]]; then
-            mkdir -p "${dir}"/virtualhosts "${dir}"/.tmp/virtualhosts
-            interlace -tL .tmp/webs_all.txt -threads "${INTERLACE_THREADS}" -c "ffuf -ac -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -H \"Host: FUZZ._cleantarget_\" -w ${fuzz_wordlist} -maxtime ${FFUF_MAXTIME} -u  _target_ -of json -o _output_/_cleantarget_.json" -o "${dir}"/.tmp/virtualhosts 2>>"${LOGFILE}" >/dev/null
-            for sub in $(cat .tmp/webs_all.txt); do
-                sub_out=$(echo $sub | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-                [[ -s ""${dir}"/.tmp/virtualhosts/${sub_out}.json" ]] && cat "${dir}"/.tmp/virtualhosts/${sub_out}.json | jq -r 'try .results[] | "\(.status) \(.length) \(.url)"' | sort | anew -q "${dir}"/virtualhosts/${sub_out}.txt
-            done
-            find "${dir}"/virtualhosts/ -type f -iname "*.txt" -exec cat {} + 2>>"${LOGFILE}" | anew -q "${dir}"/virtualhosts/virtualhosts_full.txt
+            rftw_web_vhosts -f ${dir}/.tmp/webs_all.txt -o ${dir}/virtualhosts
             end_func "Results are saved in ${DOMAIN}/virtualhosts/*subdomain*.txt" ${FUNCNAME[0]}
         else
             end_func "No${DOMAIN}//web/webs.txts file found, virtualhosts skipped " ${FUNCNAME[0]}
         fi
+        spinny::stop
     else
         if [[ $VIRTUALHOSTS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
