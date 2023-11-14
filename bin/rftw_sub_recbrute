@@ -35,8 +35,8 @@ function check_inscope() {
 	echo "Checking inscope for file $1"
 }
 
-function resolvers_update_quick_local() {
-	# Placeholder for resolvers_update_quick_local function
+function rftw_util_resolver_quick_local() {
+	# Placeholder for rftw_util_resolver_quick_local function
 	echo "Updating local resolvers"
 }
 
@@ -73,10 +73,10 @@ sub_recursive_brute() {
 		[[ ! -s ".tmp/subdomains_recurs_top.txt" ]] && dsieve -if subdomains/subdomains.txt -f 3 -top $DEEP_RECURSIVE_PASSIVE >.tmp/subdomains_recurs_top.txt
 		ripgen -d .tmp/subdomains_recurs_top.txt -w $subs_wordlist >.tmp/brute_recursive_wordlist.txt
 		if [[ ! ${AXIOM} == true ]]; then
-			resolvers_update_quick_local
+			rftw_util_resolver_quick_local
 			[[ -s ".tmp/brute_recursive_wordlist.txt" ]] && puredns resolve .tmp/brute_recursive_wordlist.txt -r $resolvers --resolvers-trusted $resolvers_trusted -l $PUREDNS_PUBLIC_LIMIT --rate-limit-trusted $PUREDNS_TRUSTED_LIMIT --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -w .tmp/brute_recursive_result.txt
 		else
-			resolvers_update_quick_axiom
+			rftw_util_resolver_quick_axiom
 			[[ -s ".tmp/brute_recursive_wordlist.txt" ]] && axiom-scan .tmp/brute_recursive_wordlist.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/brute_recursive_result.txt "${AXIOM_EXTRA_ARGS}"
 		fi
 		[[ -s ".tmp/brute_recursive_result.txt" ]] && cat .tmp/brute_recursive_result.txt | anew -q .tmp/brute_recursive.txt

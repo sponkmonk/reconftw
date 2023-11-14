@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
+
+# Display help information
+function display_help() {
+	echo "$(basename "$0")"
+	echo
+	echo "Update resolvers for reconftw."
+	echo
+	echo "Options:"
+	echo "  -h, --help    Display this help and exit"
+	echo
+}
+
+axiom-exec "wget -q -O - ${resolvers_url} > /home/op/lists/resolvers.txt" 2>>"${LOGFILE}" >/dev/null
+axiom-exec "wget -q -O - ${resolvers_trusted_url} > /home/op/lists/resolvers_trusted.txt" 2>>"${LOGFILE}" >/dev/null

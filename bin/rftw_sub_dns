@@ -56,20 +56,20 @@ if [[ -z "${INPUTFILE}" ]] || [[ ! -f "${INPUTFILE}" ]]; then
 	exit 1
 fi
 # Main logic (Original function content)
-
+mkdir -p .tmp 2>/dev/null
 if [[ ${AXIOM} != true ]]; then
-	cat "${INPUTFILE}" | dnsx -r "${resolvers_trusted}" -a -aaaa -cname -ns -ptr -mx -soa -silent -retry 3 -json -o subdomains/subdomains_dnsregs.json
-	[[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try .a[], try .aaaa[], try .cname[], try .ns[], try .ptr[], try .mx[], try .soa[]' 2>/dev/null | grep ".$DOMAIN$" | anew -q .tmp/subdomains_dns.txt
-	[[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try .a[]' | sort -u | hakip2host | cut -d' ' -f 3 | unfurl -u domains | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | grep ".$DOMAIN$" | anew -q .tmp/subdomains_dns.txt
-	[[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try "\(.host) - \(.a[])"' 2>/dev/null | sort -u -k2 | anew -q subdomains/subdomains_ips.txt
-	resolvers_update_quick_local
-	[[ -s ".tmp/subdomains_dns.txt" ]] && puredns resolve .tmp/subdomains_dns.txt -w .tmp/subdomains_dns_resolved.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+	cat "${INPUTFILE}" | dnsx -r "${resolvers_trusted}" -a -aaaa -cname -ns -ptr -mx -soa -silent -retry 3 -json -o .tmp/subdomains_dnsregs.json
+	[[ -s ".tmp/subdomains_dnsregs.json" ]] && cat .tmp/subdomains_dnsregs.json | jq -r 'try .a[], try .aaaa[], try .cname[], try .ns[], try .ptr[], try .mx[], try .soa[]' 2>/dev/null | grep ".$DOMAIN$" | anew -q .tmp/subdomains_dns.txt
+	[[ -s ".tmp/subdomains_dnsregs.json" ]] && cat .tmp/subdomains_dnsregs.json | jq -r 'try .a[]' | sort -u | hakip2host | cut -d' ' -f 3 | unfurl -u domains | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | grep ".$DOMAIN$" | anew -q .tmp/subdomains_dns.txt
+	[[ -s ".tmp/subdomains_dnsregs.json" ]] && cat .tmp/subdomains_dnsregs.json | jq -r 'try "\(.host) - \(.a[])"' 2>/dev/null | sort -u -k2 | anew -q .tmp/subdomains_ips.txt
+	rftw_util_resolver_quick_local
+	[[ -s ".tmp/subdomains_dns.txt" ]] && puredns resolve .tmp/subdomains_dns.txt -w "${OUTPUTFILE}" -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 else
-	axiom-scan "${INPUTFILE}" -m dnsx -retry 3 -a -aaaa -cname -ns -ptr -mx -soa -json -o subdomains/subdomains_dnsregs.json "${AXIOM_EXTRA_ARGS}"
-	[[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try .a[]' | sort -u | anew -q .tmp/subdomains_dns_a_records.txt
-	[[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try .a[]' | sort -u | hakip2host | cut -d' ' -f 3 | unfurl -u domains | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | grep ".${DOMAIN}$" | anew -q .tmp/subdomains_dns.txt
-	[[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try .a[], try .aaaa[], try .cname[], try .ns[], try .ptr[], try .mx[], try .soa[]' 2>/dev/null | grep ".$DOMAIN$" | anew -q .tmp/subdomains_dns.txt
-	[[ -s "subdomains/subdomains_dnsregs.json" ]] && cat subdomains/subdomains_dnsregs.json | jq -r 'try "\(.host) - \(.a[])"' 2>/dev/null | sort -u -k2 | anew -q subdomains/subdomains_ips.txt
-	resolvers_update_quick_axiom
-	[[ -s ".tmp/subdomains_dns.txt" ]] && axiom-scan .tmp/subdomains_dns.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_dns_resolved.txt "${AXIOM_EXTRA_ARGS}"
+	axiom-scan "${INPUTFILE}" -m dnsx -retry 3 -a -aaaa -cname -ns -ptr -mx -soa -json -o .tmp/subdomains_dnsregs.json "${AXIOM_EXTRA_ARGS}"
+	[[ -s ".tmp/subdomains_dnsregs.json" ]] && cat .tmp/subdomains_dnsregs.json | jq -r 'try .a[]' | sort -u | anew -q .tmp/subdomains_dns_a_records.txt
+	[[ -s ".tmp/subdomains_dnsregs.json" ]] && cat .tmp/subdomains_dnsregs.json | jq -r 'try .a[]' | sort -u | hakip2host | cut -d' ' -f 3 | unfurl -u domains | sed -e 's/*\.//' -e 's/\.$//' -e '/\./!d' | grep ".${DOMAIN}$" | anew -q .tmp/subdomains_dns.txt
+	[[ -s ".tmp/subdomains_dnsregs.json" ]] && cat .tmp/subdomains_dnsregs.json | jq -r 'try .a[], try .aaaa[], try .cname[], try .ns[], try .ptr[], try .mx[], try .soa[]' 2>/dev/null | grep ".$DOMAIN$" | anew -q .tmp/subdomains_dns.txt
+	[[ -s ".tmp/subdomains_dnsregs.json" ]] && cat .tmp/subdomains_dnsregs.json | jq -r 'try "\(.host) - \(.a[])"' 2>/dev/null | sort -u -k2 | anew -q .tmp/subdomains_ips.txt
+	rftw_util_resolver_quick_axiom
+	[[ -s ".tmp/subdomains_dns.txt" ]] && axiom-scan .tmp/subdomains_dns.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o "${OUTPUTFILE}" "${AXIOM_EXTRA_ARGS}"
 fi

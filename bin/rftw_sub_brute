@@ -16,7 +16,7 @@ display_help() {
 	echo "$(basename "$0") [Options]"
 	echo "Options:"
 	echo "  -h, --help              Display this help and exit"
-	echo "  -i, --input INPUT_FILE  Specify the input file"
+	echo "  -d, --domain            Domain for which subdomain enumeration is required"
 	echo "  -o, --output OUTPUT_FILE Specify the output file"
 	echo
 	echo "Ensure all required environment variables are set in reconftw.cfg"
@@ -24,20 +24,15 @@ display_help() {
 }
 
 # Initialize input_file and output_file variables
-input_file=""
 output_file=""
 
 # Parse input arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
 	-h | --help) display_help ;;
-	-i | --input)
+	-d | --domain)
+		DOMAIN="$2"
 		shift
-		input_file="$1"
-		if [[ ! -f ${input_file} ]]; then
-			echo "Error: Input file does not exist."
-			exit 1
-		fi
 		;;
 	-o | --output)
 		shift
@@ -57,22 +52,23 @@ done
 
 # Main logic
 sub_brute() {
+	mkdir -p .tmp 2>/dev/null
 	if [[ ${AXIOM} != true ]]; then
-		resolvers_update_quick_local
+		rftw_util_resolver_quick_local
 		if [[ ${DEEP} == true ]]; then
 			puredns bruteforce "${subs_wordlist_big}" "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 		else
 			puredns bruteforce "${subs_wordlist}" "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 		fi
-		[[ -s ".tmp/subs_brute.txt" ]] && puredns resolve .tmp/subs_brute.txt -w .tmp/subs_brute_valid.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+		[[ -s ".tmp/subs_brute.txt" ]] && puredns resolve .tmp/subs_brute.txt -w "${output_file}" -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 	else
-		resolvers_update_quick_axiom
+		rftw_util_resolver_quick_axiom
 		if [[ ${DEEP} == true ]]; then
 			axiom-scan "${subs_wordlist_big}" -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}"
 		else
 			axiom-scan "${subs_wordlist}" -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}"
 		fi
-		[[ -s ".tmp/subs_brute.txt" ]] && axiom-scan .tmp/subs_brute.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subs_brute_valid.txt "${AXIOM_EXTRA_ARGS}"
+		[[ -s ".tmp/subs_brute.txt" ]] && axiom-scan .tmp/subs_brute.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o "${output_file}" "${AXIOM_EXTRA_ARGS}"
 	fi
 }
 

@@ -332,7 +332,8 @@ function sub_dns() {
     if [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : DNS Subdomain Enumeration and PTR search"
         spinny::start
-        rftw_sub_dns -f subdomains/subdomains.txt -o .tmp/subdomains_dns_okresolved.txt
+        rftw_sub_dns -f subdomains/subdomains.txt -o ${dir}/.tmp/subdomains_dns_okresolved.txt
+        cp .tmp/subdomains_dnsregs.json subdomains/subdomains_dnsregs.json 2>>"${LOGFILE}"
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/subdomains_dns_okresolved.txt 2>>"${LOGFILE}" >/dev/null
         NUMOFLINES=$(cat .tmp/subdomains_dns_okresolved.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         spinny::stop
@@ -346,23 +347,7 @@ function sub_brute() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBBRUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Bruteforce Subdomain Enumeration"
         spinny::start
-        if [[ ! ${AXIOM} == true ]]; then
-            resolvers_update_quick_local
-            if [[ $DEEP == true ]]; then
-                puredns bruteforce $subs_wordlist_big "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-            else
-                puredns bruteforce $subs_wordlist "${DOMAIN}" -w .tmp/subs_brute.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-            fi
-            [[ -s ".tmp/subs_brute.txt" ]] && puredns resolve .tmp/subs_brute.txt -w .tmp/subs_brute_valid.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-        else
-            resolvers_update_quick_axiom
-            if [[ $DEEP == true ]]; then
-                axiom-scan $subs_wordlist_big -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            else
-                axiom-scan $subs_wordlist -m puredns-single "${DOMAIN}" -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/subs_brute.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            fi
-            [[ -s ".tmp/subs_brute.txt" ]] && axiom-scan .tmp/subs_brute.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/subs_brute_valid.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
+        rftw_sub_brute -d "${DOMAIN}" -o ${dir}/.tmp/subs_brute_valid.txt
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/subs_brute_valid.txt 2>>"${LOGFILE}" >/dev/null
         NUMOFLINES=$(cat .tmp/subs_brute_valid.txt 2>>"${LOGFILE}" | sed "s/*.//" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         spinny::stop
@@ -380,35 +365,21 @@ function sub_scraping() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBSCRAPING == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Source code scraping subdomain search"
         touch .tmp/scrap_subs.txt
-        if [[ -s ""${dir}"/subdomains/subdomains.txt" ]]; then
+        if [[ -s "${dir}/subdomains/subdomains.txt" ]]; then
             if [[ $(cat subdomains/subdomains.txt | wc -l) -le $DEEP_LIMIT ]] || [[ $DEEP == true ]]; then
                 if [[ ! ${AXIOM} == true ]]; then
-                    resolvers_update_quick_local
-                    cat subdomains/subdomains.txt | httpx -follow-host-redirects -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info1.txt 2>>"${LOGFILE}" >/dev/null
-                    [[ -s ".tmp/web_full_info1.txt" ]] && cat .tmp/web_full_info1.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
-                    [[ -s ".tmp/probed_tmp_scrap.txt" ]] && cat .tmp/probed_tmp_scrap.txt | httpx -tls-grab -tls-probe -csp-probe -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info2.txt 2>>"${LOGFILE}" >/dev/null
-                    [[ -s ".tmp/web_full_info2.txt" ]] && cat .tmp/web_full_info2.txt | jq -r 'try ."tls-grab"."dns_names"[],try .csp.domains[],try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | sort -u | httpx -silent | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
-
-                    if [[ $DEEP == true ]]; then
-                        [[ -s ".tmp/probed_tmp_scrap.txt" ]] && katana -silent -list .tmp/probed_tmp_scrap.txt -jc -kf all -c $KATANA_THREADS -d 3 -fs rdn -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
+                    if [[ ${DEEP} == true ]]; then
+                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --deep
                     else
-                        [[ -s ".tmp/probed_tmp_scrap.txt" ]] && katana -silent -list .tmp/probed_tmp_scrap.txt -jc -kf all -c $KATANA_THREADS -d 2 -fs rdn -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
+                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt
                     fi
                 else
-                    resolvers_update_quick_axiom
-                    axiom-scan subdomains/subdomains.txt -m httpx -follow-host-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info1.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                    [[ -s ".tmp/web_full_info1.txt" ]] && cat .tmp/web_full_info1.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
-                    [[ -s ".tmp/probed_tmp_scrap.txt" ]] && axiom-scan .tmp/probed_tmp_scrap.txt -m httpx -tls-grab -tls-probe -csp-probe -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -title -web-server -tech-detect -location -no-color -json -o .tmp/web_full_info2.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                    [[ -s ".tmp/web_full_info2.txt" ]] && cat .tmp/web_full_info2.txt | jq -r 'try ."tls-grab"."dns_names"[],try .csp.domains[],try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | sort -u | httpx -silent | anew .tmp/probed_tmp_scrap.txt | unfurl -u domains 2>>"${LOGFILE}" | anew -q .tmp/scrap_subs.txt
-                    if [[ $DEEP == true ]]; then
-                        [[ -s ".tmp/probed_tmp_scrap.txt" ]] && axiom-scan .tmp/probed_tmp_scrap.txt -m katana -jc -kf all -d 3 -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+                    if [[ ${DEEP} == true ]]; then
+                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --no-axiom --deep
                     else
-                        [[ -s ".tmp/probed_tmp_scrap.txt" ]] && axiom-scan .tmp/probed_tmp_scrap.txt -m katana -jc -kf all -d 2 -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
+                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --no-axiom
                     fi
                 fi
-                sed -i '/^.\{2048\}./d' .tmp/katana.txt
-                [[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | unfurl -u domains 2>>"${LOGFILE}" | grep ".$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew -q .tmp/scrap_subs.txt
-                [[ -s ".tmp/scrap_subs.txt" ]] && puredns resolve .tmp/scrap_subs.txt -w .tmp/scrap_subs_resolved.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
                 if [[ ${INSCOPE} == true ]]; then
                     check_inscope .tmp/scrap_subs_resolved.txt 2>>"${LOGFILE}" >/dev/null
                 fi
@@ -1984,18 +1955,6 @@ function resolvers_update() {
             rftw_util_notification "Resolvers updated\n" good
         fi
     fi
-}
-
-function resolvers_update_quick_local() {
-    if [[ $update_resolvers == true ]]; then
-        wget -q -O - ${resolvers_url} >$resolvers
-        wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
-    fi
-}
-
-function resolvers_update_quick_axiom() {
-    axiom-exec "wget -q -O - ${resolvers_url} > /home/op/lists/resolvers.txt" 2>>"${LOGFILE}" >/dev/null
-    axiom-exec "wget -q -O - ${resolvers_trusted_url} > /home/op/lists/resolvers_trusted.txt" 2>>"${LOGFILE}" >/dev/null
 }
 
 function ipcidr_target() {

@@ -39,10 +39,10 @@ sub_regex_permut() {
 		cd "${dir}" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
 
 		if [[ ! ${AXIOM} = true ]]; then
-			resolvers_update_quick_local
+			rftw_util_resolver_quick_local
 			[[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w .tmp/regulator.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 		else
-			resolvers_update_quick_axiom
+			rftw_util_resolver_quick_axiom
 			[[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/regulator.txt "${AXIOM_EXTRA_ARGS}"
 		fi
 		

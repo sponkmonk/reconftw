@@ -35,13 +35,13 @@ while [[ $# -gt 0 ]]; do
 		shift
 		;;
 	-f | --file)
-		domain_file="$2"
+		DOMAIN_FILE="$2"
 		shift
 		;;
 	-o | --output)
 		output_file="$2"
 		shift
-		;; # New output flag
+		;;
 	-h | --help) display_help ;;
 	*)
 		echo "Unknown parameter passed: $1"
@@ -52,13 +52,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Input validation
-if [[ -z ${DOMAIN_file} ]] || [[ -z ${DOMAIN} ]]; then
+if [[ -z ${DOMAIN_FILE} ]] || [[ -z ${DOMAIN} ]]; then
 	display_help
 	exit 1
 fi
 
 # Validate file
-if [[ ! -f ${DOMAIN_file} ]] || [[ ! -r ${DOMAIN_file} ]]; then
+if [[ ! -f ${DOMAIN_FILE} ]] || [[ ! -r ${DOMAIN_FILE} ]]; then
 	echo "Error: Specified file does not exist or is not readable."
 	exit 1
 fi
@@ -69,11 +69,11 @@ rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
 sub_active() {
 	mkdir -p .tmp 2>/dev/null
 	if [[ ${AXIOM} != true ]]; then
-		resolvers_update_quick_local
-		[[ -s ${DOMAIN_file} ]] && puredns resolve "${DOMAIN_file}" -w .tmp/subdomains_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+		rftw_util_resolver_quick_local
+		[[ -s ${DOMAIN_FILE} ]] && puredns resolve "${DOMAIN_FILE}" -w .tmp/subdomains_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 	else
-		resolvers_update_quick_axiom
-		[[ -s ${DOMAIN_file} ]] && axiom-scan ${DOMAIN_file} -m puredns-resolve -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_tmp.txt "${AXIOM_EXTRA_ARGS}"
+		rftw_util_resolver_quick_axiom
+		[[ -s ${DOMAIN_FILE} ]] && axiom-scan ${DOMAIN_FILE} -m puredns-resolve -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_tmp.txt "${AXIOM_EXTRA_ARGS}"
 	fi
 	echo "${DOMAIN}" | dnsx -retry 3 -silent -r $resolvers_trusted | anew -q .tmp/subdomains_tmp.txt
 	if [[ $DEEP == true ]]; then
