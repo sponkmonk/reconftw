@@ -12,75 +12,45 @@ else
 fi
 
 function usage() {
-	echo "$(basename "$0") [-h] [-d DOMAIN] [-i INPUT_FILE] [-o OUTPUT_FILE]"
-	echo "  -h                Display this help message."
-	echo "  -d DOMAIN         Specify the target domain."
+	echo "$(basename "$0") [-h] [-i INPUT_FILE] [-o OUTPUT_FILE]"
 	echo "  -i INPUT_FILE     Specify the input file."
 	echo "  -o OUTPUT_FILE    Specify the output file."
+	echo "  -h                Display this help message."
 	exit 1
 }
 
-# Validate input arguments
-input_file=""
-output_file=""
-while getopts ":hd:i:o:" opt; do
-	case ${opt} in
-	h)
-		usage
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-f | --file)
+		input_file="$2"
+		shift
 		;;
-	d)
-		DOMAIN="${OPTARG}"
+	-o | --output)
+		output_file="$2"
+		shift
 		;;
-	i)
-		input_file="${OPTARG}"
-		if [[ ! -f ${input_file} ]]; then
-			echo "Error: Input file does not exist."
-			exit 1
-		fi
-		;;
-	o)
-		output_file="${OPTARG}"
-		touch "${output_file}" 2>/dev/null || {
-			echo "Error: Cannot write to the specified output file."
-			exit 1
-		}
-		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Invalid option: -${OPTARG}" 1>&2
-		usage
+		echo "Unknown parameter passed: $1"
+		exit 1
 		;;
 	esac
+	shift
 done
-shift $((OPTIND - 1))
-
-if [[ -z ${DOMAIN} ]]; then
-	echo "Error: No domain specified."
-	usage
-fi
 
 function sub_analytics() {
-
-	if [[ -s ".tmp/probed_tmp_scrap.txt" ]]; then
-		mkdir -p .tmp/output_analytics/
-		analyticsrelationships -ch <.tmp/probed_tmp_scrap.txt >>.tmp/analytics_subs_tmp.txt
-		[[ -s ".tmp/analytics_subs_tmp.txt" ]] && cat .tmp/analytics_subs_tmp.txt | grep "\.$DOMAIN$\|^$DOMAIN$" | sed "s/|__ //" | anew -q .tmp/analytics_subs_clean.txt
-		if [[ ${AXIOM} != true ]]; then
-			rftw_util_resolver_quick_local
-			[[ -s ".tmp/analytics_subs_clean.txt" ]] && puredns resolve .tmp/analytics_subs_clean.txt -w .tmp/analytics_subs_resolved.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
-		else
-			rftw_util_resolver_quick_axiom
-			[[ -s ".tmp/analytics_subs_clean.txt" ]] && axiom-scan .tmp/analytics_subs_clean.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/analytics_subs_resolved.txt "${AXIOM_EXTRA_ARGS}"
-		fi
+	mkdir -p .tmp/ 2>/dev/null
+	analyticsrelationships -ch <${input_file} >>.tmp/analytics_subs_tmp.txt
+	[[ -s "${input_file}" ]] && cat .tmp/analytics_subs_tmp.txt | sed "s/|__ //" | anew -q .tmp/analytics_subs_clean.txt
+	if [[ ${AXIOM} != true ]]; then
+		rftw_util_resolver_quick_local
+		[[ -s ".tmp/analytics_subs_clean.txt" ]] && puredns resolve .tmp/analytics_subs_clean.txt -w ${output_file} -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+	else
+		rftw_util_resolver_quick_axiom
+		[[ -s ".tmp/analytics_subs_clean.txt" ]] && axiom-scan .tmp/analytics_subs_clean.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o ${output_file} "${AXIOM_EXTRA_ARGS}"
 	fi
 }
-
-# At the end where you save the output, you can redirect the output to the specified file
-if [[ -n ${output_file} ]]; then
-	# For example, if you were saving data like this:
-	# echo "${NUMOFLINES} new subs (analytics relationship)"
-	# Change it to:
-	echo "${NUMOFLINES} new subs (analytics relationship)" >"${output_file}"
-fi
 
 # Execute the function
 sub_analytics

@@ -17,7 +17,7 @@ display_help() {
 	echo
 	echo "  -d, --domain            Domain for which subdomain enumeration is required"
 	echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
-	echo "  -o, --output            Output file location (Optional)"
+	echo "  -o, --output            Output file location"
 	echo "  -h, --help              Display this help and exit"
 	echo
 	echo "Example: $0 -d example.com -l /path/to/log"

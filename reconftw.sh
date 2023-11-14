@@ -301,7 +301,7 @@ function sub_active() {
         spinny::start
         find .tmp -type f -iname "*_subs.txt" -exec cat {} + | anew -q .tmp/subs_no_resolved.txt
         [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/subs_no_resolved.txt
-        rftw_sub_active -d "${DOMAIN}" -f .tmp/subs_no_resolved.txt -o "${dir}/.tmp/subdomains_active_tmp.txt"
+        rftw_sub_active -d "${DOMAIN}" -f ${dir}/.tmp/subs_no_resolved.txt -o "${dir}/.tmp/subdomains_active_tmp.txt"
         NUMOFLINES=$(cat .tmp/subdomains_active_tmp.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         spinny::stop
         end_subfunc "${NUMOFLINES} subs DNS resolved from passive" ${FUNCNAME[0]}
@@ -364,7 +364,7 @@ function sub_brute() {
 function sub_scraping() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBSCRAPING == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Source code scraping subdomain search"
-        touch .tmp/scrap_subs.txt
+        spinny::start
         if [[ -s "${dir}/subdomains/subdomains.txt" ]]; then
             if [[ $(cat subdomains/subdomains.txt | wc -l) -le $DEEP_LIMIT ]] || [[ $DEEP == true ]]; then
                 if [[ ! ${AXIOM} == true ]]; then
@@ -394,6 +394,7 @@ function sub_scraping() {
         else
             end_subfunc "No subdomains to search (code scraping)" ${FUNCNAME[0]}
         fi
+        spinny::stop
     else
         if [[ $SUBSCRAPING == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
@@ -406,21 +407,11 @@ function sub_scraping() {
 function sub_analytics() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBANALYTICS == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Analytics Subdomain Enumeration"
-        if [[ -s ".tmp/probed_tmp_scrap.txt" ]]; then
-            mkdir -p .tmp/output_analytics/
-            analyticsrelationships -ch <.tmp/probed_tmp_scrap.txt >>.tmp/analytics_subs_tmp.txt 2>>"${LOGFILE}"
-
-            [[ -s ".tmp/analytics_subs_tmp.txt" ]] && cat .tmp/analytics_subs_tmp.txt | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/|__ //" | anew -q .tmp/analytics_subs_clean.txt
-            if [[ ! ${AXIOM} == true ]]; then
-                resolvers_update_quick_local
-                [[ -s ".tmp/analytics_subs_clean.txt" ]] && puredns resolve .tmp/analytics_subs_clean.txt -w .tmp/analytics_subs_resolved.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-            else
-                resolvers_update_quick_axiom
-                [[ -s ".tmp/analytics_subs_clean.txt" ]] && axiom-scan .tmp/analytics_subs_clean.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/analytics_subs_resolved.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            fi
-        fi
+        spinny::start
+        rftw_sub_analytics -i ${dir}/.tmp/probed_tmp_scrap.txt -o ${dir}/.tmp/analytics_subs_resolved.txt
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/analytics_subs_resolved.txt 2>>"${LOGFILE}" >/dev/null
         NUMOFLINES=$(cat .tmp/analytics_subs_resolved.txt 2>>"${LOGFILE}" | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (analytics relationship)" ${FUNCNAME[0]}
     else
         if [[ $SUBANALYTICS == false ]]; then
@@ -434,43 +425,8 @@ function sub_analytics() {
 function sub_permut() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBPERMUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Permutations Subdomain Enumeration"
-        if [[ $DEEP == true ]] || [[ "$(cat subdomains/subdomains.txt | wc -l)" -le $DEEP_LIMIT ]]; then
-            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
-                [[ -s "subdomains/subdomains.txt" ]] && gotator -sub subdomains/subdomains.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
-            else
-                [[ -s "subdomains/subdomains.txt" ]] && ripgen -d subdomains/subdomains.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
-            fi
-        elif [[ "$(cat .tmp/subs_no_resolved.txt | wc -l)" -le $DEEP_LIMIT2 ]]; then
-            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
-                [[ -s ".tmp/subs_no_resolved.txt" ]] && gotator -sub .tmp/subs_no_resolved.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
-            else
-                [[ -s ".tmp/subs_no_resolved.txt" ]] && ripgen -d .tmp/subs_no_resolved.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1.txt
-            fi
-        else
-            end_subfunc "Skipping Permutations: Too Many Subdomains" ${FUNCNAME[0]}
-            return 1
-        fi
-        if [[ ! ${AXIOM} == true ]]; then
-            resolvers_update_quick_local
-            [[ -s ".tmp/gotator1.txt" ]] && puredns resolve .tmp/gotator1.txt -w .tmp/permute1.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-        else
-            resolvers_update_quick_axiom
-            [[ -s ".tmp/gotator1.txt" ]] && axiom-scan .tmp/gotator1.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute1.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
-
-        if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
-            [[ -s ".tmp/permute1.txt" ]] && gotator -sub .tmp/permute1.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2.txt
-        else
-            [[ -s ".tmp/permute1.txt" ]] && ripgen -d .tmp/permute1.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2.txt
-        fi
-
-        if [[ ! ${AXIOM} == true ]]; then
-            [[ -s ".tmp/gotator2.txt" ]] && puredns resolve .tmp/gotator2.txt -w .tmp/permute2.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-        else
-            [[ -s ".tmp/gotator2.txt" ]] && axiom-scan .tmp/gotator2.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute2.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
-        cat .tmp/permute1.txt .tmp/permute2.txt 2>>"${LOGFILE}" | anew -q .tmp/permute_subs.txt
-
+        spinny::start
+        rftw_sub_permute -f ${dir}/subdomains/subdomains.txt -o "${dir}/.tmp/permute_subs.txt"
         if [[ -s ".tmp/permute_subs.txt" ]]; then
             [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/permute_subs.txt
             [[ ${INSCOPE} == true ]] && check_inscope .tmp/permute_subs.txt 2>>"${LOGFILE}" >/dev/null
@@ -478,6 +434,7 @@ function sub_permut() {
         else
             NUMOFLINES=0
         fi
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (permutations)" ${FUNCNAME[0]}
     else
         if [[ $SUBPERMUTE == false ]]; then
@@ -491,24 +448,8 @@ function sub_permut() {
 function sub_regex_permut() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBREGEXPERMUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Permutations by regex analysis"
-        pushd "${tools}/regulator" &>/dev/null || {
-            echo "Failed to cd to regulator"
-            exit 1
-        }
-        python3 main.py -t "${DOMAIN}" -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/${DOMAIN}.brute
-        popd &>/dev/null || {
-            echo "Failed to cd back"
-            exit 1
-        }
-
-        if [[ ! ${AXIOM} == true ]]; then
-            resolvers_update_quick_local
-            [[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w .tmp/regulator.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-        else
-            resolvers_update_quick_axiom
-            [[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/regulator.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
-
+        spinny::start
+        rftw_sub_regex -d "${DOMAIN}" -f ${dir}/subdomains/subdomains.txt -o "${dir}/.tmp/regulator.txt"
         if [[ -s ".tmp/regulator.txt" ]]; then
             [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/regulator.txt
             [[ ${INSCOPE} == true ]] && check_inscope .tmp/regulator.txt 2>>"${LOGFILE}" >/dev/null
@@ -516,6 +457,7 @@ function sub_regex_permut() {
         else
             NUMOFLINES=0
         fi
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (permutations by regex)" ${FUNCNAME[0]}
     else
         if [[ $SUBREGEXPERMUTE == false ]]; then
@@ -529,20 +471,12 @@ function sub_regex_permut() {
 function sub_recursive_passive() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUB_RECURSIVE_PASSIVE == true ]] && [[ -s "subdomains/subdomains.txt" ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Subdomains recursive search passive"
+        spinny::start
         # Passive recursive
-        [[ -s "subdomains/subdomains.txt" ]] && dsieve -if subdomains/subdomains.txt -f 3 -top $DEEP_RECURSIVE_PASSIVE >.tmp/subdomains_recurs_top.txt
-        if [[ ! ${AXIOM} == true ]]; then
-            resolvers_update_quick_local
-            [[ -s ".tmp/subdomains_recurs_top.txt" ]] && timeout -k 1m ${AMASS_ENUM_TIMEOUT}m amass enum -passive -df .tmp/subdomains_recurs_top.txt -nf subdomains/subdomains.txt -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT 2>>"${LOGFILE}" | anew -q .tmp/passive_recursive.txt
-            [[ -s ".tmp/passive_recursive.txt" ]] && puredns resolve .tmp/passive_recursive.txt -w .tmp/passive_recurs_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-        else
-            resolvers_update_quick_axiom
-            [[ -s ".tmp/subdomains_recurs_top.txt" ]] && axiom-scan .tmp/subdomains_recurs_top.txt -m amass -passive -o .tmp/amass_prec.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            [[ -s ".tmp/amass_prec.txt" ]] && cat .tmp/amass_prec.txt | anew -q .tmp/passive_recursive.txt
-            [[ -s ".tmp/passive_recursive.txt" ]] && axiom-scan .tmp/passive_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/passive_recurs_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
+        rftw_sub_recpassive -d ${DOMAIN} -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/brute_perm_recursive_final.txt
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" >/dev/null
         NUMOFLINES=$(cat .tmp/passive_recurs_tmp.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
+        spinny::stop
         end_subfunc "${NUMOFLINES} new subs (recursive)" ${FUNCNAME[0]}
     else
         if [[ $SUB_RECURSIVE_PASSIVE == false ]]; then
@@ -556,60 +490,11 @@ function sub_recursive_passive() {
 function sub_recursive_brute() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUB_RECURSIVE_BRUTE == true ]] && [[ -s "subdomains/subdomains.txt" ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Subdomains recursive search active"
-        if [[ $(cat subdomains/subdomains.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            [[ ! -s ".tmp/subdomains_recurs_top.txt" ]] && dsieve -if subdomains/subdomains.txt -f 3 -top $DEEP_RECURSIVE_PASSIVE >.tmp/subdomains_recurs_top.txt
-            ripgen -d .tmp/subdomains_recurs_top.txt -w $subs_wordlist >.tmp/brute_recursive_wordlist.txt
-            if [[ ! ${AXIOM} == true ]]; then
-                resolvers_update_quick_local
-                [[ -s ".tmp/brute_recursive_wordlist.txt" ]] && puredns resolve .tmp/brute_recursive_wordlist.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -w .tmp/brute_recursive_result.txt 2>>"${LOGFILE}" >/dev/null
-            else
-                resolvers_update_quick_axiom
-                [[ -s ".tmp/brute_recursive_wordlist.txt" ]] && axiom-scan .tmp/brute_recursive_wordlist.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/brute_recursive_result.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            fi
-            [[ -s ".tmp/brute_recursive_result.txt" ]] && cat .tmp/brute_recursive_result.txt | anew -q .tmp/brute_recursive.txt
-
-            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
-                [[ -s ".tmp/brute_recursive.txt" ]] && gotator -sub .tmp/brute_recursive.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1_recursive.txt
-            else
-                [[ -s ".tmp/brute_recursive.txt" ]] && ripgen -d .tmp/brute_recursive.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator1_recursive.txt
-            fi
-
-            if [[ ! ${AXIOM} == true ]]; then
-                [[ -s ".tmp/gotator1_recursive.txt" ]] && puredns resolve .tmp/gotator1_recursive.txt -w .tmp/permute1_recursive.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-            else
-                [[ -s ".tmp/gotator1_recursive.txt" ]] && axiom-scan .tmp/gotator1_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute1_recursive.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            fi
-
-            if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
-                [[ -s ".tmp/permute1_recursive.txt" ]] && gotator -sub .tmp/permute1_recursive.txt -perm"${tools}"/permutations_list.txt $GOTATOR_FLAGS -silent 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2_recursive.txt
-            else
-                [[ -s ".tmp/permute1_recursive.txt" ]] && ripgen -d .tmp/permute1_recursive.txt -w"${tools}"/permutations_list.txt 2>>"${LOGFILE}" | head -c "${PERMUTATIONS_LIMIT}" >.tmp/gotator2_recursive.txt
-            fi
-
-            if [[ ! ${AXIOM} == true ]]; then
-                [[ -s ".tmp/gotator2_recursive.txt" ]] && puredns resolve .tmp/gotator2_recursive.txt -w .tmp/permute2_recursive.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-            else
-                [[ -s ".tmp/gotator2_recursive.txt" ]] && axiom-scan .tmp/gotator2_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/permute2_recursive.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            fi
-            cat .tmp/permute1_recursive.txt .tmp/permute2_recursive.txt 2>>"${LOGFILE}" | anew -q .tmp/permute_recursive.txt
-        else
-            end_subfunc "skipped in this mode or defined in reconftw.cfg" ${FUNCNAME[0]}
-        fi
-        if [[ ${INSCOPE} == true ]]; then
-            check_inscope .tmp/permute_recursive.txt 2>>"${LOGFILE}" >/dev/null
-            check_inscope .tmp/brute_recursive.txt 2>>"${LOGFILE}" >/dev/null
-        fi
-
-        # Last validation
-        cat .tmp/permute_recursive.txt .tmp/brute_recursive.txt 2>>"${LOGFILE}" | anew -q .tmp/brute_perm_recursive.txt
-        if [[ ! ${AXIOM} == true ]]; then
-            [[ -s ".tmp/brute_recursive.txt" ]] && puredns resolve .tmp/brute_perm_recursive.txt -w .tmp/brute_perm_recursive_final.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>>"${LOGFILE}" >/dev/null
-        else
-            [[ -s ".tmp/brute_recursive.txt" ]] && axiom-scan .tmp/brute_perm_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/brute_perm_recursive_final.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
-
+        spinny::start
+        rftw_sub_recbrute -d ${DOMAIN} -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/brute_perm_recursive_final.txt
         NUMOFLINES=$(cat .tmp/brute_perm_recursive_final.txt 2>>"${LOGFILE}" | grep "\.$DOMAIN$\|^$DOMAIN$" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
         end_subfunc "${NUMOFLINES} new subs (recursive active)" ${FUNCNAME[0]}
+        spinny::stop
     else
         if [[ $SUB_RECURSIVE_BRUTE == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
@@ -624,19 +509,9 @@ function subtakeover() {
         start_func ${FUNCNAME[0]} "Looking for possible subdomain and DNS takeover"
         touch .tmp/tko.txt
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ ! ${AXIOM} == true ]]; then
-            nuclei -update 2>>"${LOGFILE}" >/dev/null
-            cat subdomains/subdomains.txt .tmp/webs_all.txt 2>/dev/null | nuclei -silent -nh -tags takeover -severity info,low,medium,high,critical -retries 3 -rl $NUCLEI_RATELIMIT -t ${NUCLEI_TEMPLATES_PATH} -o .tmp/tko.txt
-        else
-            cat subdomains/subdomains.txt .tmp/webs_all.txt 2>>"${LOGFILE}" | sed '/^$/d' | anew -q .tmp/webs_subs.txt
-            [[ -s ".tmp/webs_subs.txt" ]] && axiom-scan .tmp/webs_subs.txt -m nuclei --nuclei-templates ${NUCLEI_TEMPLATES_PATH} -tags takeover -nh -severity info,low,medium,high,critical -retries 3 -rl $NUCLEI_RATELIMIT -t ${NUCLEI_TEMPLATES_PATH} -o .tmp/tko.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-        fi
+        cat subdomains/subdomains.txt .tmp/webs_all.txt 2>/dev/null | anew -q .tmp/input_takeover.txt
 
-        # DNS_TAKEOVER
-        cat .tmp/subs_no_resolved.txt .tmp/subdomains_dns.txt .tmp/scrap_subs.txt .tmp/analytics_subs_clean.txt .tmp/passive_recursive.txt 2>/dev/null | anew -q .tmp/subs_dns_tko.txt
-        cat .tmp/subs_dns_tko.txt 2>/dev/null | dnstake -c $DNSTAKE_THREADS -s 2>>"${LOGFILE}" | sed '/^$/d' | anew -q .tmp/tko.txt
-
-        sed -i '/^$/d' .tmp/tko.txt
+        rftw_sub_takeover -d ${DOMAIN} -f ${dir}/.tmp/input_takeover.txt -o ${dir}/.tmp/tko.txt
 
         NUMOFLINES=$(cat .tmp/tko.txt 2>>"${LOGFILE}" | anew webs/takeover.txt | sed '/^$/d' | wc -l)
         if [[ $NUMOFLINES -gt 0 ]]; then
@@ -679,15 +554,7 @@ function s3buckets() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $S3BUCKETS == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "AWS S3 buckets search"
         # S3Scanner
-        if [[ ! ${AXIOM} == true ]]; then
-            [[ -s "subdomains/subdomains.txt" ]] && s3scanner scan -f subdomains/subdomains.txt 2>>"${LOGFILE}" | anew -q .tmp/s3buckets.txt
-        else
-            axiom-scan subdomains/subdomains.txt -m s3scanner -o .tmp/s3buckets_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            [[ -s ".tmp/s3buckets_tmp.txt" ]] && cat .tmp/s3buckets_tmp.txt .tmp/s3buckets_tmp2.txt 2>>"${LOGFILE}" | anew -q .tmp/s3buckets.txt && sed -i '/^$/d' .tmp/s3buckets.txt
-        fi
-        # Cloudenum
-        keyword=${DOMAIN%%.*}
-        python3 ~/Tools/cloud_enum/cloud_enum.py -k $keyword -qs -l .tmp/output_cloud.txt 2>>"${LOGFILE}" >/dev/null
+        rftw_sub_s3buckets -d ${DOMAIN} -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp
 
         NUMOFLINES1=$(cat .tmp/output_cloud.txt 2>>"${LOGFILE}" | sed '/^#/d' | sed '/^$/d' | anew subdomains/cloud_assets.txt | wc -l)
         if [[ $NUMOFLINES1 -gt 0 ]]; then

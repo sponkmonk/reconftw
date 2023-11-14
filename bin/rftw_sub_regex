@@ -11,47 +11,78 @@ else
     exit 1
 fi
 
-# Helper function to display usage/help menu
-usage() {
-    echo "$(basename "$0") [OPTIONS]"
-    echo
-    echo "Options:"
-    echo "  -h, --help          Display this help and exit."
-    echo
-    echo "Make sure to set up 'reconftw.cfg' with required environment variables."
-    exit 1
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -d, --domain            Target for subdomain enumeration (Required)"
+	echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
+	echo "  -o, --output            Output file location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -d example.com -l /path/to/log"
+	exit 1
 }
 
+# Variables for input and output
+output_file=""
+
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		DOMAIN="$2"
+		shift
+		;;
+	-f | --file)
+		DOMAIN_FILE="$2"
+		shift
+		;;
+	-o | --output)
+		output_file="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
+	*)
+		echo "Unknown parameter passed: $1"
+		exit 1
+		;;
+	esac
+	shift
+done
+
 # Input validation
-if [[ "$#" -eq 1 && ("$1" == "-h" || "$1" == "--help") ]]; then
-    usage
+if [[ -z ${DOMAIN_FILE} ]] || [[ -z ${DOMAIN} ]]; then
+	display_help
+	exit 1
 fi
 
-# Check for mandatory variables
-if [[ -z "$SUBREGEXPERMUTE" || -z "$called_fn_dir" || -z "$DIFF" ]]; then
-    echo "Mandatory variables not set in the configuration file. Exiting."
-    exit 1
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]] || [[ ! -r ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
 fi
+
+# Validate domain
+rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
 
 sub_regex_permut() {
-		cd "${tools}/regulator" || { echo "Failed to cd directory in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
-		python3 main.py -t "${DOMAIN}" -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/${DOMAIN}.brute
-		cd "${dir}" || { echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"; exit 1; }
+		pushd "${tools}/regulator" &>/dev/null || {
+            echo "Failed to cd to regulator"
+            exit 1
+        }
+        python3 main.py -t "${DOMAIN}" -f ${DOMAIN_FILE} -o ${dir}/.tmp/${DOMAIN}.brute
+        popd &>/dev/null || {
+            echo "Failed to cd back"
+            exit 1
+        }
 
 		if [[ ! ${AXIOM} = true ]]; then
 			rftw_util_resolver_quick_local
-			[[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w .tmp/regulator.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+			[[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w ${output_file} -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 		else
 			rftw_util_resolver_quick_axiom
-			[[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/regulator.txt "${AXIOM_EXTRA_ARGS}"
-		fi
-		
-		if [[ -s ".tmp/regulator.txt" ]]; then
-			[[ -s "$outOfScope_file" ]] && deleteOutScoped $outOfScope_file .tmp/regulator.txt
-			[[ "${INSCOPE}" = true ]] && check_inscope .tmp/regulator.txt
-			NUMOFLINES=$(cat .tmp/regulator.txt | grep ".$DOMAIN$" | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
-		else
-			NUMOFLINES=0
+			[[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o ${output_file} "${AXIOM_EXTRA_ARGS}"
 		fi
 }
 

@@ -11,64 +11,74 @@ else
     exit 1
 fi
 
-# Helper function to display usage/help menu
-usage() {
-	echo "$(basename "$0") -d domain"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
 	echo
-	echo "Options:"
-	echo "  -d, --domain domain     Specify the domain to perform recursive passive search."
-	echo "  -h, --help              Display this help and exit."
+	echo "  -d, --domain            Target for subdomain enumeration (Required)"
+	echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
+	echo "  -o, --output            Output file location"
+	echo "  -h, --help              Display this help and exit"
 	echo
-	echo "Make sure to set up 'reconftw.cfg' with required environment variables."
+	echo "Example: $0 -d example.com -l /path/to/log"
 	exit 1
 }
 
-# Input validation and parsing
-DOMAIN=""
+# Variables for input and output
+output_file=""
+
+# Parse input arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
 	-d | --domain)
 		DOMAIN="$2"
 		shift
 		;;
-	-h | --help) usage ;;
+	-f | --file)
+		DOMAIN_FILE="$2"
+		shift
+		;;
+	-o | --output)
+		output_file="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Unknown parameter: $1"
-		usage
+		echo "Unknown parameter passed: $1"
+		exit 1
 		;;
 	esac
 	shift
 done
 
-if [[ -z "${DOMAIN}" ]]; then
-	echo "Domain not specified!"
-	usage
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]] || [[ -z ${DOMAIN} ]]; then
+	display_help
+	exit 1
 fi
 
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]] || [[ ! -r ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+
+# Validate domain
+rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
+
+
 sub_recursive_passive() {
-	if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ "$DIFF" = true ]]; } && [[ "$SUB_RECURSIVE_PASSIVE" = true ]] && [[ -s "subdomains/subdomains.txt" ]]; then
-		start_subfunc ${FUNCNAME[0]} "Running : Subdomains recursive search passive"
-		# Passive recursive
-		[[ -s "subdomains/subdomains.txt" ]] && dsieve -if subdomains/subdomains.txt -f 3 -top $DEEP_RECURSIVE_PASSIVE >.tmp/subdomains_recurs_top.txt
-		if [[ ! ${AXIOM} = true ]]; then
-			rftw_util_resolver_quick_local
-			[[ -s ".tmp/subdomains_recurs_top.txt" ]] && timeout -k 1m ${AMASS_ENUM_TIMEOUT}m amass enum -passive -df .tmp/subdomains_recurs_top.txt -nf subdomains/subdomains.txt -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT | anew -q .tmp/passive_recursive.txt
-			[[ -s ".tmp/passive_recursive.txt" ]] && puredns resolve .tmp/passive_recursive.txt -w .tmp/passive_recurs_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
-		else
-			rftw_util_resolver_quick_axiom
-			[[ -s ".tmp/subdomains_recurs_top.txt" ]] && axiom-scan .tmp/subdomains_recurs_top.txt -m amass -passive -o .tmp/amass_prec.txt "${AXIOM_EXTRA_ARGS}"
-			[[ -s ".tmp/amass_prec.txt" ]] && cat .tmp/amass_prec.txt | anew -q .tmp/passive_recursive.txt
-			[[ -s ".tmp/passive_recursive.txt" ]] && axiom-scan .tmp/passive_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o .tmp/passive_recurs_tmp.txt "${AXIOM_EXTRA_ARGS}"
-		fi
-		[[ ${INSCOPE} == true ]] && check_inscope .tmp/passive_recurs_tmp.txt
-		NUMOFLINES=$(cat .tmp/passive_recurs_tmp.txt | grep "\.$DOMAIN$\|^$DOMAIN$" | sed '/^$/d' | anew subdomains/subdomains.txt | wc -l)
-		end_subfunc "${NUMOFLINES} new subs (recursive)" ${FUNCNAME[0]}
+	mkdir -p .tmp 2>/dev/null
+	[[ -s "${DOMAIN_FILE}" ]] && dsieve -if ${DOMAIN_FILE} -f 3 -top $DEEP_RECURSIVE_PASSIVE >.tmp/subdomains_recurs_top.txt
+	if [[ ! ${AXIOM} = true ]]; then
+		rftw_util_resolver_quick_local
+		[[ -s ".tmp/subdomains_recurs_top.txt" ]] && timeout -k 1m ${AMASS_ENUM_TIMEOUT}m amass enum -passive -df .tmp/subdomains_recurs_top.txt -nf ${DOMAIN_FILE} -config $AMASS_CONFIG -timeout $AMASS_ENUM_TIMEOUT | anew -q .tmp/passive_recursive.txt
+		[[ -s ".tmp/passive_recursive.txt" ]] && puredns resolve .tmp/passive_recursive.txt -w ${output_file} -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
 	else
-		if [[ "$SUB_RECURSIVE_PASSIVE" = false ]]; then
-			printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
-		else
-			printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
-		fi
+		rftw_util_resolver_quick_axiom
+		[[ -s ".tmp/subdomains_recurs_top.txt" ]] && axiom-scan .tmp/subdomains_recurs_top.txt -m amass -passive -o .tmp/amass_prec.txt "${AXIOM_EXTRA_ARGS}"
+		[[ -s ".tmp/amass_prec.txt" ]] && cat .tmp/amass_prec.txt | anew -q .tmp/passive_recursive.txt
+		[[ -s ".tmp/passive_recursive.txt" ]] && axiom-scan .tmp/passive_recursive.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o ${output_file} "${AXIOM_EXTRA_ARGS}"
 	fi
 }
 
