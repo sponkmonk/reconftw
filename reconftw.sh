@@ -695,7 +695,7 @@ function virtualhosts() {
 function favicon() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $FAVICON == true ]] && ! [[ ${DOMAIN} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9] ]]; then
         start_func ${FUNCNAME[0]} "Favicon Ip Lookup"
-        rftw_ip_cdnprovider -d${DOMAIN}/
+        rftw_ip_favicon -d${DOMAIN}/
         if [[ -s "favicontest.json" ]]; then
             cat favicontest.txt 2>>"${LOGFILE}"
             mv favicontest.txt "${dir}"/hosts/favicontest.txt 2>>"${LOGFILE}"
