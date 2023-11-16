@@ -1,5 +1,4 @@
 #!/bin/bash
-# Looks good, needs testing
 
 # Default config path
 CONFIG_PATH="${RECONFTW_CFG}"
@@ -11,75 +10,75 @@ else
     echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
-
-help_menu() {
-	echo "$(basename "$0") [OPTIONS] DOMAIN"
-	echo ""
-	echo "Favicon Ip Lookup Tool"
-	echo ""
-	echo "Options:"
-	echo "  -h, --help            Show this help menu"
-	echo "  -d, --domain DOMAIN   Specify the domain to process"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -d, --domain            Target for subdomain enumeration (Required)"
+	echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
+	echo "  -o, --output            Output file location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -d example.com -l /path/to/log"
+	exit 1
 }
 
-# Start function
-start_func() {
-	echo "Starting $1..."
-}
+# Variables for input and output
+output_file=""
 
-# End function
-end_func() {
-	echo "$1"
-	echo "End of $2..."
-}
-
-# Default values
-DOMAIN=""
-
-# Parse arguments
+# Parse input arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	-h | --help)
-		help_menu
-		exit 0
-		;;
 	-d | --domain)
 		DOMAIN="$2"
 		shift
 		;;
+	-f | --file)
+		DOMAIN_FILE="$2"
+		shift
+		;;
+	-o | --output)
+		output_file="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
 	*)
-		# Set the domain if it's not specified with -d
-		if [[ -z ${DOMAIN} ]]; then
-			DOMAIN="$1"
-		fi
+		echo "Unknown parameter passed: $1"
+		exit 1
 		;;
 	esac
 	shift
 done
 
 # Input validation
-if [[ -z ${DOMAIN} ]]; then
-	help_menu
+if [[ -z ${DOMAIN_FILE} ]] || [[ -z ${DOMAIN} ]]; then
+	display_help
 	exit 1
 fi
 
-# Validate domain format
-if [[ ! ${DOMAIN} =~ ^[a-zA-Z0-9.-]+$ ]]; then
-	echo "Invalid domain format."
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]] || [[ ! -r ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
 	exit 1
 fi
+# Validate domain
+rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
+
 
 pushd "${tools}/fav-up" &>/dev/null || {
 	echo "Failed to cd to ${tools}/fav-up in favicon"
 	exit 1
 }
 python3 favUp.py -w "${DOMAIN}" -sc -o favicontest.json
+
 if [[ -s "favicontest.json" ]]; then
 	jq -r 'try .found_ips' favicontest.json >temp.txt
 	grep -v "not-found" temp.txt >favicontest.txt
 	rm temp.txt
 	sed -i "s/|/\n/g" favicontest.txt
+	mv favicontest.txt ${output_file}
 fi
+
 popd &>/dev/null || {
 	echo "Failed to cd back from favicon"
 	exit 1

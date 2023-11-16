@@ -11,39 +11,30 @@ else
     exit 1
 fi
 
-# Help function
-help_menu() {
-	echo "$(basename "$0") [OPTIONS]"
-	echo ""
-	echo "CMS Scanner"
-	echo ""
-	echo "Options:"
-	echo "  -h, --help            Show this help menu"
-	echo "  -f, --force           Force the execution even if already processed"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Start function
-start_func() {
-	echo "Starting $1: $2..."
-}
-
-# End function
-end_func() {
-	echo "$1"
-	echo "End of $2..."
-}
-
-# Default values
-FORCE=false
-
-# Parse arguments
+# Parse input arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	-h | --help)
-		help_menu
-		exit 0
+	-f | --file)
+		input_file="$2"
+		shift
 		;;
-	-f | --force) FORCE=true ;;
+	-o | --output)
+		output_dir="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
 	*)
 		echo "Unknown parameter passed: $1"
 		exit 1
@@ -52,28 +43,39 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-mkdir -p "${dir}"/cms && rm -rf "${dir}"/cms/*
-anew -q .tmp/webs_all.txt < <(cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null)
-if [[ -s ".tmp/webs_all.txt" ]]; then
-	tr '\n' ',' <.tmp/webs_all.txt >.tmp/cms.txt
-	timeout -k 1m ${CMSSCAN_TIMEOUT}s python3"${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r
-	exit_status=$?
-	if [[ $exit_status -eq 125 ]]; then
-		echo "TIMEOUT cmseek.py - investigate manually for $dir"
-		end_func "TIMEOUT cmseek.py - investigate manually for $dir" "cms_scanner"
-		exit 1
-	elif [[ $exit_status -ne 0 ]]; then
-		echo "ERROR cmseek.py - investigate manually for $dir"
-		end_func "ERROR cmseek.py - investigate manually for $dir" "cms_scanner"
-		exit 1
-	fi
-	while read -r sub; do
-		sub_out=$(echo "$sub" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-		cms_id=$(jq -r 'try .cms_id' "${tools}/CMSeeK/Result/${sub_out}/cms.json" 2>/dev/null)
-		if [[ -z $cms_id ]]; then
-			rm -rf "${tools}/CMSeeK/Result/${sub_out}"
-		else
-			mv -f "${tools}/CMSeeK/Result/${sub_out}" "${dir}"/cms/
-		fi
-	done <.tmp/webs_all.txt
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
 fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+
+mkdir -p .tmp 2>/dev/null
+
+tr '\n' ',' <${input_file} >.tmp/cms.txt
+timeout -k 1m ${CMSSCAN_TIMEOUT}s python3 "${tools}"/CMSeeK/cmseek.py -l .tmp/cms.txt --batch -r
+exit_status=$?
+if [[ $exit_status -eq 125 ]]; then
+	echo "TIMEOUT cmseek.py - investigate manually for $dir"
+	end_func "TIMEOUT cmseek.py - investigate manually for $dir" "cms_scanner"
+	exit 1
+elif [[ $exit_status -ne 0 ]]; then
+	echo "ERROR cmseek.py - investigate manually for $dir"
+	end_func "ERROR cmseek.py - investigate manually for $dir" "cms_scanner"
+	exit 1
+fi
+
+while read -r sub; do
+	sub_out=$(echo "$sub" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+	cms_id=$(jq -r 'try .cms_id' "${tools}/CMSeeK/Result/${sub_out}/cms.json" 2>/dev/null)
+	if [[ -z $cms_id ]]; then
+		rm -rf "${tools}/CMSeeK/Result/${sub_out}"
+	else
+		mv -f "${tools}/CMSeeK/Result/${sub_out}" ${output_dir}/
+	fi
+done <${input_file}

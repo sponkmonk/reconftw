@@ -11,111 +11,109 @@ else
     exit 1
 fi
 
-# Help menu function
-help_menu() {
-	echo "Usage: urlchecks.sh [OPTIONS]"
-	echo ""
-	echo "Options:"
-	echo "  -d, --domain <domain>   Specify the domain to scan."
-	echo "  -h, --help             Display this help menu."
-	echo ""
-	echo "Example:"
-	echo "  urlchecks.sh -d example.com"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Input validation function
-validate_input() {
-	if [[ -z ${DOMAIN} ]]; then
-		echo "Error: Domain not specified."
-		help_menu
-		exit 1
-	fi
-}
-
-# URL checks function
-urlchecks() {
-	echo "[+] Starting URL Extraction"
-	mkdir -p js
-	[[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-	if [[ -s ".tmp/webs_all.txt" ]]; then
-		if [[ ! ${AXIOM} == true ]]; then
-			if [[ $URL_CHECK_PASSIVE == true ]]; then
-				if [[ $DEEP == true ]]; then
-					cat .tmp/webs_all.txt | unfurl -u domains >.tmp/waymore_input.txt
-					python3 ${tools}/waymore/waymore.py -i .tmp/waymore_input.txt -mode U -f -oU .tmp/url_extract_tmp.txt
-				else
-					cat .tmp/webs_all.txt | gau --threads $GAU_THREADS | anew -q .tmp/url_extract_tmp.txt
-				fi
-				if [[ -s ${GITHUB_TOKENS} ]]; then
-					github-endpoints -q -k -d "${DOMAIN}" -t ${GITHUB_TOKENS} -o .tmp/github-endpoints.txt
-					[[ -s ".tmp/github-endpoints.txt" ]] && cat .tmp/github-endpoints.txt | anew -q .tmp/url_extract_tmp.txt
-				fi
-			fi
-			diff_webs=$(diff <(sort -u .tmp/probed_tmp.txt) <(sort -u .tmp/webs_all.txt) | wc -l)
-			if [[ $diff_webs != "0" ]] || [[ ! -s ".tmp/katana.txt" ]]; then
-				if [[ $URL_CHECK_ACTIVE == true ]]; then
-					if [[ $DEEP == true ]]; then
-						katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 3 -fs rdn -o .tmp/katana.txt
-					else
-						katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 2 -fs rdn -o .tmp/katana.txt
-					fi
-				fi
-			fi
-		else
-			if [[ $URL_CHECK_PASSIVE == true ]]; then
-				if [[ $DEEP == true ]]; then
-					cat .tmp/webs_all.txt | unfurl -u domains >.tmp/waymore_input.txt
-					axiom-scan .tmp/waymore_input.txt -m waymore -o .tmp/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}"
-				else
-					axiom-scan .tmp/webs_all.txt -m gau -o .tmp/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}"
-				fi
-				if [[ -s ${GITHUB_TOKENS} ]]; then
-					github-endpoints -q -k -d "${DOMAIN}" -t ${GITHUB_TOKENS} -o .tmp/github-endpoints.txt
-					[[ -s ".tmp/github-endpoints.txt" ]] && cat .tmp/github-endpoints.txt | anew -q .tmp/url_extract_tmp.txt
-				fi
-			fi
-			diff_webs=$(diff <(sort -u .tmp/probed_tmp.txt) <(sort -u .tmp/webs_all.txt) | wc -l)
-			if [[ $diff_webs != "0" ]] || [[ ! -s ".tmp/katana.txt" ]]; then
-				if [[ $URL_CHECK_ACTIVE == true ]]; then
-					if [[ $DEEP == true ]]; then
-						axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 3 -fs rdn -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}"
-					else
-						axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 2 -fs rdn -fs rdn -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}"
-					fi
-				fi
-			fi
-		fi
-		[[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
-		[[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | anew -q .tmp/url_extract_tmp.txt
-		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${DOMAIN}" | grep -aEi "\.(js)" | anew -q .tmp/url_extract_js.txt
-		if [[ $DEEP == true ]]; then
-			[[ -s ".tmp/url_extract_js.txt" ]] && interlace -tL .tmp/url_extract_js.txt -threads 10 -c "python3"${tools}"/JSA/jsa.py -f target | anew -q .tmp/url_extract_tmp.txt" &>/dev/null
-		fi
-		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep "${DOMAIN}" | grep "=" | qsreplace -a | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | anew -q .tmp/url_extract_tmp2.txt
-		[[ -s ".tmp/url_extract_tmp2.txt" ]] && cat .tmp/url_extract_tmp2.txt | python3"${tools}"/urless/urless/urless.py | anew -q .tmp/url_extract_uddup.txt
-	fi
-
-}
-
-# Parse command-line arguments
+# Parse input arguments
 while [[ $# -gt 0 ]]; do
-	case "$1" in
-	-d | --domain)
-		DOMAIN="$2"
-		shift 2
+	case $1 in
+	-f | --file)
+		input_file="$2"
+		shift
 		;;
-	-h | --help)
-		help_menu
-		exit 0
+	-o | --output)
+		output_dir="$2"
+		shift
 		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Unknown parameter: $1"
-		help_menu
+		echo "Unknown parameter passed: $1"
 		exit 1
 		;;
 	esac
+	shift
 done
 
-# Validate input and start main function
-validate_input
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+
+
+
+# URL checks function
+urlchecks() {
+	mkdir -p ${output_dir} 2>/dev/null
+
+	if [[ ! ${AXIOM} == true ]]; then
+		if [[ $URL_CHECK_PASSIVE == true ]]; then
+			if [[ $DEEP == true ]]; then
+				cat ${input_file} | unfurl -u domains >${output_dir}/waymore_input.txt
+				python3 ${tools}/waymore/waymore.py -i ${output_dir}/waymore_input.txt -mode U -f -oU ${output_dir}/url_extract_tmp.txt
+			else
+				cat ${input_file} | gau --threads $GAU_THREADS | anew -q ${output_dir}/url_extract_tmp.txt
+			fi
+			if [[ -s ${GITHUB_TOKENS} ]]; then
+				github-endpoints -q -k -d "${DOMAIN}" -t ${GITHUB_TOKENS} -o ${output_dir}/github-endpoints.txt
+				[[ -s "${output_dir}/github-endpoints.txt" ]] && cat ${output_dir}/github-endpoints.txt | anew -q ${output_dir}/url_extract_tmp.txt
+			fi
+		fi
+		if [[ $URL_CHECK_ACTIVE == true ]]; then
+			if [[ $DEEP == true ]]; then
+				katana -silent -list ${input_file} -jc -kf all -c $KATANA_THREADS -d 3 -fs rdn -o ${output_dir}/katana.txt
+			else
+				katana -silent -list ${input_file} -jc -kf all -c $KATANA_THREADS -d 2 -fs rdn -o ${output_dir}/katana.txt
+			fi
+		fi
+	else
+		if [[ $URL_CHECK_PASSIVE == true ]]; then
+			if [[ $DEEP == true ]]; then
+				cat ${input_file} | unfurl -u domains >${output_dir}/waymore_input.txt
+				axiom-scan ${output_dir}/waymore_input.txt -m waymore -o ${output_dir}/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}"
+			else
+				axiom-scan ${input_file} -m gau -o ${output_dir}/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}"
+			fi
+			if [[ -s ${GITHUB_TOKENS} ]]; then
+				github-endpoints -q -k -d "${DOMAIN}" -t ${GITHUB_TOKENS} -o ${output_dir}/github-endpoints.txt
+				[[ -s "${output_dir}/github-endpoints.txt" ]] && cat ${output_dir}/github-endpoints.txt | anew -q ${output_dir}/url_extract_tmp.txt
+			fi
+		fi
+
+		if [[ $URL_CHECK_ACTIVE == true ]]; then
+			if [[ $DEEP == true ]]; then
+				axiom-scan ${input_file} -m katana -jc -kf all -d 3 -fs rdn -fs rdn -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}"
+			else
+				axiom-scan ${input_file} -m katana -jc -kf all -d 2 -fs rdn -fs rdn -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}"
+			fi
+		fi
+
+	fi
+	[[ -s "${output_dir}/katana.txt" ]] && sed -i '/^.\{2048\}./d' ${output_dir}/katana.txt
+	[[ -s "${output_dir}/katana.txt" ]] && cat ${output_dir}/katana.txt | anew -q ${output_dir}/url_extract_tmp.txt
+	[[ -s "${output_dir}/url_extract_tmp.txt" ]] && cat ${output_dir}/url_extract_tmp.txt | grep "${DOMAIN}" | grep -aEi "\.(js)" | anew -q ${output_dir}/url_extract_js.txt
+	if [[ $DEEP == true ]]; then
+		[[ -s "${output_dir}/url_extract_js.txt" ]] && interlace -tL ${output_dir}/url_extract_js.txt -threads 10 -c "python3"${tools}"/JSA/jsa.py -f target | anew -q ${output_dir}/url_extract_tmp.txt" &>/dev/null
+	fi
+	[[ -s "${output_dir}/url_extract_tmp.txt" ]] && cat ${output_dir}/url_extract_tmp.txt | grep "${DOMAIN}" | grep "=" | qsreplace -a | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | anew -q ${output_dir}/url_extract_tmp2.txt
+	[[ -s "${output_dir}/url_extract_tmp2.txt" ]] && cat ${output_dir}/url_extract_tmp2.txt | python3"${tools}"/urless/urless/urless.py | anew -q ${output_dir}/url_extract_uddup.txt
+
+
+}
+
 urlchecks

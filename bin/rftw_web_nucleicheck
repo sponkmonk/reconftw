@@ -11,35 +11,30 @@ else
     exit 1
 fi
 
-# Help function
-help_menu() {
-	echo "$(basename "$0") [OPTIONS]"
-	echo ""
-	echo "Templates Based Web Scanner"
-	echo ""
-	echo "Options:"
-	echo "  -h, --help            Show this help menu"
-	echo "  -f, --force           Force the execution even if already processed"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Start function
-start_func() {
-	echo "Starting $1: $2..."
-}
-
-# End function
-end_func() {
-	echo "$1"
-	echo "End of $2..."
-}
-
-# Parse arguments
+# Parse input arguments
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	-h | --help)
-		help_menu
-		exit 0
+	-f | --file)
+		input_file="$2"
+		shift
 		;;
+	-o | --output)
+		output_dir="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
 	*)
 		echo "Unknown parameter passed: $1"
 		exit 1
@@ -48,25 +43,34 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+
 nuclei -update
 mkdir -p nuclei_output
-anew -q .tmp/webs_all.txt < <(cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null)
-anew -q .tmp/webs_subs.txt < <(cat subdomains/subdomains.txt .tmp/webs_all.txt)
+
 if [[ ${AXIOM} != true ]]; then
 	IFS=',' read -ra severity_array <<<"$NUCLEI_SEVERITY"
 	for crit in "${severity_array[@]}"; do
 		printf "${yellow}\n Running : Nuclei $crit ${reset}\n\n"
-		nuclei $NUCLEI_FLAGS -severity $crit -nh -rl $NUCLEI_RATELIMIT -o nuclei_output/${crit}.txt <.tmp/webs_subs.txt
+		nuclei $NUCLEI_FLAGS -severity $crit -nh -rl $NUCLEI_RATELIMIT -o ${output_dir}/${crit}.txt <${input_file}
 	done
 	printf "\n\n"
 else
-	if [[ -s ".tmp/webs_subs.txt" ]]; then
-		IFS=',' read -ra severity_array <<<"$NUCLEI_SEVERITY"
-		for crit in "${severity_array[@]}"; do
-			printf "${yellow}\n Running : Nuclei $crit, check results on nuclei_output folder${reset}\n\n"
-			axiom-scan .tmp/webs_subs.txt -m nuclei --nuclei-templates ${NUCLEI_TEMPLATES_PATH} -severity ${crit} -nh -rl $NUCLEI_RATELIMIT -o nuclei_output/${crit}.txt "${AXIOM_EXTRA_ARGS}"
-			[[ -s "nuclei_output/${crit}.txt" ]] && cat nuclei_output/${crit}.txt
-		done
-		printf "\n\n"
-	fi
+	IFS=',' read -ra severity_array <<<"$NUCLEI_SEVERITY"
+	for crit in "${severity_array[@]}"; do
+		printf "${yellow}\n Running : Nuclei $crit, check results on nuclei_output folder${reset}\n\n"
+		axiom-scan ${input_file} -m nuclei --nuclei-templates ${NUCLEI_TEMPLATES_PATH} -severity ${crit} -nh -rl $NUCLEI_RATELIMIT -o ${output_dir}/${crit}.txt "${AXIOM_EXTRA_ARGS}"
+		[[ -s "${output_dir}/${crit}.txt" ]] && cat ${output_dir}/${crit}.txt
+	done
+	printf "\n\n"
 fi

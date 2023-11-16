@@ -10,62 +10,68 @@ else
     echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
     exit 1
 fi
-
-help_menu() {
-    echo "$(basename "$0") [DOMAIN] [OPTIONS]"
-    echo "Virtual Hosts discovery tool for the specified domain."
-    echo
-    echo "Options:"
-    echo "  -h, --help   Display this help menu and exit"
-    echo "  -f, --force  Force the execution even if it was already processed"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -d, --domain            Target for subdomain enumeration (Required)"
+	echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
+	echo "  -o, --output            Output file location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -d example.com -l /path/to/log"
+	exit 1
 }
 
-validate_inputs() {
-    if [[ -z "${DOMAIN}" ]]; then
-        echo -e "${yellow} No domain provided! ${reset}"
-        exit 1
-    fi
+# Variables for input and output
+output_dir=""
 
-    if [[ "$VIRTUALHOSTS" != true ]] && [[ "$FORCE_EXECUTION" != true ]]; then
-        echo -e "${yellow} virtualhosts skipped in this mode or defined in reconftw.cfg ${reset}"
-        exit 0
-    fi
-}
-
-run_virtualhosts() {
-    start_func "virtualhosts" "Virtual Hosts discovery"
-    
-    [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-
-    if [[ -s ".tmp/webs_all.txt" ]]; then
-        mkdir -p "${dir}"/virtualhosts "${dir}"/.tmp/virtualhosts
-        interlace -tL .tmp/webs_all.txt -threads "${INTERLACE_THREADS}" -c "ffuf -ac -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -H \"Host: FUZZ._cleantarget_\" -w ${fuzz_wordlist} -maxtime ${FFUF_MAXTIME} -u  _target_ -of json -o _output_/_cleantarget_.json" -o "${dir}"/.tmp/virtualhosts
-
-        for sub in $(cat .tmp/webs_all.txt); do
-            sub_out=$(echo $sub | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-            [[ -s ""${dir}"/.tmp/virtualhosts/${sub_out}.json" ]] && cat "${dir}"/.tmp/virtualhosts/${sub_out}.json | jq -r 'try .results[] | "\(.status) \(.length) \(.url)"' | sort | anew -q "${dir}"/virtualhosts/${sub_out}.txt
-        done
-        
-        find "${dir}"/virtualhosts/ -type f -iname "*.txt" -exec cat {} + | anew -q "${dir}"/virtualhosts/virtualhosts_full.txt
-        end_func "Results are saved in ${DOMAIN}/virtualhosts/*subdomain*.txt" "virtualhosts"
-    else
-        end_func "No${DOMAIN}//web/webs.txts file found, virtualhosts skipped " "virtualhosts"
-    fi
-}
-
-# Main
-FORCE_EXECUTION=false
-DOMAIN="$1"
-
-shift
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -h|--help) help_menu; exit 0 ;;
-        -f|--force) FORCE_EXECUTION=true; shift ;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
-    esac
-    shift
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-d | --domain)
+		DOMAIN="$2"
+		shift
+		;;
+	-f | --file)
+		DOMAIN_FILE="$2"
+		shift
+		;;
+	-o | --output)
+		output_dir="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
+	*)
+		echo "Unknown parameter passed: $1"
+		exit 1
+		;;
+	esac
+	shift
 done
 
-validate_inputs
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]] || [[ -z ${DOMAIN} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]] || [[ ! -r ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+# Validate domain
+rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
+
+run_virtualhosts() {
+    mkdir -p "${output_dir}" .tmp 2>/dev/null
+    interlace -tL ${DOMAIN_FILE} -threads "${INTERLACE_THREADS}" -c "ffuf -ac -t ${FFUF_THREADS} -rate ${FFUF_RATELIMIT} -H \"${HEADER}\" -H \"Host: FUZZ._cleantarget_\" -w ${fuzz_wordlist} -maxtime ${FFUF_MAXTIME} -u  _target_ -of json -o _output_/_cleantarget_.json" -o .tmp/virtualhosts
+    for sub in $(cat ${DOMAIN_FILE}); do
+        sub_out=$(echo "${sub}" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+        [[ -s ".tmp/virtualhosts/${sub_out}.json" ]] && cat ".tmp/virtualhosts/${sub_out}.json" | jq -r 'try .results[] | "\(.status) \(.length) \(.url)"' | sort | anew -q "${dir}/virtualhosts/${sub_out}.txt"
+    done
+    find "${dir}/virtualhosts/" -type f -iname "*.txt" -exec cat {} + | anew -q "${dir}/virtualhosts/virtualhosts_full.txt"
+}
+
 run_virtualhosts
