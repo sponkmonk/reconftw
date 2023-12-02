@@ -66,7 +66,6 @@ So, what are you waiting for? Go! Go! Go! :boom:
   - [Hosts](#hosts)
   - [Webs](#webs)
   - [Vulnerability checks](#vulnerability-checks)
-  - [Extras](#extras)
   - [Mindmap/Workflow](#mindmapworkflow)
   - [Data Keep](#data-keep)
     - [Makefile](#makefile)
@@ -533,9 +532,9 @@ reset='\033[0m'
 - Broken Links Checker ([katana](https://github.com/projectdiscovery/katana))
 - Prototype Pollution ([ppfuzz](https://github.com/dwisiswant0/ppfuzz))
 - Web Cache Vulnerabilities ([Web-Cache-Vulnerability-Scanner](https://github.com/Hackmanit/Web-Cache-Vulnerability-Scanner))
-- 4XX Bypasser ([byp4xx](https://github.com/lobuhi/byp4xx))
+- 4XX Bypasser ([dontgo403](https://github.com/devploit/dontgo403))
 
-## Extras
+- ## Extras
 
 - Multithreading ([Interlace](https://github.com/codingo/Interlace))
 - Custom resolvers generated list ([dnsvalidator](https://github.com/vortexau/dnsvalidator))

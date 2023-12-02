@@ -12,53 +12,55 @@ else
 fi
 
 # Help menu
-help_menu() {
-	echo "$(basename "$0") [OPTIONS]"
-	echo "Robots Wordlist Generation using roboxtractor"
-	echo ""
-	echo "Options:"
-	echo "  -d, --domain DOMAIN     Set domain (required)"
-	echo "  -h, --help              Display this help message and exit"
-	exit 0
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Input validation
-if [[ $# -eq 0 ]]; then
-	help_menu
-fi
-
-DOMAIN=""
-while [[ $1 != "" ]]; do
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
 	case $1 in
-	-d | --domain)
+	-f | --file)
+		input_file="$2"
 		shift
-		DOMAIN=$1
 		;;
-	-h | --help)
-		help_menu
-		exit
+	-o | --output)
+		output_dir="$2"
+		shift
 		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Unknown option: $1"
+		echo "Unknown parameter passed: $1"
 		exit 1
 		;;
 	esac
 	shift
 done
 
-if [[ -z ${DOMAIN} ]]; then
-	echo "Error: Domain is required!"
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
 	exit 1
 fi
 
 wordlist_gen_roboxtractor() {
-	local DOMAIN=$1
 
-	[[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-	if [[ -s ".tmp/webs_all.txt" ]]; then
-		cat .tmp/webs_all.txt | roboxtractor -m 1 -wb 2>/dev/null | anew -q webs/robots_wordlist.txt
+	if [[ -s "${input_file}" ]]; then
+		cat ${input_file} | roboxtractor -m 1 -wb 2>/dev/null | anew -q ${output_dir}/robots_wordlist.txt
 	fi
 
 }
 
-wordlist_gen_roboxtractor ${DOMAIN}
+wordlist_gen_roboxtractor

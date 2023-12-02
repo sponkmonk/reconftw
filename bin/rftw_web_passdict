@@ -12,53 +12,53 @@ else
 fi
 
 # Help menu
-help_menu() {
-	echo "$(basename "$0") [OPTIONS]"
-	echo "Password Dictionary Generation using pydictor"
-	echo ""
-	echo "Options:"
-	echo "  -d, --domain DOMAIN     Set domain (required)"
-	echo "  -h, --help              Display this help message and exit"
-	exit 0
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -d, --domain              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Input validation
-if [[ $# -eq 0 ]]; then
-	help_menu
-fi
-
-DOMAIN=""
-while [[ $1 != "" ]]; do
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
 	case $1 in
 	-d | --domain)
+		input_domain="$2"
 		shift
-		DOMAIN=$1
 		;;
-	-h | --help)
-		help_menu
-		exit
+	-o | --output)
+		output_dir="$2"
+		shift
 		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Unknown option: $1"
+		echo "Unknown parameter passed: $1"
 		exit 1
 		;;
 	esac
 	shift
 done
 
-if [[ -z ${DOMAIN} ]]; then
-	echo "Error: Domain is required!"
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
 	exit 1
 fi
 
 password_dict() {
-	local DOMAIN=$1
-
-	start_func ${FUNCNAME[0]} "Password dictionary generation"
-
-	local word=${DOMAIN%%.*}
+	word=${input_domain%%.*}
 	python3"${tools}"/pydictor/pydictor.py -extend $word --leet 0 1 2 11 21 --len ${PASSWORD_MIN_LENGTH} ${PASSWORD_MAX_LENGTH} -o webs/password_dict.txt
 
 }
 
-password_dict ${DOMAIN}
+password_dict

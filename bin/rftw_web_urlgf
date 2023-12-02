@@ -11,68 +11,65 @@ else
     exit 1
 fi
 
-# Help menu function
-help_menu() {
-	echo "Usage: url_gf.sh [OPTIONS]"
-	echo ""
-	echo "Options:"
-	echo "  -u, --url-file <file>   Specify the URL file to scan."
-	echo "  -h, --help             Display this help menu."
-	echo ""
-	echo "Example:"
-	echo "  url_gf.sh -u webs/url_extract.txt"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Input validation function
-validate_input() {
-	if [[ -z $url_file ]]; then
-		echo "Error: URL file not specified."
-		help_menu
-		exit 1
-	elif [[ ! -f $url_file ]]; then
-		echo "Error: Specified URL file does not exist."
-		exit 1
-	fi
-}
-
-# Vulnerable pattern search function
-url_gf() {
-	echo "[+] Starting Vulnerable Pattern Search"
-	mkdir -p gf
-	if [[ -s $url_file ]]; then
-		gf xss "$url_file" | anew -q gf/xss.txt
-		gf ssti "$url_file" | anew -q gf/ssti.txt
-		gf ssrf "$url_file" | anew -q gf/ssrf.txt
-		gf sqli "$url_file" | anew -q gf/sqli.txt
-		gf redirect "$url_file" | anew -q gf/redirect.txt
-		[[ -s "gf/ssrf.txt" ]] && cat gf/ssrf.txt | anew -q gf/redirect.txt
-		gf rce "$url_file" | anew -q gf/rce.txt
-		gf potential "$url_file" | cut -d ':' -f3-5 | anew -q gf/potential.txt
-		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p | anew -q gf/endpoints.txt
-		gf lfi "$url_file" | anew -q gf/lfi.txt
-	fi
-	echo "[+] Results are saved in ${DOMAIN}/gf folder"
-}
-
-# Parse command-line arguments
+# Parse input arguments
 while [[ $# -gt 0 ]]; do
-	case "$1" in
-	-u | --url-file)
-		url_file="$2"
-		shift 2
+	case $1 in
+	-f | --file)
+		input_file="$2"
+		shift
 		;;
-	-h | --help)
-		help_menu
-		exit 0
+	-o | --output)
+		output_dir="$2"
+		shift
 		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Unknown parameter: $1"
-		help_menu
+		echo "Unknown parameter passed: $1"
 		exit 1
 		;;
 	esac
+	shift
 done
 
-# Validate input and start main function
-validate_input
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+
+# Vulnerable pattern search function
+url_gf() {
+	mkdir -p $output_dir
+	if [[ -s $input_file ]]; then
+		gf xss "$input_file" | anew -q ${output_dir}/xss.txt
+		gf ssti "$input_file" | anew -q ${output_dir}/ssti.txt
+		gf ssrf "$input_file" | anew -q ${output_dir}/ssrf.txt
+		gf sqli "$input_file" | anew -q ${output_dir}/sqli.txt
+		gf redirect "$input_file" | anew -q ${output_dir}/redirect.txt
+		[[ -s "${output_dir}/ssrf.txt" ]] && cat ${output_dir}/ssrf.txt | anew -q ${output_dir}/redirect.txt
+		gf rce "$input_file" | anew -q ${output_dir}/rce.txt
+		gf potential "$input_file" | cut -d ':' -f3-5 | anew -q ${output_dir}/potential.txt
+		[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p | anew -q ${output_dir}/endpoints.txt
+		gf lfi "$input_file" | anew -q ${output_dir}/lfi.txt
+	fi
+}
+
 url_gf

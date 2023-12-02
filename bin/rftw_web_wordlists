@@ -12,60 +12,59 @@ else
 fi
 
 # Help menu
-help_menu() {
-	echo "$(basename "$0") [OPTIONS]"
-	echo "Wordlist Generation"
-	echo ""
-	echo "Options:"
-	echo "  -d, --domain DOMAIN     Set domain (required)"
-	echo "  -h, --help              Display this help message and exit"
-	exit 0
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Input validation
-if [[ $# -eq 0 ]]; then
-	help_menu
-fi
-
-DOMAIN=""
-while [[ $1 != "" ]]; do
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
 	case $1 in
-	-d | --domain)
+	-f | --file)
+		input_file="$2"
 		shift
-		DOMAIN=$1
 		;;
-	-h | --help)
-		help_menu
-		exit
+	-o | --output)
+		output_dir="$2"
+		shift
 		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Unknown option: $1"
+		echo "Unknown parameter passed: $1"
 		exit 1
 		;;
 	esac
 	shift
 done
 
-if [[ -z ${DOMAIN} ]]; then
-	echo "Error: Domain is required!"
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
 	exit 1
 fi
 
 wordlist_gen() {
-	local DOMAIN=$1
-	start_func ${FUNCNAME[0]} "Wordlist generation"
+	local DOMAIN=$(cat ${input_file} | head -n1 | unfurl -u apexes)
 	if [[ -s ".tmp/url_extract_tmp.txt" ]]; then
-		cat .tmp/url_extract_tmp.txt | unfurl -u keys | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_params.txt
-		cat .tmp/url_extract_tmp.txt | unfurl -u values | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_values.txt
-		cat .tmp/url_extract_tmp.txt | tr "[:punct:]" "\n" | anew -q webs/dict_words.txt
+		cat .tmp/url_extract_tmp.txt | unfurl -u keys | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q ${output_dir}/dict_params.txt
+		cat .tmp/url_extract_tmp.txt | unfurl -u values | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q ${output_dir}/dict_values.txt
+		cat .tmp/url_extract_tmp.txt | tr "[:punct:]" "\n" | anew -q ${output_dir}/dict_words.txt
 	fi
-	[[ -s ".tmp/js_endpoints.txt" ]] && cat .tmp/js_endpoints.txt | unfurl -u format %s://%d%p | anew -q webs/all_paths.txt
-	[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p | anew -q webs/all_paths.txt
-	end_func "Results are saved in ${DOMAIN}/webs/dict_[words|paths].txt" ${FUNCNAME[0]}
-	if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/all_paths.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
-		notification "Sending urls to proxy" info
-		ffuf -mc all -w webs/all_paths.txt -u FUZZ -replay-proxy $proxy_url
-	fi
+	[[ -s ".tmp/js_endpoints.txt" ]] && cat .tmp/js_endpoints.txt | unfurl -u format %s://%d%p | anew -q ${output_dir}/all_paths.txt
+	[[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p | anew -q ${output_dir}/all_paths.txt
+
 }
 
 wordlist_gen ${DOMAIN}

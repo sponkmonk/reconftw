@@ -53,6 +53,7 @@ function tools_installed() {
 	[[ -f "${tools}/urless/urless/urless.py" ]] || { printf "${bred} [*] urless			[NO]${reset}\n"; allinstalled=false;}
 	[[ -f "${tools}/smuggler/smuggler.py" ]] || { printf "${bred} [*] smuggler			[NO]${reset}\n"; allinstalled=false;}
 	[[ -f "${tools}/regulator/main.py" ]] || { printf "${bred} [*] regulator			[NO]${reset}\n"; allinstalled=false;}
+	[[ -f "${tools}/dontgo403/dontgo403" ]] || { printf "${bred} [*] dontgo403			[NO]${reset}\n"; allinstalled=false;}
 	command -v github-endpoints &>/dev/null || { printf "${bred} [*] github-endpoints		[NO]${reset}\n"; allinstalled=false;}
 	command -v github-subdomains &>/dev/null || { printf "${bred} [*] github-subdomains		[NO]${reset}\n"; allinstalled=false;}
 	command -v gitlab-subdomains &>/dev/null || { printf "${bred} [*] gitlab-subdomains		[NO]${reset}\n"; allinstalled=false;}
@@ -96,7 +97,6 @@ function tools_installed() {
 	command -v enumerepo &>/dev/null || { printf "${bred} [*] enumerepo			[NO]${reset}\n${reset}"; allinstalled=false;}
 	command -v Web-Cache-Vulnerability-Scanner &>/dev/null || { printf "${bred} [*] Web-Cache-Vulnerability-Scanner [NO]${reset}\n"; allinstalled=false;}
 	command -v subfinder &>/dev/null || { printf "${bred} [*] subfinder			[NO]${reset}\n${reset}"; allinstalled=false;}
-	command -v byp4xx &>/dev/null || { printf "${bred} [*] byp4xx			[NO]${reset}\n${reset}"; allinstalled=false;}
 	command -v ghauri &>/dev/null || { printf "${bred} [*] ghauri			[NO]${reset}\n${reset}"; allinstalled=false;}
 	command -v hakip2host &>/dev/null || { printf "${bred} [*] hakip2host			[NO]${reset}\n${reset}"; allinstalled=false;}
 	command -v gau &>/dev/null || { printf "${bred} [*] gau			[NO]${reset}\n${reset}"; allinstalled=false;}

@@ -66,7 +66,6 @@ gotools["inscope"]="go install -v github.com/tomnomnom/hacks/inscope@latest"
 gotools["enumerepo"]="go install -v github.com/trickest/enumerepo@latest"
 gotools["Web-Cache-Vulnerability-Scanner"]="go install -v github.com/Hackmanit/Web-Cache-Vulnerability-Scanner@latest"
 gotools["subfinder"]="go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
-gotools["byp4xx"]="go install -v github.com/lobuhi/byp4xx@latest"
 gotools["hakip2host"]="go install -v github.com/hakluke/hakip2host@latest"
 gotools["gau"]="go install -v github.com/lc/gau/v2/cmd/gau@latest"
 gotools["Mantra"]="go install -v github.com/MrEmpy/Mantra@latest"
@@ -100,10 +99,10 @@ repos["urless"]="xnl-h4ck3r/urless"
 repos["smuggler"]="defparam/smuggler"
 repos["Web-Cache-Vulnerability-Scanner"]="Hackmanit/Web-Cache-Vulnerability-Scanner"
 repos["regulator"]="cramppet/regulator"
-repos["byp4xx"]="lobuhi/byp4xx"
 repos["ghauri"]="r0oth3x49/ghauri"
 repos["gitleaks"]="gitleaks/gitleaks"
 repos["trufflehog"]="trufflesecurity/trufflehog"
+repos["dontgo403"]="devploit/dontgo403"
 
 function banner() {
     tput clear
@@ -209,6 +208,9 @@ function install_tools() {
             fi
             if [[ "gitleaks" == "$repo" ]]; then
                 eval make build $DEBUG_STD && eval $SUDO cp ./gitleaks /usr/local/bin/ $DEBUG_ERROR
+            fi
+            if [[ "dontgo403" == "$repo" ]]; then
+                eval go get && go build && chmod +x ./dontgo403 $DEBUG_STD
             fi
         fi
         if [[ "gf" == "$repo" ]]; then

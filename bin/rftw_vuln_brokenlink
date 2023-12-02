@@ -4,60 +4,78 @@
 CONFIG_PATH="${RECONFTW_CFG}"
 
 # Check if the config file exists
-if [[ -f "${CONFIG_PATH}" ]]; then
-    source "${CONFIG_PATH}"
+if [[ -f ${CONFIG_PATH} ]]; then
+	source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
-    exit 1
+	echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+	exit 1
 fi
 
 # Help menu
-help_menu() {
-	echo "$(basename "$0") [OPTIONS]"
-	echo "Broken Links Check using katana and axiom"
-	echo ""
-	echo "Options:"
-	echo "  -d, --deep              Set deep mode (optional)"
-	echo "  -h, --help              Display this help message and exit"
-	exit 0
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Input validation
-DEEP_MODE=false
-while [[ $1 != "" ]]; do
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
+	deep_mode="False"
 	case $1 in
+	-f | --file)
+		input_file="$2"
+		shift
+		;;
+	-o | --output)
+		output_dir="$2"
+		shift
+		;;
 	-d | --deep)
-		DEEP_MODE=true
+		deep_mode="True"
+		shift
 		;;
-	-h | --help)
-		help_menu
-		exit
-		;;
+	-h | --help) display_help ;;
 	*)
-		echo "Unknown option: $1"
+		echo "Unknown parameter passed: $1"
 		exit 1
 		;;
 	esac
 	shift
 done
 
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
+
+mkdir -p .tmp 2>/dev/null
+
 broken_links_check() {
 	local deep_mode=$1
 
 		# The code remains mostly unchanged, with only minor adjustments for clarity.
-		[[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
 		if [[ ! ${AXIOM} == true ]]; then
 			depth_level=$([[ "$deep_mode" = true ]] && echo 3 || echo 2)
-			[[ -s ".tmp/webs_all.txt" ]] && katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d $depth_level -o .tmp/katana.txt
-			[[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
+			[[ -s "${input_file}" ]] && katana -silent -list ${input_file} -jc -kf all -c $KATANA_THREADS -d $depth_level -o ${output_dir}/katana.txt
+			[[ -s "${output_dir}/katana.txt" ]] && sed -i '/^.\{2048\}./d' ${output_dir}/katana.txt
 		else
 			depth_level=$([[ "$deep_mode" = true ]] && echo 3 || echo 2)
-			[[ -s ".tmp/webs_all.txt" ]] && axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d $depth_level -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}"
-			[[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
+			[[ -s "${input_file}" ]] && axiom-scan ${input_file} -m katana -jc -kf all -d $depth_level -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}"
+			[[ -s "${output_dir}/katana.txt" ]] && sed -i '/^.\{2048\}./d' ${output_dir}/katana.txt
 		fi
-		[[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | sort -u | httpx -follow-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -no-color | grep "\[4" | cut -d ' ' -f1 | anew -q .tmp/brokenLinks_total.txt
-		NUMOFLINES=$(cat .tmp/brokenLinks_total.txt | anew vulns/brokenLinks.txt | sed '/^$/d' | wc -l)
-		notification "${NUMOFLINES} new broken links found" info
+		[[ -s "${output_dir}/katana.txt" ]] && cat ${output_dir}/katana.txt | sort -u | httpx -follow-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -no-color | grep "\[4" | cut -d ' ' -f1 | anew -q ${output_dir}/brokenLinks_total.txt
 
 }
 

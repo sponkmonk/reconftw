@@ -4,11 +4,11 @@
 CONFIG_PATH="${RECONFTW_CFG}"
 
 # Check if the config file exists
-if [[ -f "${CONFIG_PATH}" ]]; then
-    source "${CONFIG_PATH}"
+if [[ -f ${CONFIG_PATH} ]]; then
+	source "${CONFIG_PATH}"
 else
-    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
-    exit 1
+	echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+	exit 1
 fi
 
 # Help menu
@@ -58,42 +58,39 @@ fi
 mkdir -p .tmp 2>/dev/null
 
 jschecks() {
-	local DOMAIN=$1
 
-	if [[ -s ".tmp/url_extract_js.txt" ]]; then
-		printf "${yellow} Running : Fetching Urls 1/5${reset}\n"
-		if [[ ${AXIOM} != true ]]; then
-			cat .tmp/url_extract_js.txt | subjs -ua "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0" -c 40 | grep "${DOMAIN}" | anew -q .tmp/subjslinks.txt
-		else
-			axiom-scan .tmp/url_extract_js.txt -m subjs -o .tmp/subjslinks.txt "${AXIOM_EXTRA_ARGS}"
-		fi
-		[[ -s ".tmp/subjslinks.txt" ]] && cat .tmp/subjslinks.txt | egrep -iv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)" | anew -q js/nojs_links.txt
-		[[ -s ".tmp/subjslinks.txt" ]] && cat .tmp/subjslinks.txt | grep -iE "\.js($|\?)" | anew -q .tmp/url_extract_js.txt
-		cat .tmp/url_extract_js.txt | python3"${tools}"/urless/urless/urless.py | anew -q js/url_extract_js.txt
-		printf "${yellow} Running : Resolving JS Urls 2/5${reset}\n"
-		if [[ ${AXIOM} != true ]]; then
-			[[ -s "js/url_extract_js.txt" ]] && cat js/url_extract_js.txt | httpx -follow-redirects -random-agent -silent -timeout $HTTPX_TIMEOUT -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -status-code -content-type -retries 2 -no-color | grep "[200]" | grep "javascript" | cut -d ' ' -f1 | anew -q js/js_livelinks.txt
-		else
-			[[ -s "js/url_extract_js.txt" ]] && axiom-scan js/url_extract_js.txt -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -content-type -retries 2 -no-color -o .tmp/js_livelinks.txt "${AXIOM_EXTRA_ARGS}"
-			[[ -s ".tmp/js_livelinks.txt" ]] && cat .tmp/js_livelinks.txt | anew .tmp/web_full_info.txt | grep "[200]" | grep "javascript" | cut -d ' ' -f1 | anew -q js/js_livelinks.txt
-		fi
-		printf "${yellow} Running : Gathering endpoints 3/5${reset}\n"
-		[[ -s "js/js_livelinks.txt" ]] && python3"${tools}"/xnLinkFinder/xnLinkFinder.py -i js/js_livelinks.txt -sf subdomains/subdomains.txt -d $XNLINKFINDER_DEPTH -o .tmp/js_endpoints.txt
-		[[ -s "parameters.txt" ]] && rm -f parameters.txt
-		if [[ -s ".tmp/js_endpoints.txt" ]]; then
-			sed -i '/^\//!d' .tmp/js_endpoints.txt
-			cat .tmp/js_endpoints.txt | anew -q js/js_endpoints.txt
-		fi
-		printf "${yellow} Running : Gathering secrets 4/5${reset}\n"
-		if [[ ${AXIOM} != true ]]; then
-			[[ -s "js/js_livelinks.txt" ]] && cat js/js_livelinks.txt | Mantra -ua ${HEADER} -s | anew -q js/js_secrets.txt
-		else
-			[[ -s "js/js_livelinks.txt" ]] && axiom-scan js/js_livelinks.txt -m mantra -ua ${HEADER} -s -o js/js_secrets.txt "${AXIOM_EXTRA_ARGS}" &>/dev/null
-		fi
-		[[ -s "js/js_secrets.txt" ]] && sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" -i js/js_secrets.txt
-		printf "${yellow} Running : Building wordlist 5/5${reset}\n"
-		[[ -s "js/js_livelinks.txt" ]] && interlace -tL js/js_livelinks.txt -threads "${INTERLACE_THREADS}" -c "python3"${tools}"/getjswords.py '_target_' | anew -q webs/dict_words.txt"
+	local DOMAIN=$(cat ${input_file} | head -n1 | unfurl -u apexes)
+	if [[ ${AXIOM} != true ]]; then
+		cat ${input_file} | subjs -ua "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0" -c 40 | grep "${DOMAIN}" | anew -q .tmp/subjslinks.txt
+	else
+		axiom-scan ${input_file} -m subjs -o .tmp/subjslinks.txt "${AXIOM_EXTRA_ARGS}"
 	fi
+	[[ -s ".tmp/subjslinks.txt" ]] && cat .tmp/subjslinks.txt | egrep -iv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)" | anew -q ${output_dir}/nojs_links.txt
+	[[ -s ".tmp/subjslinks.txt" ]] && cat .tmp/subjslinks.txt | grep -iE "\.js($|\?)" | anew -q ${input_file}
+	cat ${input_file} | python3"${tools}"/urless/urless/urless.py | anew -q ${output_dir}/url_extract_js.txt
+	printf "${yellow} Running : Resolving JS Urls 2/5${reset}\n"
+	if [[ ${AXIOM} != true ]]; then
+		[[ -s "${output_dir}/url_extract_js.txt" ]] && cat ${output_dir}/url_extract_js.txt | httpx -follow-redirects -random-agent -silent -timeout $HTTPX_TIMEOUT -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -status-code -content-type -retries 2 -no-color | grep "[200]" | grep "javascript" | cut -d ' ' -f1 | anew -q ${output_dir}/js_livelinks.txt
+	else
+		[[ -s "${output_dir}/url_extract_js.txt" ]] && axiom-scan ${output_dir}/url_extract_js.txt -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -content-type -retries 2 -no-color -o .tmp/js_livelinks.txt "${AXIOM_EXTRA_ARGS}"
+		[[ -s ".tmp/js_livelinks.txt" ]] && cat .tmp/js_livelinks.txt | anew .tmp/web_full_info.txt | grep "[200]" | grep "javascript" | cut -d ' ' -f1 | anew -q ${output_dir}/js_livelinks.txt
+	fi
+	printf "${yellow} Running : Gathering endpoints 3/5${reset}\n"
+	[[ -s "${output_dir}/js_livelinks.txt" ]] && python3"${tools}"/xnLinkFinder/xnLinkFinder.py -i ${output_dir}/js_livelinks.txt -sf subdomains/subdomains.txt -d $XNLINKFINDER_DEPTH -o .tmp/js_endpoints.txt
+	[[ -s "parameters.txt" ]] && rm -f parameters.txt
+	if [[ -s ".tmp/js_endpoints.txt" ]]; then
+		sed -i '/^\//!d' .tmp/js_endpoints.txt
+		cat .tmp/js_endpoints.txt | anew -q ${output_dir}/js_endpoints.txt
+	fi
+	printf "${yellow} Running : Gathering secrets 4/5${reset}\n"
+	if [[ ${AXIOM} != true ]]; then
+		[[ -s "${output_dir}/js_livelinks.txt" ]] && cat ${output_dir}/js_livelinks.txt | Mantra -ua ${HEADER} -s | anew -q ${output_dir}/js_secrets.txt
+	else
+		[[ -s "${output_dir}/js_livelinks.txt" ]] && axiom-scan ${output_dir}/js_livelinks.txt -m mantra -ua ${HEADER} -s -o ${output_dir}/js_secrets.txt "${AXIOM_EXTRA_ARGS}" &>/dev/null
+	fi
+	[[ -s "${output_dir}/js_secrets.txt" ]] && sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" -i ${output_dir}/js_secrets.txt
+	printf "${yellow} Running : Building wordlist 5/5${reset}\n"
+	[[ -s "${output_dir}/js_livelinks.txt" ]] && interlace -tL ${output_dir}/js_livelinks.txt -threads "${INTERLACE_THREADS}" -c "python3"${tools}"/getjswords.py '_target_' | anew -q webs/dict_words.txt"
 }
 
 jschecks "${DOMAIN}"

@@ -11,36 +11,49 @@ else
     exit 1
 fi
 
-# Help menu function
-help_menu() {
-	echo "Usage: url_ext.sh [OPTIONS]"
-	echo ""
-	echo "Options:"
-	echo "  -i, --input-file <file>    Specify the input URL file for extraction."
-	echo "  -o, --output-file <file>   Specify the output file for URLs by extension."
-	echo "  -h, --help                 Display this help menu."
-	echo ""
-	echo "Example:"
-	echo "  url_ext.sh -i .tmp/url_extract_tmp.txt -o webs/urls_by_ext.txt"
+# Help menu
+display_help() {
+	echo "$(basename "$0") [Options]"
+	echo
+	echo "  -f, --file              File containing domains for web probing"
+	echo "  -o, --output-dir        Output dir location"
+	echo "  -h, --help              Display this help and exit"
+	echo
+	echo "Example: $0 -f input.txt -o output.txt"
+	exit 1
 }
 
-# Input validation function
-validate_input() {
-	if [[ -z ${input_file} ]]; then
-		echo "Error: Input file not specified."
-		help_menu
+# Parse input arguments
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-f | --file)
+		input_file="$2"
+		shift
+		;;
+	-o | --output)
+		output_dir="$2"
+		shift
+		;;
+	-h | --help) display_help ;;
+	*)
+		echo "Unknown parameter passed: $1"
 		exit 1
-	elif [[ ! -f ${input_file} ]]; then
-		echo "Error: Specified input file does not exist."
-		exit 1
-	fi
+		;;
+	esac
+	shift
+done
 
-	if [[ -z ${output_file} ]]; then
-		echo "Error: Output file not specified."
-		help_menu
-		exit 1
-	fi
-}
+# Input validation
+if [[ -z ${DOMAIN_FILE} ]]; then
+	display_help
+	exit 1
+fi
+
+# Validate file
+if [[ ! -f ${DOMAIN_FILE} ]]; then
+	echo "Error: Specified file does not exist or is not readable."
+	exit 1
+fi
 
 # Extract URLs by extension function
 url_ext() {
@@ -60,29 +73,6 @@ url_ext() {
 	fi
 }
 
-# Parse command-line arguments
-while [[ $# -gt 0 ]]; do
-	case "$1" in
-	-i | --input-file)
-		input_file="$2"
-		shift 2
-		;;
-	-o | --output-file)
-		output_file="$2"
-		shift 2
-		;;
-	-h | --help)
-		help_menu
-		exit 0
-		;;
-	*)
-		echo "Unknown parameter: $1"
-		help_menu
-		exit 1
-		;;
-	esac
-done
 
 # Validate input and start the main function
-validate_input
 url_ext

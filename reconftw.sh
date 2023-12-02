@@ -891,19 +891,11 @@ function urlchecks() {
 function url_gf() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $URL_GF == true ]]; then
         start_func ${FUNCNAME[0]} "Vulnerable Pattern Search"
-        mkdir -p gf
-        if [[ -s "webs/url_extract.txt" ]]; then
-            gf xss webs/url_extract.txt | anew -q gf/xss.txt
-            gf ssti webs/url_extract.txt | anew -q gf/ssti.txt
-            gf ssrf webs/url_extract.txt | anew -q gf/ssrf.txt
-            gf sqli webs/url_extract.txt | anew -q gf/sqli.txt
-            gf redirect webs/url_extract.txt | anew -q gf/redirect.txt
-            [[ -s "gf/ssrf.txt" ]] && cat gf/ssrf.txt | anew -q gf/redirect.txt
-            gf rce webs/url_extract.txt | anew -q gf/rce.txt
-            gf potential webs/url_extract.txt | cut -d ':' -f3-5 | anew -q gf/potential.txt
-            [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | grep -aEiv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)$" | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q gf/endpoints.txt
-            gf lfi webs/url_extract.txt | anew -q gf/lfi.txt
-        fi
+
+        spinny::start
+        rftw_web_urlgf -f .tmp/webs_all.txt -o ${dir}/gf
+        spinny::stop
+
         end_func "Results are saved in ${DOMAIN}/gf folder" ${FUNCNAME[0]}
     else
         if [[ $URL_GF == false ]]; then
@@ -918,15 +910,11 @@ function url_ext() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $URL_EXT == true ]]; then
         if [[ -s ".tmp/url_extract_tmp.txt" ]]; then
             start_func ${FUNCNAME[0]} "Urls by extension"
-            ext=("7z" "achee" "action" "adr" "apk" "arj" "ascx" "asmx" "asp" "aspx" "axd" "backup" "bak" "bat" "bin" "bkf" "bkp" "bok" "cab" "cer" "cfg" "cfm" "cfml" "cgi" "cnf" "conf" "config" "cpl" "crt" "csr" "csv" "dat" "db" "dbf" "deb" "dmg" "dmp" "doc" "docx" "drv" "email" "eml" "emlx" "env" "exe" "gadget" "gz" "html" "ica" "inf" "ini" "iso" "jar" "java" "jhtml" "json" "jsp" "key" "log" "lst" "mai" "mbox" "mbx" "md" "mdb" "msg" "msi" "nsf" "ods" "oft" "old" "ora" "ost" "pac" "passwd" "pcf" "pdf" "pem" "pgp" "php" "php3" "php4" "php5" "phtm" "phtml" "pkg" "pl" "plist" "pst" "pwd" "py" "rar" "rb" "rdp" "reg" "rpm" "rtf" "sav" "sh" "shtm" "shtml" "skr" "sql" "swf" "sys" "tar" "tar.gz" "tmp" "toast" "tpl" "txt" "url" "vcd" "vcf" "wml" "wpd" "wsdl" "wsf" "xls" "xlsm" "xlsx" "xml" "xsd" "yaml" "yml" "z" "zip")
-            #echo "" > webs/url_extract.txt
-            for t in "${ext[@]}"; do
-                NUMOFLINES=$(cat .tmp/url_extract_tmp.txt | grep -aEi "\.(${t})($|\/|\?)" | sort -u | sed '/^$/d' | wc -l)
-                if [[ ${NUMOFLINES} -gt 0 ]]; then
-                    echo -e "\n############################\n + ${t} + \n############################\n" >>webs/urls_by_ext.txt
-                    cat .tmp/url_extract_tmp.txt | grep -aEi "\.(${t})($|\/|\?)" >>webs/urls_by_ext.txt
-                fi
-            done
+            spinny::start
+
+            rftw_web_urlext -f .tmp/webs_all.txt -o ${dir}/.tmp
+
+            spinny::stop
             end_func "Results are saved in ${DOMAIN}/webs/urls_by_ext.txt" ${FUNCNAME[0]}
         fi
     else
@@ -942,38 +930,11 @@ function jschecks() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $JSCHECKS == true ]]; then
         start_func ${FUNCNAME[0]} "Javascript Scan"
         if [[ -s ".tmp/url_extract_js.txt" ]]; then
-            printf "${yellow} Running : Fetching Urls 1/5${reset}\n"
-            if [[ ! ${AXIOM} == true ]]; then
-                cat .tmp/url_extract_js.txt | subjs -ua "Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0" -c 40 | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | anew -q .tmp/subjslinks.txt
-            else
-                axiom-scan .tmp/url_extract_js.txt -m subjs -o .tmp/subjslinks.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-            fi
-            [[ -s ".tmp/subjslinks.txt" ]] && cat .tmp/subjslinks.txt | egrep -iv "\.(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|pdf|svg|txt|js)" | anew -q js/nojs_links.txt
-            [[ -s ".tmp/subjslinks.txt" ]] && cat .tmp/subjslinks.txt | grep -iE "\.js($|\?)" | anew -q .tmp/url_extract_js.txt
-            cat .tmp/url_extract_js.txt | python3"${tools}"/urless/urless/urless.py | anew -q js/url_extract_js.txt 2>>"${LOGFILE}" >/dev/null
-            printf "${yellow} Running : Resolving JS Urls 2/5${reset}\n"
-            if [[ ! ${AXIOM} == true ]]; then
-                [[ -s "js/url_extract_js.txt" ]] && cat js/url_extract_js.txt | httpx -follow-redirects -random-agent -silent -timeout $HTTPX_TIMEOUT -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -status-code -content-type -retries 2 -no-color | grep "[200]" | grep "javascript" | cut -d ' ' -f1 | anew -q js/js_livelinks.txt
-            else
-                [[ -s "js/url_extract_js.txt" ]] && axiom-scan js/url_extract_js.txt -m httpx -follow-host-redirects -H \"${HEADER}\" -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -content-type -retries 2 -no-color -o .tmp/js_livelinks.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                [[ -s ".tmp/js_livelinks.txt" ]] && cat .tmp/js_livelinks.txt | anew .tmp/web_full_info.txt | grep "[200]" | grep "javascript" | cut -d ' ' -f1 | anew -q js/js_livelinks.txt
-            fi
-            printf "${yellow} Running : Gathering endpoints 3/5${reset}\n"
-            [[ -s "js/js_livelinks.txt" ]] && python3"${tools}"/xnLinkFinder/xnLinkFinder.py -i js/js_livelinks.txt -sf subdomains/subdomains.txt -d $XNLINKFINDER_DEPTH -o .tmp/js_endpoints.txt 2>>"${LOGFILE}" >/dev/null
-            [[ -s "parameters.txt" ]] && rm -f parameters.txt 2>>"${LOGFILE}" >/dev/null
-            if [[ -s ".tmp/js_endpoints.txt" ]]; then
-                sed -i '/^\//!d' .tmp/js_endpoints.txt
-                cat .tmp/js_endpoints.txt | anew -q js/js_endpoints.txt
-            fi
-            printf "${yellow} Running : Gathering secrets 4/5${reset}\n"
-            if [[ ! ${AXIOM} == true ]]; then
-                [[ -s "js/js_livelinks.txt" ]] && cat js/js_livelinks.txt | Mantra -ua ${HEADER} -s | anew -q js/js_secrets.txt
-            else
-                [[ -s "js/js_livelinks.txt" ]] && axiom-scan js/js_livelinks.txt -m mantra -ua \"${HEADER}\" -s -o js/js_secrets.txt "${AXIOM_EXTRA_ARGS}" &>/dev/null
-            fi
-            [[ -s "js/js_secrets.txt" ]] && sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g" -i js/js_secrets.txt
-            printf "${yellow} Running : Building wordlist 5/5${reset}\n"
-            [[ -s "js/js_livelinks.txt" ]] && interlace -tL js/js_livelinks.txt -threads "${INTERLACE_THREADS}" -c "python3"${tools}"/getjswords.py '_target_' | anew -q webs/dict_words.txt" 2>>"${LOGFILE}" >/dev/null
+            spinny::start
+
+            rftw_web_jschecks -f .tmp/url_extract_js.txt -o ${dir}/js
+
+            spinny::stop
             end_func "Results are saved in ${DOMAIN}/js folder" ${FUNCNAME[0]}
         else
             end_func "No JS urls found for${DOMAIN}/, function skipped" ${FUNCNAME[0]}
@@ -990,13 +951,13 @@ function jschecks() {
 function wordlist_gen() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WORDLIST == true ]]; then
         start_func ${FUNCNAME[0]} "Wordlist generation"
-        if [[ -s ".tmp/url_extract_tmp.txt" ]]; then
-            cat .tmp/url_extract_tmp.txt | unfurl -u keys 2>>"${LOGFILE}" | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_params.txt
-            cat .tmp/url_extract_tmp.txt | unfurl -u values 2>>"${LOGFILE}" | sed 's/[][]//g' | sed 's/[#]//g' | sed 's/[}{]//g' | anew -q webs/dict_values.txt
-            cat .tmp/url_extract_tmp.txt | tr "[:punct:]" "\n" | anew -q webs/dict_words.txt
-        fi
-        [[ -s ".tmp/js_endpoints.txt" ]] && cat .tmp/js_endpoints.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
-        [[ -s ".tmp/url_extract_tmp.txt" ]] && cat .tmp/url_extract_tmp.txt | unfurl -u format %s://%d%p 2>>"${LOGFILE}" | anew -q webs/all_paths.txt
+
+        spinny::start
+
+        rftw_web_wordlists -f .tmp/url_extract_js.txt -o ${dir}/web
+
+        spinny::stop
+
         end_func "Results are saved in ${DOMAIN}/webs/dict_[words|paths].txt" ${FUNCNAME[0]}
         if [[ $PROXY == true ]] && [[ -n $proxy_url ]] && [[ $(cat webs/all_paths.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
             rftw_util_notification "Sending urls to proxy" info
@@ -1015,9 +976,11 @@ function wordlist_gen_roboxtractor() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $ROBOTSWORDLIST == true ]]; then
         start_func ${FUNCNAME[0]} "Robots wordlist generation"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ -s ".tmp/webs_all.txt" ]]; then
-            cat .tmp/webs_all.txt | roboxtractor -m 1 -wb 2>/dev/null | anew -q webs/robots_wordlist.txt
-        fi
+        spinny::start
+
+        rftw_web_roboxtractor -f .tmp/webs_all.txt -o ${dir}/web
+
+        spinny::stop
         end_func "Results are saved in ${DOMAIN}/webs/robots_wordlist.txt" ${FUNCNAME[0]}
     else
         if [[ $ROBOTSWORDLIST == false ]]; then
@@ -1031,8 +994,13 @@ function wordlist_gen_roboxtractor() {
 function password_dict() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $PASSWORD_DICT == true ]]; then
         start_func ${FUNCNAME[0]} "Password dictionary generation"
-        word=${DOMAIN%%.*}
-        python3"${tools}"/pydictor/pydictor.py -extend $word --leet 0 1 2 11 21 --len ${PASSWORD_MIN_LENGTH} ${PASSWORD_MAX_LENGTH} -o webs/password_dict.txt 2>>"${LOGFILE}" >/dev/null
+
+        spinny::start
+
+        rftw_web_passdict -d $DOMAIN -o ${dir}/web
+
+        spinny::stop
+
         end_func "Results are saved in ${DOMAIN}/webs/password_dict.txt" ${FUNCNAME[0]}
     else
         if [[ $PASSWORD_DICT == false ]]; then
@@ -1051,26 +1019,11 @@ function brokenLinks() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $BROKENLINKS == true ]]; then
         start_func ${FUNCNAME[0]} "Broken links checks"
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        if [[ ! ${AXIOM} == true ]]; then
-            if [[ ! -s ".tmp/katana.txt" ]]; then
-                if [[ $DEEP == true ]]; then
-                    [[ -s ".tmp/webs_all.txt" ]] && katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 3 -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
-                else
-                    [[ -s ".tmp/webs_all.txt" ]] && katana -silent -list .tmp/webs_all.txt -jc -kf all -c $KATANA_THREADS -d 2 -o .tmp/katana.txt 2>>"${LOGFILE}" >/dev/null
-                fi
-            fi
-            [[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
-        else
-            if [[ ! -s ".tmp/katana.txt" ]]; then
-                if [[ $DEEP == true ]]; then
-                    [[ -s ".tmp/webs_all.txt" ]] && axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 3 -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                else
-                    [[ -s ".tmp/webs_all.txt" ]] && axiom-scan .tmp/webs_all.txt -m katana -jc -kf all -d 2 -o .tmp/katana.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                fi
-                [[ -s ".tmp/katana.txt" ]] && sed -i '/^.\{2048\}./d' .tmp/katana.txt
-            fi
-        fi
-        [[ -s ".tmp/katana.txt" ]] && cat .tmp/katana.txt | sort -u | httpx -follow-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -no-color | grep "\[4" | cut -d ' ' -f1 | anew -q .tmp/brokenLinks_total.txt
+        spinny::start
+
+        rftw_vuln_brokenlink -f .tmp/webs_all.txt -o ${dir}/.tmp
+
+        spinny::stop
         NUMOFLINES=$(cat .tmp/brokenLinks_total.txt 2>>"${LOGFILE}" | anew vulns/brokenLinks.txt | sed '/^$/d' | wc -l)
         rftw_util_notification "${NUMOFLINES} new broken links found" info
         end_func "Results are saved in vulns/brokenLinks.txt" ${FUNCNAME[0]}
@@ -1086,48 +1039,13 @@ function brokenLinks() {
 function xss() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $XSS == true ]] && [[ -s "gf/xss.txt" ]]; then
         start_func ${FUNCNAME[0]} "XSS Analysis"
-        [[ -s "gf/xss.txt" ]] && cat gf/xss.txt | qsreplace FUZZ | sed '/FUZZ/!d' | Gxss -c 100 -p Xss | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/xss_reflected.txt
-        if [[ ! ${AXIOM} == true ]]; then
-            if [[ $DEEP == true ]]; then
-                if [[ -n $XSS_SERVER ]]; then
-                    [[ -s ".tmp/xss_reflected.txt" ]] && cat .tmp/xss_reflected.txt | dalfox pipe --silence --no-color --no-spinner --only-poc r --ignore-return 302,404,403 --skip-bav -b ${XSS_SERVER} -w $DALFOX_THREADS 2>>"${LOGFILE}" | anew -q vulns/xss.txt
-                else
-                    printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
-                    [[ -s ".tmp/xss_reflected.txt" ]] && cat .tmp/xss_reflected.txt | dalfox pipe --silence --no-color --no-spinner --only-poc r --ignore-return 302,404,403 --skip-bav -w $DALFOX_THREADS 2>>"${LOGFILE}" | anew -q vulns/xss.txt
-                fi
-            else
-                if [[ $(cat .tmp/xss_reflected.txt | wc -l) -le $DEEP_LIMIT ]]; then
-                    if [[ -n $XSS_SERVER ]]; then
-                        cat .tmp/xss_reflected.txt | dalfox pipe --silence --no-color --no-spinner --skip-bav --skip-mining-dom --skip-mining-dict --only-poc r --ignore-return 302,404,403 -b ${XSS_SERVER} -w $DALFOX_THREADS 2>>"${LOGFILE}" | anew -q vulns/xss.txt
-                    else
-                        printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
-                        cat .tmp/xss_reflected.txt | dalfox pipe --silence --no-color --no-spinner --skip-bav --skip-mining-dom --skip-mining-dict --only-poc r --ignore-return 302,404,403 -w $DALFOX_THREADS 2>>"${LOGFILE}" | anew -q vulns/xss.txt
-                    fi
-                else
-                    printf "${bred} Skipping XSS: Too many URLs to test, try with --deep flag${reset}\n"
-                fi
-            fi
-        else
-            if [[ $DEEP == true ]]; then
-                if [[ -n $XSS_SERVER ]]; then
-                    [[ -s ".tmp/xss_reflected.txt" ]] && axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav -b ${XSS_SERVER} -w $DALFOX_THREADS -o vulns/xss.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                else
-                    printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
-                    [[ -s ".tmp/xss_reflected.txt" ]] && axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav -w $DALFOX_THREADS -o vulns/xss.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                fi
-            else
-                if [[ $(cat .tmp/xss_reflected.txt | wc -l) -le $DEEP_LIMIT ]]; then
-                    if [[ -n $XSS_SERVER ]]; then
-                        axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav --skip-grepping --skip-mining-all --skip-mining-dict -b ${XSS_SERVER} -w $DALFOX_THREADS -o vulns/xss.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                    else
-                        printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
-                        axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav --skip-grepping --skip-mining-all --skip-mining-dict -w $DALFOX_THREADS -o vulns/xss.txt "${AXIOM_EXTRA_ARGS}" 2>>"${LOGFILE}" >/dev/null
-                    fi
-                else
-                    printf "${bred} Skipping XSS: Too many URLs to test, try with --deep flag${reset}\n"
-                fi
-            fi
-        fi
+
+        spinny::start
+
+        rftw_vuln_xss -f gf/xss.txt -o ${dir}/vuln
+
+        spinny::stop
+
         end_func "Results are saved in vulns/xss.txt" ${FUNCNAME[0]}
     else
         if [[ $XSS == false ]]; then
@@ -1181,30 +1099,11 @@ function open_redirect() {
 function ssrf_checks() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SSRF_CHECKS == true ]] && [[ -s "gf/ssrf.txt" ]]; then
         start_func ${FUNCNAME[0]} "SSRF checks"
-        if [[ -z $COLLAB_SERVER ]]; then
-            interactsh-client &>.tmp/ssrf_callback.txt &
-            sleep 2
-            COLLAB_SERVER_FIX="FFUFHASH.$(cat .tmp/ssrf_callback.txt | tail -n1 | cut -c 16-)"
-            COLLAB_SERVER_URL="http://$COLLAB_SERVER_FIX"
-            INTERACT=true
-        else
-            COLLAB_SERVER_FIX="FFUFHASH.$(echo ${COLLAB_SERVER} | sed -r "s/https?:\/\///")"
-            INTERACT=false
-        fi
-        if [[ $DEEP == true ]] || [[ $(cat gf/ssrf.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            cat gf/ssrf.txt | qsreplace ${COLLAB_SERVER_FIX} | anew -q .tmp/tmp_ssrf.txt
-            cat gf/ssrf.txt | qsreplace ${COLLAB_SERVER_URL} | anew -q .tmp/tmp_ssrf.txt
-            ffuf -v -H "${HEADER}" -t $FFUF_THREADS -rate $FFUF_RATELIMIT -w .tmp/tmp_ssrf.txt -u FUZZ 2>/dev/null | grep "URL" | sed 's/| URL | //' | anew -q vulns/ssrf_requested_url.txt
-            ffuf -v -w .tmp/tmp_ssrf.txt:W1,$tools/headers_inject.txt:W2 -H "${HEADER}" -H "W2: ${COLLAB_SERVER_FIX}" -t $FFUF_THREADS -rate $FFUF_RATELIMIT -u W1 2>/dev/null | anew -q vulns/ssrf_requested_headers.txt
-            ffuf -v -w .tmp/tmp_ssrf.txt:W1,$tools/headers_inject.txt:W2 -H "${HEADER}" -H "W2: ${COLLAB_SERVER_URL}" -t $FFUF_THREADS -rate $FFUF_RATELIMIT -u W1 2>/dev/null | anew -q vulns/ssrf_requested_headers.txt
-            sleep 5
-            [[ -s ".tmp/ssrf_callback.txt" ]] && cat .tmp/ssrf_callback.txt | tail -n+11 | anew -q vulns/ssrf_callback.txt && NUMOFLINES=$(cat .tmp/ssrf_callback.txt | tail -n+12 | sed '/^$/d' | wc -l)
-            [[ $INTERACT == true ]] && rftw_util_notification "SSRF: ${NUMOFLINES} callbacks received" info
-            end_func "Results are saved in vulns/ssrf_*" ${FUNCNAME[0]}
-        else
-            end_func "Skipping SSRF: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
-        fi
-        pkill -f interactsh-client &
+        spinny::start
+
+        rftw_vuln_ssrf -f gf/ssrf.txt -o ${dir}/vuln
+
+        spinny::stop
     else
         if [[ $SSRF_CHECKS == false ]]; then
             printf "\n${yellow} ${FUNCNAME[0]} skipped in this mode or defined in reconftw.cfg ${reset}\n"
@@ -1370,17 +1269,17 @@ function 4xxbypass() {
         if [[ $(cat fuzzing/fuzzing_full.txt 2>/dev/null | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 | wc -l) -le 1000 ]] || [[ $DEEP == true ]]; then
             start_func "403 bypass"
             cat "${dir}"/fuzzing/fuzzing_full.txt 2>/dev/null | grep -E '^4' | grep -Ev '^404' | cut -d ' ' -f3 >"${dir}"/.tmp/403test.txt
-            pushd "${tools}/byp4xx" &>/dev/null || {
-                echo "Failed to cd to byp4xx"
+            pushd "${tools}/dontgo403" &>/dev/null || {
+                echo "Failed to cd to dontgo403"
                 exit 1
             }
-            byp4xx -threads $BYP4XX_THREADS "${dir}"/.tmp/403test.txt >"${dir}"/.tmp/byp4xx.txt
+            interlace -tL ${dir}/.tmp/403test.txt -threads "${INTERLACE_THREADS}" -c "./dontgo403 -a ${HEADER} _target_ -a \"${HEADER}\" >> "${dir}"/.tmp/dontgo403.txt" 2>>"${LOGFILE}" >/dev/null
             popd &>/dev/null || {
                 echo "Failed to cd back"
                 exit 1
             }
-            [[ -s ".tmp/byp4xx.txt" ]] && cat .tmp/byp4xx.txt | anew -q vulns/byp4xx.txt
-            end_func "Results are saved in vulns/byp4xx.txt" ${FUNCNAME[0]}
+            [[ -s ".tmp/dontgo403.txt" ]] && cat .tmp/dontgo403.txt | anew -q vulns/dontgo403.txt
+            end_func "Results are saved in vulns/dontgo403.txt" ${FUNCNAME[0]}
         else
             rftw_util_notification "Too many urls to bypass, skipping" warn
         fi
@@ -1531,7 +1430,7 @@ function zipSnedOutputFolder {
 
     echo "Sending zip file "${dir}/${zip_name}""
     if [[ -s "${dir}/$zip_name" ]]; then
-        sendToNotify ""${dir}"/$zip_name"
+        rftw_util_sendnotify ${dir}/$zip_name
         rm -f "${dir}/$zip_name"
     else
         rftw_util_notification "No Zip file to send" warn
@@ -1561,29 +1460,6 @@ function remove_big_files() {
     eval find .tmp -type f -size +200M -exec rm -f {} + 2>>"${LOGFILE}"
 }
 
-function rftw_util_notification() {
-    if [[ -n $1 ]] && [[ -n $2 ]]; then
-        case $2 in
-        info)
-            text="\n${bblue} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
-            ;;
-        warn)
-            text="\n${yellow} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
-            ;;
-        error)
-            text="\n${bred} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
-            ;;
-        good)
-            text="\n${bgreen} ${1} ${reset}"
-            printf "${text}\n" && printf "${text} - ${DOMAIN}\n" | ${NOTIFY}
-            ;;
-        esac
-    fi
-}
-
 function transfer {
     if [[ $# -eq 0 ]]; then
         echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>" >&2
@@ -1605,36 +1481,6 @@ function transfer {
     else
         file_name=$1
         curl --progress-bar --upload-file "-" "https://transfer.sh/$file_name" | tee /dev/null
-    fi
-}
-
-function sendToNotify {
-    if [[ -z $1 ]]; then
-        printf "\n${yellow} no file provided to send ${reset}\n"
-    else
-        if [[ -z ${NOTIFY_CONFIG} ]]; then
-            NOTIFY_CONFIG=~/.config/notify/provider-config.yaml
-        fi
-        if [[ -n "$(find "${1}" -prune -size +8000000c)" ]]; then
-            printf '%s is larger than 8MB, sending over transfer.sh\n' "${1}"
-            transfer "${1}" | notify
-            return 0
-        fi
-        if grep -q '^ telegram\|^telegram\|^    telegram' ${NOTIFY_CONFIG}; then
-            rftw_util_notification "Sending ${DOMAIN} data over Telegram" info
-            telegram_chat_id=$(cat ${NOTIFY_CONFIG} | grep '^    telegram_chat_id\|^telegram_chat_id\|^    telegram_chat_id' | xargs | cut -d' ' -f2)
-            telegram_key=$(cat ${NOTIFY_CONFIG} | grep '^    telegram_api_key\|^telegram_api_key\|^    telegram_apikey' | xargs | cut -d' ' -f2)
-            curl -F document=@${1} "https://api.telegram.org/bot${telegram_key}/sendDocument?chat_id=${telegram_chat_id}" 2>>"${LOGFILE}" >/dev/null
-        fi
-        if grep -q '^ discord\|^discord\|^    discord' ${NOTIFY_CONFIG}; then
-            rftw_util_notification "Sending ${DOMAIN} data over Discord" info
-            discord_url=$(cat ${NOTIFY_CONFIG} | grep '^ discord_webhook_url\|^discord_webhook_url\|^    discord_webhook_url' | xargs | cut -d' ' -f2)
-            curl -v -i -H "Accept: application/json" -H "Content-Type: multipart/form-data" -X POST -F file1=@${1} $discord_url 2>>"${LOGFILE}" >/dev/null
-        fi
-        if [[ -n $slack_channel ]] && [[ -n $slack_auth ]]; then
-            rftw_util_notification "Sending ${DOMAIN} data over Slack" info
-            curl -F file=@${1} -F "initial_comment=reconftw zip file" -F channels=${slack_channel} -H "Authorization: Bearer ${slack_auth}" https://slack.com/api/files.upload 2>>"${LOGFILE}" >/dev/null
-        fi
     fi
 }
 
@@ -1673,40 +1519,6 @@ function check_inscope() {
     cat $1 | inscope >$1_tmp && cp $1_tmp $1 && rm -f $1_tmp
 }
 
-function resolvers_update() {
-    if [[ $generate_resolvers == true ]]; then
-        if [[ ! ${AXIOM} == true ]]; then
-            if [[ ! -s $resolvers ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
-                rftw_util_notification "Resolvers seem older than 1 day\n Generating custom resolvers..." warn
-                eval rm -f $resolvers 2>>"${LOGFILE}"
-                dnsvalidator -tL https://public-dns.info/nameservers.txt -threads $DNSVALIDATOR_THREADS -o $resolvers 2>>"${LOGFILE}" >/dev/null
-                dnsvalidator -tL https://raw.githubusercontent.com/blechschmidt/massdns/master/lists/resolvers.txt -threads $DNSVALIDATOR_THREADS -o tmp_resolvers 2>>"${LOGFILE}" >/dev/null
-                [[ -s "tmp_resolvers" ]] && cat tmp_resolvers | anew -q $resolvers
-                [[ -s "tmp_resolvers" ]] && rm -f tmp_resolvers 2>>"${LOGFILE}" >/dev/null
-                [[ ! -s $resolvers ]] && wget -q -O - ${resolvers_url} >$resolvers
-                [[ ! -s $resolvers_trusted ]] && wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
-                rftw_util_notification "Updated\n" good
-            fi
-        else
-            rftw_util_notification "Checking resolvers lists...\n Accurate resolvers are the key to great results\n This may take around 10 minutes if it's not updated" warn
-            # shellcheck disable=SC2016
-            axiom-exec 'if [[ $(find "/home/op/lists/resolvers.txt" -mtime +1 -print) ]] || [[ $(cat /home/op/lists/resolvers.txt | wc -l) -le 40 ]] ; then dnsvalidator -tL https://public-dns.info/nameservers.txt -threads 200 -o /home/op/lists/resolvers.txt ; fi' &>/dev/null
-            axiom-exec "wget -q -O - ${resolvers_url} > /home/op/lists/resolvers.txt" 2>>"${LOGFILE}" >/dev/null
-            axiom-exec "wget -q -O - ${resolvers_trusted_url} > /home/op/lists/resolvers_trusted.txt" 2>>"${LOGFILE}" >/dev/null
-            rftw_util_notification "Updated\n" good
-        fi
-        generate_resolvers=false
-    else
-
-        if [[ ! -s $resolvers ]] || [[ $(find "$resolvers" -mtime +1 -print) ]]; then
-            rftw_util_notification "Resolvers seem older than 1 day\n Downloading new resolvers..." warn
-            wget -q -O - ${resolvers_url} >$resolvers
-            wget -q -O - ${resolvers_trusted_url} >$resolvers_trusted
-            rftw_util_notification "Resolvers updated\n" good
-        fi
-    fi
-}
-
 function ipcidr_target() {
     IP_CIDR_REGEX='(((25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?))(\/([8-9]|[1-2][0-9]|3[0-2]))([^0-9.]|$)|(((25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]?)$)'
     if [[ $1 =~ ^${IP_CIDR_REGEX} ]]; then
@@ -1724,66 +1536,6 @@ function ipcidr_target() {
             cat $list | anew -q $2
             sed -i '/\/[0-9]*$/d' $2
         fi
-    fi
-}
-
-function axiom_lauch() {
-    # let's fire up a FLEET!
-    if [[ ${AXIOM_FLEET_LAUNCH} == true ]] && [[ -n ${AXIOM_FLEET_NAME} ]] && [[ -n ${AXIOM_FLEET_COUNT} ]]; then
-        start_func ${FUNCNAME[0]} "Launching our Axiom fleet"
-        python3 -m pip install --upgrade linode-cli 2>>"${LOGFILE}" >/dev/null
-        # Check to see if we have a fleet already, if so, SKIP THIS!
-        NUMOFNODES=$(timeout 30 axiom-ls | grep -c "${AXIOM_FLEET_NAME}")
-        if [[ ${NUMOFNODES} -ge ${AXIOM_FLEET_COUNT} ]]; then
-            axiom-select "${AXIOM}_FLEET_NAME*"
-            end_func "Axiom fleet ${AXIOM}_FLEET_NAME already has ${NUMOFNODES} instances"
-        else
-            if [[ ${NUMOFNODES} -eq 0 ]]; then
-                startcount=${AXIOM_FLEET_COUNT}
-            else
-                startcount=$((AXIOM_FLEET_COUNT - NUMOFNODES))
-            fi
-            AXIOM_ARGS=" -i $startcount"
-            # Temporarily disabled multiple axiom regions
-            # [[ -n "${AXIOM}_FLEET_REGIONS" ]] && axiom_args="${AXIOM}_args --regions=\"${AXIOM}_FLEET_REGIONS\" "
-
-            echo "axiom-fleet ${AXIOM_FLEET_NAME} ${AXIOM_ARGS}"
-            axiom-fleet ${AXIOM_FLEET_NAME} ${AXIOM_ARGS}
-            axiom-select "${AXIOM}_FLEET_NAME*"
-            if [[ -n ${AXIOM_POST_START} ]]; then
-                eval "${AXIOM_POST_START}" 2>>"${LOGFILE}" >/dev/null
-            fi
-
-            NUMOFNODES=$(timeout 30 axiom-ls | grep -c "${AXIOM_FLEET_NAME}")
-            echo "Axiom fleet ${AXIOM}_FLEET_NAME launched w/ ${NUMOFNODES} instances" | ${NOTIFY}
-            end_func "Axiom fleet ${AXIOM}_FLEET_NAME launched w/ ${NUMOFNODES} instances"
-        fi
-    fi
-}
-
-function axiom_shutdown() {
-    if [[ ${AXIOM_FLEET_LAUNCH} == true ]] && [[ ${AXIOM_FLEET_SHUTDOWN} == true ]] && [[ -n ${AXIOM_FLEET_NAME} ]]; then
-        #if [[ "$mode" == "subs_menu" ]] || [[ "$mode" == "list_recon" ]] || [[ "$mode" == "passive" ]] || [[ "$mode" == "all" ]]; then
-        if [[ $mode == "subs_menu" ]] || [[ $mode == "passive" ]] || [[ $mode == "all" ]]; then
-            rftw_util_notification "Automatic Axiom fleet shutdown is not enabled in this mode" info
-            return
-        fi
-        eval axiom-rm -f "${AXIOM}_FLEET_NAME*"
-        echo "Axiom fleet ${AXIOM}_FLEET_NAME shutdown" | ${NOTIFY}
-        rftw_util_notification "Axiom fleet ${AXIOM}_FLEET_NAME shutdown" info
-    fi
-}
-
-function axiom_selected() {
-
-    if [[ ! $(axiom-ls | tail -n +2 | sed '$ d' | wc -l) -gt 0 ]]; then
-        rftw_util_notification "\n\n${bred} No axiom instances running ${reset}\n\n" error
-        exit
-    fi
-
-    if [[ ! $(cat ~/.axiom/selected.conf | sed '/^\s*$/d' | wc -l) -gt 0 ]]; then
-        rftw_util_notification "\n\n${bred} No axiom instances selected ${reset}\n\n" error
-        exit
     fi
 }
 
@@ -1919,8 +1671,8 @@ function passive() {
     SUB_RECURSIVE_BRUTE=false
     WEBPROBESIMPLE=false
     if [[ ${AXIOM} == true ]]; then
-        axiom_lauch
-        axiom_selected
+        rftw_util_axiomon
+        rftw_util_axiomsel
     fi
 
     subdomains_full
@@ -1931,7 +1683,7 @@ function passive() {
     portscan
 
     if [[ ${AXIOM} == true ]]; then
-        axiom_shutdown
+        rftw_util_axiomoff
     fi
 
     end
@@ -2063,8 +1815,8 @@ function recon() {
     favicon
 
     if [[ ${AXIOM} == true ]]; then
-        axiom_lauch
-        axiom_selected
+        rftw_util_axiomon
+        rftw_util_axiomsel
     fi
 
     subdomains_full
@@ -2083,7 +1835,7 @@ function recon() {
     jschecks
 
     if [[ ${AXIOM} == true ]]; then
-        axiom_shutdown
+        rftw_util_axiomoff
     fi
 
     cms_scanner
@@ -2177,8 +1929,8 @@ function multi_recon() {
     }
 
     if [[ ${AXIOM} == true ]]; then
-        axiom_lauch
-        axiom_selected
+        rftw_util_axiomon
+        rftw_util_axiomsel
     fi
 
     for domain in $targets; do
@@ -2265,7 +2017,7 @@ function multi_recon() {
     done
 
     if [[ ${AXIOM} == true ]]; then
-        axiom_shutdown
+        rftw_util_axiomoff
     fi
 
     for domain in $targets; do
@@ -2306,8 +2058,8 @@ function subs_menu() {
     start
 
     if [[ ${AXIOM} == true ]]; then
-        axiom_lauch
-        axiom_selected
+        rftw_util_axiomon
+        rftw_util_axiomsel
     fi
 
     subdomains_full
@@ -2320,7 +2072,7 @@ function subs_menu() {
     s3buckets
 
     if [[ ${AXIOM} == true ]]; then
-        axiom_shutdown
+        rftw_util_axiomoff
     fi
 
     end
