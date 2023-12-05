@@ -210,7 +210,7 @@ function install_tools() {
                 eval make build $DEBUG_STD && eval $SUDO cp ./gitleaks /usr/local/bin/ $DEBUG_ERROR
             fi
             if [[ "dontgo403" == "$repo" ]]; then
-                eval go get && go build && chmod +x ./dontgo403 $DEBUG_STD
+                eval go get $DEBUG_STD && eval go build $DEBUG_STD && eval chmod +x ./dontgo403 $DEBUG_STD
             fi
         fi
         if [[ "gf" == "$repo" ]]; then
@@ -505,7 +505,7 @@ wget -q -O - https://gist.githubusercontent.com/six2dez/a89a0c7861d49bb61a09822d
 wget -q -O - https://gist.githubusercontent.com/six2dez/ab5277b11da7369bf4e9db72b49ad3c1/raw >${ssti_wordlist}
 wget -q -O - https://gist.github.com/six2dez/d62ab8f8ffd28e1c206d401081d977ae/raw >${tools}/headers_inject.txt
 wget -q -O - https://gist.githubusercontent.com/six2dez/6e2d9f4932fd38d84610eb851014b26e/raw >${tools}/axiom_config.sh
-eval $SUDO chmod +x"${tools}"/axiom_config.sh
+eval $SUDO chmod +x ${tools}/axiom_config.sh
 eval $SUDO mv $SCRIPTPATH/assets/potential.json ~/.gf/potential.json
 
 ## Last check
