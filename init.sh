@@ -27,7 +27,7 @@ mkdir -p "${HOME}/.reconftw"
 echo -e "${GREEN}Cloning reconftw...${NC}"
 
 if [[ ! -d "${HOME}/.reconftw/reconftw" ]]; then
-    git clone https://github.com/six2dez/reconftw.git "${HOME}/.reconftw/reconftw"
+    git clone --branch v3.0-dev https://github.com/six2dez/reconftw.git "${HOME}/.reconftw/reconftw"
     echo -e "${GREEN}reconftw cloned successfully.${NC}"
 else
     echo "reconftw already cloned. Pulling latest changes..."
