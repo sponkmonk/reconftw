@@ -3,7 +3,7 @@
 # This script initializes reconftw by cloning the repository and setting up the environment.
 
 # Oneliner for set up and installation:
-# curl -sSL https://raw.githubusercontent.com/six2dez/reconftw/v3.0-dev/setup_reconftw.sh | bash
+# curl -sSL https://raw.githubusercontent.com/six2dez/reconftw/v3.0-dev/init.sh | bash
 
 set -e # Exit on error
 set -u # Exit on uninitialized variable
@@ -27,11 +27,11 @@ mkdir -p "${HOME}/.reconftw"
 echo -e "${GREEN}Cloning reconftw...${NC}"
 
 if [[ ! -d "${HOME}/.reconftw/reconftw" ]]; then
-    git clone --branch v3.0-dev https://github.com/six2dez/reconftw.git "${HOME}/.reconftw/reconftw"
+    git clone --branch v3.0-dev https://github.com/six2dez/reconftw.git "${HOME}/.reconftw"
     echo -e "${GREEN}reconftw cloned successfully.${NC}"
 else
     echo "reconftw already cloned. Pulling latest changes..."
-    git -C "${HOME}/.reconftw/reconftw" pull
+    git -C "${HOME}/.reconftw" pull
 fi
 
 echo -e "${GREEN}Setting up the environment vars...${NC}"
