@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 
-. ./reconftw.cfg
+# Default config path
+CONFIG_PATH="${RECONFTW_CFG}"
+
+# Check if the config file exists
+if [[ -f "${CONFIG_PATH}" ]]; then
+    source "${CONFIG_PATH}"
+else
+    echo "Error: reconftw.cfg not found at ${CONFIG_PATH}!"
+    exit 1
+fi
 
 dir=${tools}
 double_check=false
@@ -264,7 +273,8 @@ display_menu() {
             printf "${bblue} 1. Install/Update ReconFTW${reset}\n\n"
             printf "${bblue} 2. Exit${reset}\n\n"
             printf "${bgreen}#######################################################################${reset}\n\n"
-            read -p "${bblue}Insert option: ${reset}" option
+            printf "${bblue}Insert option: ${reset}"
+            read -r option
             printf "\n\n${bgreen}#######################################################################${reset}\n\n"
 
             option=$(echo "$option" | tr -d '[:space:]')
@@ -273,7 +283,7 @@ display_menu() {
                 continue
             fi
 
-            case $option in
+            case ${option} in
             1)
                 break
                 ;;

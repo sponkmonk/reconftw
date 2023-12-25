@@ -26,8 +26,8 @@ mkdir -p "${HOME}/.reconftw"
 
 echo -e "${GREEN}Cloning reconftw...${NC}"
 
-if [[ ! -d "${HOME}/.reconftw/reconftw" ]]; then
-    git clone --branch v3.0-dev https://github.com/six2dez/reconftw.git "${HOME}/.reconftw"
+if [[ ! -d "${HOME}/.reconftw" ]]; then
+    git clone --branch v3.0-dev https://github.com/six2dez/reconftw.git "${HOME}/.reconftw" 2>/dev/null
     echo -e "${GREEN}reconftw cloned successfully.${NC}"
 else
     echo "reconftw already cloned. Pulling latest changes..."
@@ -53,7 +53,7 @@ while true; do
     choice=${choice:-y}
     case ${choice} in
     [Yy]*)
-        "${HOME}"/.reconftw/install.sh
+        . "${HOME}"/.reconftw/reconftw.cfg && "${HOME}"/.reconftw/install.sh
         break
         ;;
     [Nn]*) exit ;;
