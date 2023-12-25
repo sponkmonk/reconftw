@@ -133,7 +133,7 @@ function install_ppfuzz() {
     local url=$1
     local tar_file=$2
 
-    wget -N -c "$url" $DEBUG_STD
+    eval wget -N -c "$url" $DEBUG_STD
     eval $SUDO tar -C /usr/local/bin/ -xzf "$tar_file" $DEBUG_STD
     eval $SUDO rm -rf "$tar_file" $DEBUG_STD
 }
@@ -593,6 +593,16 @@ if ! grep -qF "$rftw_path_command" ~/"${profile_shell}"; then
 else
     echo "reconftw bin PATH already set in ${profile_shell}. Skipping..."
 fi
+
+RECONFTW_CFG="RECONFTW_CFG=${HOME}/.reconftw/reconftw.cfg"
+
+# Check if the line already exists in the shell configuration file
+if ! grep -qF "${RECONFTW_CFG}" ~/"${profile_shell}"; then
+    echo "${RECONFTW_CFG}" >>~/"${profile_shell}"
+else
+    echo "RECONFTW_CFG already set in ${profile_shell}. Skipping..."
+fi
+
 
 printf "${yellow} Remember set your api keys:\n - amass (~/.config/amass/config.ini)\n - subfinder (~/.config/subfinder/provider-config.yaml)\n - GitLab (~/Tools/.gitlab_tokens)\n - SSRF Server (COLLAB_SERVER in reconftw.cfg or env var) \n - Blind XSS Server (XSS_SERVER in reconftw.cfg or env var) \n - notify (~/.config/notify/provider-config.yaml) \n - WHOISXML API (WHOISXML_API in reconftw.cfg or env var)\n\n${reset}"
 printf "${bgreen} Finished!${reset}\n\n"
