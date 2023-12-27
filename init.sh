@@ -21,9 +21,6 @@ if ! command -v git &>/dev/null; then
     exit 1
 fi
 
-# Ensure the directory exists before cloning
-mkdir -p "${HOME}/.reconftw"
-
 echo -e "${GREEN}Cloning reconftw...${NC}"
 
 if [[ ! -d "${HOME}/.reconftw" ]]; then
