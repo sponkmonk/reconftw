@@ -35,6 +35,8 @@ echo -e "${GREEN}Setting up the environment vars...${NC}"
 
 chmod +x "${HOME}"/.reconftw/bin/*
 
+cd "${HOME}"/.reconftw" || exit 
+
 # Check if reconftw.cfg exists before sourcing
 if [[ -f "${HOME}/.reconftw/reconftw.cfg" ]]; then
     source "${HOME}"/.reconftw/reconftw.cfg
