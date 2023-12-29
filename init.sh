@@ -46,7 +46,7 @@ else
 fi
 
 echo -e "${GREEN}The installer will now install the required tools. Are you sure?${NC}"
-read -r -p "Continue (y/n) [default: y]? " choice
+read -r -p "Continue (y/n) [default: y]? " choice </dev/tty
 choice=${choice:-y}
 case ${choice} in
 [Yy]*)
