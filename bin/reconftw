@@ -55,6 +55,7 @@ function google_dorks() {
             echo "rftw_osint_googledorks command failed"
             exit 1
         } 2>>"${LOGFILE}" >/dev/null 2>&1
+        spinny::stop
         end_func "Results are saved in ${DOMAIN}/osint/dorks.txt" "${FUNCNAME[0]}"
     else
         if [[ $GOOGLE_DORKS == false ]] || [[ $OSINT == false ]]; then
@@ -158,7 +159,6 @@ function emails() {
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
         fi
     fi
-    spinny::stop
 }
 
 function domain_info() {
@@ -185,7 +185,6 @@ function domain_info() {
             printf "${yellow} ${FUNCNAME[0]} is already processed, to force executing ${FUNCNAME[0]} delete\n    $called_fn_dir/.${FUNCNAME[0]} ${reset}\n\n"
         fi
     fi
-    spinny::stop
 }
 
 function ip_info() {
