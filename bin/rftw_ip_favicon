@@ -15,7 +15,6 @@ display_help() {
 	echo "$(basename "$0") [Options]"
 	echo
 	echo "  -d, --domain            Target for subdomain enumeration (Required)"
-	echo "  -f, --file              File containing domains for subdomain enumeration (Required)"
 	echo "  -o, --output            Output file location"
 	echo "  -h, --help              Display this help and exit"
 	echo
@@ -33,10 +32,6 @@ while [[ $# -gt 0 ]]; do
 		DOMAIN="$2"
 		shift
 		;;
-	-f | --file)
-		DOMAIN_FILE="$2"
-		shift
-		;;
 	-o | --output)
 		output_file="$2"
 		shift
@@ -51,16 +46,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Input validation
-if [[ -z ${DOMAIN_FILE} ]] || [[ -z ${DOMAIN} ]]; then
+if [[ -z ${DOMAIN} ]]; then
+	echo "No input provided!"
 	display_help
 	exit 1
 fi
 
-# Validate file
-if [[ ! -f ${DOMAIN_FILE} ]] || [[ ! -r ${DOMAIN_FILE} ]]; then
-	echo "Error: Specified file does not exist or is not readable."
-	exit 1
-fi
 # Validate domain
 rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
 
