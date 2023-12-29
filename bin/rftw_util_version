@@ -23,7 +23,7 @@ function help_menu() {
 # Main function
 function check_version() {
 	# Check if current directory is a git repository
-	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	if ! git -C $HOME/.reconftw rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 		echo -e "${bred}Error: This is not a git repository.${reset}" >&2
 		exit 1
 	fi
