@@ -25,7 +25,7 @@ fi
 # 																by @six2dez
 
 function banner_graber() {
-    source "${SCRIPTPATH}"/banners.txt
+    source $HOME/.reconftw/banners.txt
     randx=$(shuf -i 1-23 -n 1)
     tmp="banner${randx}"
     banner_code=${!tmp}
@@ -2285,7 +2285,7 @@ while true; do
         ;;
     '--help' | '-h' | *)
         # echo "Unknown argument: $1"
-        . ./reconftw.cfg
+        . $HOME/.reconftw/reconftw.cfg
         banner
         help
         rftw_util_tools -t "${tools}"
