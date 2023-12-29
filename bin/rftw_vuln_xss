@@ -49,13 +49,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Input validation
-if [[ -z ${DOMAIN_FILE} ]]; then
+if [[ -z ${input_file} ]]; then
 	display_help
 	exit 1
 fi
 
 # Validate file
-if [[ ! -f ${DOMAIN_FILE} ]]; then
+if [[ ! -f ${input_file} ]]; then
 	echo "Error: Specified file does not exist or is not readable."
 	exit 1
 fi

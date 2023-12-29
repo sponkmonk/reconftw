@@ -1308,7 +1308,7 @@ function prototype_pollution() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $PROTO_POLLUTION == true ]]; then
         start_func ${FUNCNAME[0]} "Prototype Pollution checks"
         if [[ $DEEP == true ]] || [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            [[ -s "webs/url_extract.txt" ]] && ppfuzz -l webs/url_extract.txt -c $PPFUZZ_THREADS 2>/dev/null | anew -q .tmp/prototype_pollution.txt
+            [[ -s "webs/url_extract.txt" ]] && ppfuzz -l ${dir}/webs/url_extract.txt -c $PPFUZZ_THREADS 2>/dev/null | anew -q .tmp/prototype_pollution.txt
             [[ -s ".tmp/prototype_pollution.txt" ]] && cat .tmp/prototype_pollution.txt | sed -e '1,8d' | sed '/^\[ERR/d' | anew -q vulns/prototype_pollution.txt
             end_func "Results are saved in vulns/prototype_pollution.txt" ${FUNCNAME[0]}
         else
@@ -1326,7 +1326,7 @@ function prototype_pollution() {
 function smuggling() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SMUGGLING == true ]]; then
         start_func ${FUNCNAME[0]} "HTTP Request Smuggling checks"
-        [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
+        [[ ! -s ".tmp/webs_all.txt" ]] && cat ${dir}/webs/webs.txt ${dir}/webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         if [[ $DEEP == true ]] || [[ $(cat .tmp/webs_all.txt | wc -l) -le $DEEP_LIMIT ]]; then
             pushd "${tools}/smuggler" &>/dev/null || {
                 echo "Failed to cd to smuggler"

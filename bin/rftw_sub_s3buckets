@@ -68,7 +68,7 @@ rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
 
 run_s3buckets() {
     if [[ ! ${AXIOM} = true ]]; then
-        [[ -s "${DOMAIN_FILE}" ]] && s3scanner -bucket-file ${DOMAIN_FILE} | anew -q .tmp/s3buckets.txt
+        [[ -s "${DOMAIN_FILE}" ]] && s3scanner -bucket-file ${DOMAIN_FILE} 2>/dev/null | anew -q .tmp/s3buckets.txt
     else
         axiom-scan ${DOMAIN_FILE} -m s3scanner -o .tmp/s3buckets_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
         [[ -s ".tmp/s3buckets_tmp.txt" ]] && cat .tmp/s3buckets_tmp.txt .tmp/s3buckets_tmp2.txt | anew -q .tmp/s3buckets.txt && sed -i '/^$/d' ${output_dir}/s3buckets.txt

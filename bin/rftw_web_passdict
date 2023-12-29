@@ -57,7 +57,7 @@ fi
 
 password_dict() {
 	word=${input_domain%%.*}
-	python3"${tools}"/pydictor/pydictor.py -extend $word --leet 0 1 2 11 21 --len ${PASSWORD_MIN_LENGTH} ${PASSWORD_MAX_LENGTH} -o webs/password_dict.txt
+	python3"${tools}"/pydictor/pydictor.py -extend $word --leet 0 1 2 11 21 --len ${PASSWORD_MIN_LENGTH} ${PASSWORD_MAX_LENGTH} -o ${output_dir}/password_dict.txt
 
 }
 

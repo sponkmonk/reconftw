@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Input validation
-if [[ -z ${DOMAIN_FILE} ]] || [[ -z ${DOMAIN} ]]; then
+if [[ -z ${DOMAIN_FILE} ]]; then
 	display_help
 	exit 1
 fi
@@ -57,9 +57,6 @@ if [[ ! -f ${DOMAIN_FILE} ]] || [[ ! -r ${DOMAIN_FILE} ]]; then
 	echo "Error: Specified file does not exist or is not readable."
 	exit 1
 fi
-
-# Validate domain
-rftw_util_validatedomain "${DOMAIN}" || exit 1 # Domain validation
 
 sub_permut() {
 	mkdir -p .tmp 2>/dev/null
