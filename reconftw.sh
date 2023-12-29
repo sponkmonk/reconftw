@@ -2163,7 +2163,7 @@ function help() {
 ########################################### START SCRIPT  #####################################################
 ###############################################################################################################
 
-source assets/spinny/spinny.sh
+source $HOME/.reconftw/assets/spinny/spinny.sh
 
 # macOS PATH initialization, thanks @0xtavian <3
 if [[ $OSTYPE == "darwin"* ]]; then
