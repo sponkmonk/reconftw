@@ -1384,7 +1384,7 @@ function fuzzparams() {
         if [[ $DEEP == true ]] || [[ $(cat webs/url_extract.txt | wc -l) -le $DEEP_LIMIT2 ]]; then
             if [[ ! ${AXIOM} == true ]]; then
                 nuclei -update 2>>"${LOGFILE}" >/dev/null
-                git -C"${tools}"/fuzzing-templates pull
+                git -C "${tools}"/fuzzing-templates pull
                 cat webs/url_extract.txt 2>/dev/null | nuclei -silent -retries 3 -rl $NUCLEI_RATELIMIT -t"${tools}"/fuzzing-templates -o .tmp/fuzzparams.txt
             else
                 axiom-exec "git clone https://github.com/projectdiscovery/fuzzing-templates /home/op/fuzzing-templates" &>/dev/null
