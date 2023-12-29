@@ -50,7 +50,7 @@ read -r -p "Continue (y/n) [default: y]? " choice </dev/tty
 choice=${choice:-y}
 case ${choice} in
 [Yy]*)
-    . "${HOME}"/.reconftw/reconftw.cfg && "${HOME}"/.reconftw/install.sh
+    export RECONFTW_CFG="${HOME}/.reconftw/reconftw.cfg" && "${HOME}"/.reconftw/install.sh
     exit 0
     ;;
 [Nn]*) exit ;;
