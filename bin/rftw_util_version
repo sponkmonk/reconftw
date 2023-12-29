@@ -31,9 +31,9 @@ function check_version() {
 	timeout 10 git fetch
 	exit_status=$?
 	if [[ ${exit_status} -eq 0 ]]; then
-		BRANCH=$(git rev-parse --abbrev-ref HEAD)
-		HEADHASH=$(git rev-parse HEAD)
-		UPSTREAMHASH=$(git rev-parse "${BRANCH}"@\{upstream\})
+		BRANCH=$(git -C $HOME/.reconftw rev-parse --abbrev-ref HEAD)
+		HEADHASH=$(git -C $HOME/.reconftw rev-parse HEAD)
+		UPSTREAMHASH=$(git -C $HOME/.reconftw rev-parse "${BRANCH}"@\{upstream\})
 		if [[ ${HEADHASH} != "${UPSTREAMHASH}" ]]; then
 			echo -e "\n${yellow} There is a new version, run ./install.sh to get the latest version${reset}\n\n"
 		fi
