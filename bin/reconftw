@@ -1333,7 +1333,7 @@ function smuggling() {
                 exit 1
             }
             cat "${dir}"/.tmp/webs_all.txt | python3 smuggler.py -q --no-color 2>/dev/null | anew -q "${dir}"/.tmp/smuggling.txt
-            pophd &>/dev/null || {
+            popd &>/dev/null || {
                 echo "Failed to cd back"
                 exit 1
             }
