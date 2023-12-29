@@ -28,7 +28,7 @@ function check_version() {
 		exit 1
 	fi
 
-	timeout 10 git fetch
+	timeout 10 git -C $HOME/.reconftw fetch
 	exit_status=$?
 	if [[ ${exit_status} -eq 0 ]]; then
 		BRANCH=$(git -C $HOME/.reconftw rev-parse --abbrev-ref HEAD)
