@@ -530,7 +530,7 @@ RECONFTW_CFG="RECONFTW_CFG=${HOME}/.reconftw/reconftw.cfg"
 
 # Check if the line already exists in the shell configuration file
 if ! grep -qF "${RECONFTW_CFG}" ~/"${profile_shell}"; then
-    echo "${RECONFTW_CFG}" >>~/"${profile_shell}"
+    echo "export ${RECONFTW_CFG}" >>~/"${profile_shell}"
 else
     echo "RECONFTW_CFG already set in ${profile_shell}. Skipping..."
 fi
