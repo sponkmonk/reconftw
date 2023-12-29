@@ -93,10 +93,16 @@ So, what are you waiting for? Go! Go! Go! :boom:
 Important: if you are not running reconftw as root, run `sudo echo "${USERNAME}  ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers.d/reconFTW`, to make sure no sudo prompts are required to run the tool and to avoid any permission issues.
 
 ```bash
+curl -sSL https://raw.githubusercontent.com/six2dez/reconftw/v3.0-dev/init.sh | bash
+```
+
+or
+
+```bash
 git clone https://github.com/six2dez/reconftw
 cd reconftw/
-./install.sh
-./reconftw.sh -d target.com -r
+./init.sh
+reconftw -d target.com -r
 ```
 
 ## b) Docker Image 🐳 (3 options)
@@ -414,43 +420,43 @@ reset='\033[0m'
 ### To perform a full recon on single target
 
 ```bash
-./reconftw.sh -d target.com -r
+reconftw -d target.com -r
 ```
 
 ### To perform a full recon on a list of targets
 
 ```bash
-./reconftw.sh -l sites.txt -r -o /output/directory/
+reconftw -l sites.txt -r -o /output/directory/
 ```
 
 ### Perform full recon with more time intense tasks *(VPS intended only)*
 
 ```bash
-./reconftw.sh -d target.com -r --deep -o /output/directory/
+reconftw -d target.com -r --deep -o /output/directory/
 ```
 
 ### Perform recon in a multi domain target
 
 ```bash
-./reconftw.sh -m company -l domains_list.txt -r
+reconftw -m company -l domains_list.txt -r
 ```
 
 ### Perform recon with axiom integration
 
 ```bash
-./reconftw.sh -d target.com -r -v
+reconftw -d target.com -r -v
 ```
 
 ### Perform all steps (whole recon + all attacks) a.k.a. YOLO mode
 
 ```bash
-./reconftw.sh -d target.com -a
+reconftw -d target.com -a
 ```
 
 ### Show help section
 
 ```bash
-./reconftw.sh -h
+reconftw -h
 ```
 
 # Axiom Support :cloud:

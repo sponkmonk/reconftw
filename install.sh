@@ -169,7 +169,7 @@ function install_tools() {
     # Repos with special configs
     eval git clone https://github.com/projectdiscovery/nuclei-templates ${NUCLEI_TEMPLATES_PATH} $DEBUG_STD
     eval git clone https://github.com/geeknik/the-nuclei-templates.git ${NUCLEI_TEMPLATES_PATH}/extra_templates $DEBUG_STD
-    eval git clone https://github.com/projectdiscovery/fuzzing-templates"${tools}"/fuzzing-templates $DEBUG_STD
+    eval git clone https://github.com/projectdiscovery/fuzzing-templates ${tools}/fuzzing-templates $DEBUG_STD
     eval nuclei -update-templates update-template-dir ${NUCLEI_TEMPLATES_PATH} $DEBUG_STD
     cd "${dir}" || {
         echo "Failed to cd to $dir in ${FUNCNAME[0]} @ line ${LINENO}"

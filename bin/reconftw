@@ -2138,25 +2138,25 @@ function help() {
     printf " \n"
     printf " ${bblue}USAGE EXAMPLES${reset}\n"
     printf " ${byellow}Perform full recon (without attacks):${reset}\n"
-    printf " ./reconftw.sh -d example.com -r\n"
+    printf " reconftw -d example.com -r\n"
     printf " \n"
     printf " ${byellow}Perform subdomain enumeration on multiple targets:${reset}\n"
-    printf " ./reconftw.sh -l targets.txt -s\n"
+    printf " reconftw -l targets.txt -s\n"
     printf " \n"
     printf " ${byellow}Perform Web based scanning on a subdomains list:${reset}\n"
-    printf " ./reconftw.sh -d example.com -l targets.txt -w\n"
+    printf " reconftw -d example.com -l targets.txt -w\n"
     printf " \n"
     printf " ${byellow}Multidomain recon:${reset}\n"
-    printf " ./reconftw.sh -m company -l domainlist.txt -r\n"
+    printf " reconftw -m company -l domainlist.txt -r\n"
     printf " \n"
     printf " ${byellow}Perform full recon (with active attacks) along Out-Of-Scope subdomains list:${reset}\n"
-    printf " ./reconftw.sh -d example.com -x out.txt -a\n"
+    printf " reconftw -d example.com -x out.txt -a\n"
     printf " \n"
     printf " ${byellow}Perform full recon and store output to specified directory:${reset}\n"
-    printf " ./reconftw.sh -d example.com -r -o custom/path\n"
+    printf " reconftw -d example.com -r -o custom/path\n"
     printf " \n"
     printf " ${byellow}Run custom function:${reset}\n"
-    printf " ./reconftw.sh -d example.com -c nuclei_check \n"
+    printf " reconftw -d example.com -c nuclei_check \n"
 }
 
 ###############################################################################################################
@@ -2299,7 +2299,7 @@ SCRIPTPATH="$(
     cd "$(dirname "$0")" >/dev/null 2>&1 || exit
     pwd -P
 )"
-. "$SCRIPTPATH"/reconftw.cfg || {
+. $HOME/.reconftw/reconftw.cfg || {
     echo "Error importing reconftw.ctg"
     exit 1
 }
@@ -2441,7 +2441,7 @@ case $opt_mode in
             cp $SCRIPTPATH/$list "${dir}"/webs/webs.txt
         fi
     else
-        printf "\n\n${bred} Web mode needs a website list file as target (./reconftw.sh -l target.txt -w) ${reset}\n\n"
+        printf "\n\n${bred} Web mode needs a website list file as target (reconftw -l target.txt -w) ${reset}\n\n"
         exit
     fi
     webs_menu
