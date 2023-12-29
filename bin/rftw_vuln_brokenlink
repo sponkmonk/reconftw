@@ -72,7 +72,7 @@ broken_links_check() {
 			[[ -s "${output_dir}/katana.txt" ]] && sed -i '/^.\{2048\}./d' ${output_dir}/katana.txt
 		else
 			depth_level=$([[ "$deep_mode" = true ]] && echo 3 || echo 2)
-			[[ -s "${input_file}" ]] && axiom-scan ${input_file} -m katana -jc -kf all -d $depth_level -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}"
+			[[ -s "${input_file}" ]] && axiom-scan ${input_file} -m katana -jc -kf all -d $depth_level -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 			[[ -s "${output_dir}/katana.txt" ]] && sed -i '/^.\{2048\}./d' ${output_dir}/katana.txt
 		fi
 		[[ -s "${output_dir}/katana.txt" ]] && cat ${output_dir}/katana.txt | sort -u | httpx -follow-redirects -random-agent -status-code -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -timeout $HTTPX_TIMEOUT -silent -retries 2 -no-color | grep "\[4" | cut -d ' ' -f1 | anew -q ${output_dir}/brokenLinks_total.txt

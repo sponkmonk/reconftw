@@ -71,7 +71,8 @@ sub_regex_permut() {
             echo "Failed to cd to regulator"
             exit 1
         }
-        python3 main.py -t "${DOMAIN}" -f ${DOMAIN_FILE} -o ${dir}/.tmp/${DOMAIN}.brute
+		mkdir -p .tmp 2>/dev/null
+        python3 main.py -t "${DOMAIN}" -f ${DOMAIN_FILE} -o .tmp/${DOMAIN}.brute
         popd &>/dev/null || {
             echo "Failed to cd back"
             exit 1
@@ -79,10 +80,10 @@ sub_regex_permut() {
 
 		if [[ ! ${AXIOM} = true ]]; then
 			rftw_util_resolver_quick_local
-			[[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w ${output_file} -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+			[[ -s ".tmp/${DOMAIN}.brute" ]] && puredns resolve .tmp/${DOMAIN}.brute -w ${output_file} -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>/dev/null
 		else
 			rftw_util_resolver_quick_axiom
-			[[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o ${output_file} "${AXIOM_EXTRA_ARGS}"
+			[[ -s ".tmp/${DOMAIN}.brute" ]] && axiom-scan .tmp/${DOMAIN}.brute -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --wildcard-tests $PUREDNS_WILDCARDTEST_LIMIT --wildcard-batch $PUREDNS_WILDCARDBATCH_LIMIT -o ${output_file} "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 		fi
 }
 

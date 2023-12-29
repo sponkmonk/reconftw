@@ -252,7 +252,7 @@ function subdomains_full() {
 		echo $DOMAIN | anew -q subdomains/subdomains.txt
 	fi
 
-	rftw_web_screenshot
+	screenshot
 	if [[ -s "subdomains/subdomains.txt" ]]; then
 		[ -s "$outOfScope_file" ] && rftw_util_deleteoos $outOfScope_file subdomains/subdomains.txt
 		NUMOFLINES_subs=$(cat subdomains/subdomains.txt 2>>"$LOGFILE" | anew .tmp/subdomains_old.txt | sed '/^$/d' | wc -l)
@@ -379,15 +379,15 @@ function sub_scraping() {
             if [[ $(cat subdomains/subdomains.txt | wc -l) -le $DEEP_LIMIT ]] || [[ $DEEP == true ]]; then
                 if [[ ! ${AXIOM} == true ]]; then
                     if [[ ${DEEP} == true ]]; then
-                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --deep
+                        rftw_sub_scraping -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --deep
                     else
-                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt
+                        rftw_sub_scraping -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt
                     fi
                 else
                     if [[ ${DEEP} == true ]]; then
-                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --no-axiom --deep
+                        rftw_sub_scraping -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --no-axiom --deep
                     else
-                        rftw_sub_scraipng -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --no-axiom
+                        rftw_sub_scraping -f ${dir}/subdomains/subdomains.txt -o ${dir}/.tmp/scrap_subs_resolved.txt --no-axiom
                     fi
                 fi
                 if [[ ${INSCOPE} == true ]]; then
@@ -418,7 +418,7 @@ function sub_analytics() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBANALYTICS == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Analytics Subdomain Enumeration"
         spinny::start
-        rftw_sub_analytics -i ${dir}/.tmp/probed_tmp_scrap.txt -o ${dir}/.tmp/analytics_subs_resolved.txt
+        rftw_sub_analytics -f ${dir}/.tmp/probed_tmp_scrap.txt -o ${dir}/.tmp/analytics_subs_resolved.txt
         [[ ${INSCOPE} == true ]] && check_inscope .tmp/analytics_subs_resolved.txt 2>>"${LOGFILE}" >/dev/null
         NUMOFLINES=$(cat .tmp/analytics_subs_resolved.txt 2>>"${LOGFILE}" | anew subdomains/subdomains.txt | sed '/^$/d' | wc -l)
         spinny::stop
@@ -436,7 +436,7 @@ function sub_permut() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $SUBPERMUTE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Permutations Subdomain Enumeration"
         spinny::start
-        rftw_sub_permute -f ${dir}/subdomains/subdomains.txt -o "${dir}/.tmp/permute_subs.txt"
+        rftw_sub_permut -f ${dir}/subdomains/subdomains.txt -o "${dir}/.tmp/permute_subs.txt"
         if [[ -s ".tmp/permute_subs.txt" ]]; then
             [[ -s $outOfScope_file ]] && rftw_util_deleteoos $outOfScope_file .tmp/permute_subs.txt
             [[ ${INSCOPE} == true ]] && check_inscope .tmp/permute_subs.txt 2>>"${LOGFILE}" >/dev/null
@@ -604,6 +604,8 @@ function webprobe_simple() {
     if { [[ ! -f "${called_fn_dir}/.${FUNCNAME[0]}" ]] || [[ $DIFF == true ]]; } && [[ $WEBPROBESIMPLE == true ]]; then
         start_subfunc ${FUNCNAME[0]} "Running : Http probing${DOMAIN}/"
         spinny::start
+        echo ${DOMAIN} > /tmp/domains.txt
+        DOMAIN_FILE="/tmp/domains.txt"
         rftw_web_probecommon -f ${DOMAIN_FILE} -o .tmp/web_full_info1.txt
         cat .tmp/web_full_info.txt .tmp/web_full_info_probe.txt webs/web_full_info.txt 2>>"${LOGFILE}" | jq -s 'try .' | jq 'try unique_by(.input)' | jq 'try .[]' 2>>"${LOGFILE}" >webs/web_full_info.txt
         [[ -s "webs/web_full_info.txt" ]] && cat webs/web_full_info.txt | jq -r 'try .url' 2>/dev/null | grep "${DOMAIN}" | grep -E '^((http|https):\/\/)?([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{1,}(\/.*)?$' | sed "s/*.//" | anew -q .tmp/probed_tmp.txt
@@ -664,7 +666,7 @@ function screenshot() {
         start_func ${FUNCNAME[0]} "Web Screenshots"
         spinny::start
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
-        rftw_web_probecommon -f ${dir}/.tmp/webs_all.txt -o ${dir}/webs/screenshots
+        rftw_web_screenshot -f ${dir}/.tmp/webs_all.txt -o ${dir}/webs/screenshots
         spinny::stop
         end_func "Results are saved in ${DOMAIN}/screenshots folder" ${FUNCNAME[0]}
     else
@@ -807,7 +809,7 @@ function nuclei_check() {
         [[ ! -s ".tmp/webs_all.txt" ]] && cat webs/webs.txt webs/webs_uncommon_ports.txt 2>/dev/null | anew -q .tmp/webs_all.txt
         [[ ! -s ".tmp/webs_subs.txt" ]] && cat subdomains/subdomains.txt .tmp/webs_all.txt 2>>"${LOGFILE}" | anew -q .tmp/webs_subs.txt
 
-        rftw_web_nucleichecks -f ${dir}/.tmp/webs_subs.txt -o ${dir}/nuclei_output
+        rftw_web_nucleicheck -f ${dir}/.tmp/webs_subs.txt -o ${dir}/nuclei_output
 
         spinny::stop
 
@@ -1258,7 +1260,7 @@ function command_injection() {
         start_func ${FUNCNAME[0]} "Command Injection checks"
         [[ -s "gf/rce.txt" ]] && cat gf/rce.txt | qsreplace FUZZ | sed '/FUZZ/!d' | anew -q .tmp/tmp_rce.txt
         if [[ $DEEP == true ]] || [[ $(cat .tmp/tmp_rce.txt | wc -l) -le $DEEP_LIMIT ]]; then
-            [[ -s ".tmp/tmp_rce.txt" ]] && python3"${tools}"/commix/commix.py --batch -m .tmp/tmp_rce.txt --output-dir vulns/command_injection.txt 2>>"${LOGFILE}" >/dev/null
+            [[ -s ".tmp/tmp_rce.txt" ]] && python3 "${tools}"/commix/commix.py --batch -m .tmp/tmp_rce.txt --output-dir vulns/command_injection.txt 2>>"${LOGFILE}" >/dev/null
             end_func "Results are saved in vulns/command_injection folder" ${FUNCNAME[0]}
         else
             end_func "Skipping Command injection: Too many URLs to test, try with --deep flag" ${FUNCNAME[0]}
@@ -1572,7 +1574,7 @@ function start() {
         if [[ -n $list ]]; then
             if [[ -z ${DOMAIN} ]]; then
                 DOMAIN="Multi"
-                dir="$SCRIPTPATH/Recon/$DOMAIN"
+                dir="$HOME/.reconftw/Recon/$DOMAIN"
                 called_fn_dir="${dir}"/.called_fn
             fi
             if [[ $list == /* ]]; then
@@ -1582,7 +1584,7 @@ function start() {
             fi
         fi
     else
-        dir="$SCRIPTPATH/Recon/$DOMAIN"
+        dir="$HOME/.reconftw/Recon/$DOMAIN"
         called_fn_dir="${dir}"/.called_fn
     fi
 
@@ -1761,7 +1763,7 @@ function multi_osint() {
         exit
     fi
 
-    workdir=$SCRIPTPATH/Recon/$multi
+    workdir=$HOME/.reconftw/Recon/$multi
     mkdir -p $workdir || {
         echo "Failed to create directory '$workdir' in ${FUNCNAME[0]} @ line ${LINENO}"
         exit 1
@@ -1876,7 +1878,7 @@ function multi_recon() {
         exit
     fi
 
-    workdir=$SCRIPTPATH/Recon/$multi
+    workdir=$HOME/.reconftw/Recon/$multi
     mkdir -p $workdir || {
         echo "Failed to create directory '$workdir' in ${FUNCNAME[0]} @ line ${LINENO}"
         exit 1
@@ -2467,7 +2469,7 @@ case $opt_mode in
     ;;
 'c')
     export DIFF=true
-    dir="$SCRIPTPATH/Recon/$DOMAIN"
+    dir="$HOME/.reconftw/Recon/$DOMAIN"
     cd $dir || {
         echo "Failed to cd directory '$dir'"
         exit 1

@@ -60,7 +60,7 @@ mkdir -p .tmp 2>/dev/null
 if [[ ! ${AXIOM} == true ]]; then
 	wafw00f -i ${input_file} -o .tmp/wafs.txt
 else
-	axiom-scan ${input_file} -m wafw00f -o .tmp/wafs.txt "${AXIOM_EXTRA_ARGS}"
+	axiom-scan ${input_file} -m wafw00f -o .tmp/wafs.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 fi
 
 sed -e 's/^[ \t]*//' -e 's/ \+ /\t/g' -e '/(None)/d' .tmp/wafs.txt | tr -s "\t" ";" >${output_file}

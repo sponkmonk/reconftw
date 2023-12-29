@@ -90,18 +90,18 @@ function xss_analysis() {
 	else
 		if [[ $DEEP == true ]]; then
 			if [[ -n $XSS_SERVER ]]; then
-				[[ -s ".tmp/xss_reflected.txt" ]] && axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav -b ${XSS_SERVER} -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}"
+				[[ -s ".tmp/xss_reflected.txt" ]] && axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav -b ${XSS_SERVER} -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 			else
 				printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
-				[[ -s ".tmp/xss_reflected.txt" ]] && axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}"
+				[[ -s ".tmp/xss_reflected.txt" ]] && axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 			fi
 		else
 			if [[ $(cat .tmp/xss_reflected.txt | wc -l) -le $DEEP_LIMIT ]]; then
 				if [[ -n $XSS_SERVER ]]; then
-					axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav --skip-grepping --skip-mining-all --skip-mining-dict -b ${XSS_SERVER} -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}"
+					axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav --skip-grepping --skip-mining-all --skip-mining-dict -b ${XSS_SERVER} -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 				else
 					printf "${yellow}\n No XSS_SERVER defined, blind xss skipped\n\n"
-					axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav --skip-grepping --skip-mining-all --skip-mining-dict -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}"
+					axiom-scan .tmp/xss_reflected.txt -m dalfox --skip-bav --skip-grepping --skip-mining-all --skip-mining-dict -w $DALFOX_THREADS -o ${output_dir}/xss.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 				fi
 			else
 				printf "${bred} Skipping XSS: Too many URLs to test, try with --deep flag${reset}\n"

@@ -59,9 +59,9 @@ run_screenshot() {
 	dynamic_gowitness_timeout=$(expr $num_lines \* $GOWITNESS_TIMEOUT_PER_SITE)
 
 	if [[ ! ${AXIOM} == true ]]; then
-		[[ -s "${input_file}" ]] && timeout -k 1m ${dynamic_gowitness_timeout}s gowitness file -f ${input_file} -t $GOWITNESS_THREADS -P ${output_dir} $GOWITNESS_FLAGS
+		[[ -s "${input_file}" ]] && timeout -k 1m ${dynamic_gowitness_timeout}s nuclei -l ${input_file}  -headless -id screenshot -V dir=${output_dir} 2>/dev/null
 	else
-		timeout -k 1m ${dynamic_gowitness_timeout}s axiom-scan ${input_file} -m gowitness -t $GOWITNESS_THREADS $GOWITNESS_FLAGS -o ${output_dir} "${AXIOM_EXTRA_ARGS}"
+		timeout -k 1m ${dynamic_gowitness_timeout}s axiom-scan ${input_file} -m nuclei-screenshots -o ${output_dir} "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 	fi
 }
 

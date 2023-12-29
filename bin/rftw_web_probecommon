@@ -63,7 +63,7 @@ run_webprobe_simple() {
 		cat ${input_file} | httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o ${output_file}
 	else
 		rftw_util_resolver_quick_axiom
-		axiom-scan ${input_file} -m httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o ${output_file} "${AXIOM_EXTRA_ARGS}"
+		axiom-scan ${input_file} -m httpx ${HTTPX_FLAGS} -no-color -json -random-agent -threads $HTTPX_THREADS -rl $HTTPX_RATELIMIT -retries 2 -timeout $HTTPX_TIMEOUT -o ${output_file} "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 	fi
 }
 

@@ -85,9 +85,9 @@ urlchecks() {
 		if [[ $URL_CHECK_PASSIVE == true ]]; then
 			if [[ $DEEP == true ]]; then
 				cat ${input_file} | unfurl -u domains >${output_dir}/waymore_input.txt
-				axiom-scan ${output_dir}/waymore_input.txt -m waymore -o ${output_dir}/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}"
+				axiom-scan ${output_dir}/waymore_input.txt -m waymore -o ${output_dir}/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 			else
-				axiom-scan ${input_file} -m gau -o ${output_dir}/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}"
+				axiom-scan ${input_file} -m gau -o ${output_dir}/url_extract_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 			fi
 			if [[ -s ${GITHUB_TOKENS} ]]; then
 				github-endpoints -q -k -d "${DOMAIN}" -t ${GITHUB_TOKENS} -o ${output_dir}/github-endpoints.txt
@@ -97,9 +97,9 @@ urlchecks() {
 
 		if [[ $URL_CHECK_ACTIVE == true ]]; then
 			if [[ $DEEP == true ]]; then
-				axiom-scan ${input_file} -m katana -jc -kf all -d 3 -fs rdn -fs rdn -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}"
+				axiom-scan ${input_file} -m katana -jc -kf all -d 3 -fs rdn -fs rdn -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 			else
-				axiom-scan ${input_file} -m katana -jc -kf all -d 2 -fs rdn -fs rdn -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}"
+				axiom-scan ${input_file} -m katana -jc -kf all -d 2 -fs rdn -fs rdn -o ${output_dir}/katana.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 			fi
 		fi
 

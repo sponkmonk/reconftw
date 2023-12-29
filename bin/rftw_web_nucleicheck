@@ -62,14 +62,15 @@ if [[ ${AXIOM} != true ]]; then
 	IFS=',' read -ra severity_array <<<"$NUCLEI_SEVERITY"
 	for crit in "${severity_array[@]}"; do
 		printf "${yellow}\n Running : Nuclei $crit ${reset}\n\n"
-		nuclei $NUCLEI_FLAGS -severity $crit -nh -rl $NUCLEI_RATELIMIT -o ${output_dir}/${crit}.txt <${input_file}
+		nuclei $NUCLEI_FLAGS -severity $crit -nh -rl $NUCLEI_RATELIMIT -o ${output_dir}/${crit}.txt <${input_file} 2>/dev/null
+		[[ -s "${output_dir}/${crit}.txt" ]] && cat ${output_dir}/${crit}.txt
 	done
 	printf "\n\n"
 else
 	IFS=',' read -ra severity_array <<<"$NUCLEI_SEVERITY"
 	for crit in "${severity_array[@]}"; do
 		printf "${yellow}\n Running : Nuclei $crit, check results on nuclei_output folder${reset}\n\n"
-		axiom-scan ${input_file} -m nuclei --nuclei-templates ${NUCLEI_TEMPLATES_PATH} -severity ${crit} -nh -rl $NUCLEI_RATELIMIT -o ${output_dir}/${crit}.txt "${AXIOM_EXTRA_ARGS}"
+		axiom-scan ${input_file} -m nuclei --nuclei-templates ${NUCLEI_TEMPLATES_PATH} -severity ${crit} -nh -rl $NUCLEI_RATELIMIT -o ${output_dir}/${crit}.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 		[[ -s "${output_dir}/${crit}.txt" ]] && cat ${output_dir}/${crit}.txt
 	done
 	printf "\n\n"

@@ -70,10 +70,10 @@ sub_active() {
 	mkdir -p .tmp 2>/dev/null
 	if [[ ${AXIOM} != true ]]; then
 		rftw_util_resolver_quick_local
-		[[ -s ${DOMAIN_FILE} ]] && puredns resolve "${DOMAIN_FILE}" -w .tmp/subdomains_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+		[[ -s ${DOMAIN_FILE} ]] && puredns resolve "${DOMAIN_FILE}" -w .tmp/subdomains_tmp.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>/dev/null
 	else
 		rftw_util_resolver_quick_axiom
-		[[ -s ${DOMAIN_FILE} ]] && axiom-scan ${DOMAIN_FILE} -m puredns-resolve -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_tmp.txt "${AXIOM_EXTRA_ARGS}"
+		[[ -s ${DOMAIN_FILE} ]] && axiom-scan ${DOMAIN_FILE} -m puredns-resolve -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" -o .tmp/subdomains_tmp.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 	fi
 	echo "${DOMAIN}" | dnsx -retry 3 -silent -r $resolvers_trusted | anew -q .tmp/subdomains_tmp.txt
 	if [[ $DEEP == true ]]; then

@@ -81,10 +81,10 @@ sub_permut() {
 	fi
 	if [[ ${AXIOM} != true ]]; then
 		rftw_util_resolver_quick_local
-		[[ -s ".tmp/gotator1.txt" ]] && puredns resolve .tmp/gotator1.txt -w .tmp/permute1.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+		[[ -s ".tmp/gotator1.txt" ]] && puredns resolve .tmp/gotator1.txt -w .tmp/permute1.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>/dev/null
 	else
 		rftw_util_resolver_quick_axiom
-		[[ -s ".tmp/gotator1.txt" ]] && axiom-scan .tmp/gotator1.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" -o .tmp/permute1.txt "${AXIOM_EXTRA_ARGS}"
+		[[ -s ".tmp/gotator1.txt" ]] && axiom-scan .tmp/gotator1.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" -o .tmp/permute1.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 	fi
 
 	if [[ $PERMUTATIONS_OPTION == "gotator" ]]; then
@@ -94,9 +94,9 @@ sub_permut() {
 	fi
 
 	if [[ ${AXIOM} != true ]]; then
-		[[ -s ".tmp/gotator2.txt" ]] && puredns resolve .tmp/gotator2.txt -w .tmp/permute2.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}"
+		[[ -s ".tmp/gotator2.txt" ]] && puredns resolve .tmp/gotator2.txt -w .tmp/permute2.txt -r "${resolvers}" --resolvers-trusted "${resolvers_trusted}" -l "${PUREDNS_PUBLIC_LIMIT}" --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" --wildcard-batch "${PUREDNS_WILDCARDBATCH_LIMIT}" 2>/dev/null
 	else
-		[[ -s ".tmp/gotator2.txt" ]] && axiom-scan .tmp/gotator2.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" -o .tmp/permute2.txt "${AXIOM_EXTRA_ARGS}"
+		[[ -s ".tmp/gotator2.txt" ]] && axiom-scan .tmp/gotator2.txt -m puredns-resolve -r /home/op/lists/resolvers.txt --resolvers-trusted /home/op/lists/resolvers_trusted.txt --rate-limit-trusted "${PUREDNS_TRUSTED_LIMIT}" --wildcard-tests "${PUREDNS_WILDCARDTEST_LIMIT}" -o .tmp/permute2.txt "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 	fi
 	cat .tmp/permute1.txt .tmp/permute2.txt | anew -q ${output_file}
 

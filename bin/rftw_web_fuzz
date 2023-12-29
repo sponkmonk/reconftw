@@ -70,7 +70,7 @@ else
 	axiom-exec "mkdir -p /home/op/lists/seclists/Discovery/Web-Content/" &>/dev/null
 	axiom-exec "wget -q -O - ${fuzzing_remote_list} > /home/op/lists/fuzz_wordlist.txt" &>/dev/null
 	axiom-exec "wget -q -O - ${fuzzing_remote_list} > /home/op/lists/seclists/Discovery/Web-Content/big.txt" &>/dev/null
-	axiom-scan ${input_file} -m ffuf_base -H "${HEADER}" $FFUF_FLAGS -s -maxtime $FFUF_MAXTIME -o .tmp/ffuf-content.json "${AXIOM_EXTRA_ARGS}"
+	axiom-scan ${input_file} -m ffuf_base -H "${HEADER}" $FFUF_FLAGS -s -maxtime $FFUF_MAXTIME -o .tmp/ffuf-content.json "${AXIOM_EXTRA_ARGS}" 2>/dev/null
 	while read -r sub; do
 		sub_out=$(echo "$sub" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
 		if [[ -s ".tmp/ffuf-content.json" ]]; then
