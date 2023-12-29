@@ -46,16 +46,13 @@ else
 fi
 
 echo -e "${GREEN}The installer will now install the required tools. Are you sure?${NC}"
-
-while true; do
-    read -p "Continue (y/n) [default: y]? " choice
-    choice=${choice:-y}
-    case ${choice} in
-    [Yy]*)
-        . "${HOME}"/.reconftw/reconftw.cfg && "${HOME}"/.reconftw/install.sh
-        break
-        ;;
-    [Nn]*) exit ;;
-    *) echo "Please answer y or n." ;;
-    esac
-done
+read -r -p "Continue (y/n) [default: y]? " choice
+choice=${choice:-y}
+case ${choice} in
+[Yy]*)
+    . "${HOME}"/.reconftw/reconftw.cfg && "${HOME}"/.reconftw/install.sh
+    exit 0
+    ;;
+[Nn]*) exit ;;
+*) echo "Please answer y or n." ;;
+esac
